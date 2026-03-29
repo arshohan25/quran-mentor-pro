@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid } from "lucide-react";
+import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid, BookOpen } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations, useWordByWord } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import TajweedText, { TajweedLegend } from "@/components/TajweedText";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import HifzMode from "@/components/HifzMode";
 
 export default function QuranPage() {
   const { t, language } = useLanguage();
@@ -25,8 +26,8 @@ export default function QuranPage() {
   const [tajweedEnabled, setTajweedEnabled] = useState(() => {
     try { return localStorage.getItem("tajweedEnabled") !== "false"; } catch { return true; }
   });
-  const [viewMode, setViewMode] = useState<"verse" | "word">(() => {
-    try { return (localStorage.getItem("quranViewMode") as "verse" | "word") || "verse"; } catch { return "verse"; }
+  const [viewMode, setViewMode] = useState<"verse" | "word" | "hifz">(() => {
+    try { return (localStorage.getItem("quranViewMode") as "verse" | "word" | "hifz") || "verse"; } catch { return "verse"; }
   });
 
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
@@ -69,7 +70,7 @@ export default function QuranPage() {
             <ToggleGroup
               type="single"
               value={viewMode}
-              onValueChange={(v) => v && setViewMode(v as "verse" | "word")}
+              onValueChange={(v) => v && setViewMode(v as "verse" | "word" | "hifz")}
               className="bg-primary-foreground/10 rounded-lg p-0.5"
             >
               <ToggleGroupItem value="verse" className="data-[state=on]:bg-primary-foreground/20 text-primary-foreground px-2 py-1 text-xs rounded" title={t("আয়াত মোড", "Verse Mode", "وضع الآية")}>
@@ -77,6 +78,9 @@ export default function QuranPage() {
               </ToggleGroupItem>
               <ToggleGroupItem value="word" className="data-[state=on]:bg-primary-foreground/20 text-primary-foreground px-2 py-1 text-xs rounded" title={t("শব্দ মোড", "Word Mode", "وضع الكلمة")}>
                 <LayoutGrid className="w-4 h-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="hifz" className="data-[state=on]:bg-primary-foreground/20 text-primary-foreground px-2 py-1 text-xs rounded" title={t("হিফজ মোড", "Hifz Mode", "وضع الحفظ")}>
+                <BookOpen className="w-4 h-4" />
               </ToggleGroupItem>
             </ToggleGroup>
             <button
@@ -163,7 +167,23 @@ export default function QuranPage() {
           {/* Tajweed legend */}
           {tajweedEnabled && <div className="mb-4"><TajweedLegend /></div>}
 
-          {viewMode === "verse" ? (
+          {viewMode === "hifz" ? (
+            isLoading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-32 rounded-lg" />
+                ))}
+              </div>
+            ) : data ? (
+              <HifzMode
+                arabicAyahs={data.arabic.ayahs}
+                bengaliAyahs={data.bengali.ayahs}
+                englishAyahs={data.english.ayahs}
+                surahNumber={selectedSurah}
+                tajweedEnabled={tajweedEnabled}
+              />
+            ) : null
+          ) : viewMode === "verse" ? (
             isLoading ? (
               <div className="space-y-4">
                 {[...Array(5)].map((_, i) => (
