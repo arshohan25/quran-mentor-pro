@@ -1,32 +1,51 @@
 
 
-# কুরআন শিক্ষা ও নামাজ অ্যাপ
+# ডার্ক মোড + বুকমার্ক + নামাজের সময়সূচী
 
-## ফিচার সমূহ
+## ১. ডার্ক মোড
 
-### ১. কুরআন পাঠ ও তরজমা
-- সূরা/আয়াত ব্রাউজার — আরবি টেক্সট + বাংলা ও ইংরেজি তরজমা পাশাপাশি
-- সূরা লিস্ট থেকে সিলেক্ট করা যাবে, আয়াত নম্বরে জাম্প করা যাবে
-- Al Quran Cloud API থেকে আরবি টেক্সট ও তরজমা লোড হবে
+Dark theme CSS variables already exist in `index.css` (`.dark` class). Need to:
 
-### ২. তেলাওয়াত ভুল ধরা (Voice Recognition)
-- Web Speech API দিয়ে মাইক্রোফোন থেকে আরবি রিকগনিশন
-- রেকর্ড বাটন চাপলে ইউজারের পড়া ক্যাপচার হবে
-- আরবি টেক্সটের সাথে তুলনা করে ভুল জায়গা লাল রঙে মার্ক করবে, সঠিক টেক্সট সবুজে দেখাবে
-- **নোট:** আরবি ভয়েস রিকগনিশন ব্রাউজারভেদে সীমিত — বেসিক ম্যাচিং দিয়ে শুরু
+- **Create `ThemeProvider` context** (`src/contexts/ThemeContext.tsx`) — stores theme in localStorage, toggles `dark` class on `<html>`
+- **Add dark mode toggle button** to `LanguageSwitcher` or header — Moon/Sun icon
+- **Wrap App** with `ThemeProvider`
 
-### ৩. কারী অডিও ও প্র্যাকটিস মোড
-- বিখ্যাত কারীদের তেলাওয়াত (মিশারি, আব্দুল বাসিত, সুদাইস ইত্যাদি) — Free API থেকে
-- আয়াত-বাই-আয়াত প্লেব্যাক: কারী এক আয়াত পড়বে → ইউজারকে পড়ার সময় দেবে → ভুল হলে আয়াত রিপিট ও ভুল জায়গা কালার মার্ক
+## ২. বুকমার্ক ফিচার (শেষ পড়া আয়াত মনে রাখা)
 
-### ৪. নামাজ গাইড (চার মাযহাব)
-- হানাফী, শাফেঈ, মালেকী, হাম্বলী — প্রতিটি মাযহাব অনুযায়ী নামাজের নিয়ম
-- নামাজে পড়ার দোয়া, সূরা, তাশাহুদ, দরুদ সব আরবি + বাংলা তরজমা সহ
-- ওয়াক্ত অনুযায়ী (ফজর, যোহর, আসর, মাগরিব, এশা) আলাদা গাইড
+- **Create `useBookmark` hook** — saves last-read surah + ayah to localStorage
+- **QuranPage**: Auto-save current surah/ayah on scroll/click; on load, restore last position
+- **Index page**: Show "Continue reading" card at top if bookmark exists — click to jump to last ayah
+- **AudioPage**: Also save last-listened position
 
-### ৫. UI/UX ডিজাইন
-- বাংলা UI (ইংরেজি ও আরবি সুইচ অপশন সহ)
-- হোম পেজে ৪টি প্রধান সেকশন: কুরআন পড়ুন, প্র্যাকটিস, অডিও, নামাজ গাইড
-- মোবাইল-ফ্রেন্ডলি রেসপন্সিভ ডিজাইন
-- ইসলামিক সবুজ ও সোনালি থিম
+Data structure in localStorage:
+```json
+{
+  "lastRead": { "surah": 2, "ayah": 45 },
+  "lastAudio": { "surah": 1, "ayah": 3, "qari": "ar.alafasy" }
+}
+```
+
+## ৩. নামাজের সময়সূচী (লোকেশন অনুযায়ী)
+
+- **Create `PrayerTimesPage`** — new route `/prayer-times`
+- Use **Aladhan API** (`https://api.aladhan.com/v1/timingsByCity`) — free, no API key needed
+- **Auto-detect location** via browser Geolocation API → reverse to city/country, or let user manually enter city
+- Show **5 waqt times** (Fajr, Dhuhr, Asr, Maghrib, Isha) + Sunrise in a clean card layout
+- Show **next prayer countdown** timer
+- Add link from **Index page** (new 5th section card with Clock icon)
+- **Add route** in `App.tsx`
+
+## ফাইল পরিবর্তন
+
+| ফাইল | পরিবর্তন |
+|---|---|
+| `src/contexts/ThemeContext.tsx` | নতুন — dark mode context + localStorage |
+| `src/hooks/useBookmark.ts` | নতুন — localStorage bookmark hook |
+| `src/hooks/usePrayerTimes.ts` | নতুন — Aladhan API hook |
+| `src/pages/PrayerTimesPage.tsx` | নতুন — prayer times UI with countdown |
+| `src/components/LanguageSwitcher.tsx` | Dark mode toggle বাটন যোগ |
+| `src/pages/Index.tsx` | Bookmark "Continue" card + Prayer Times section card |
+| `src/pages/QuranPage.tsx` | Auto-save bookmark on ayah view |
+| `src/pages/AudioPage.tsx` | Auto-save last audio position |
+| `src/App.tsx` | ThemeProvider wrap + `/prayer-times` route |
 
