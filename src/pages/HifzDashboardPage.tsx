@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Brain, BookOpen, Search, Trophy, Flame, TrendingUp } from "lucide-react";
+import { ArrowLeft, Brain, BookOpen, Search, Trophy, Flame, TrendingUp, Calendar, Clock, Zap } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { getStreakStats } from "@/hooks/useStreakTracker";
 
 interface SrsCard {
   ayahNum: number;
@@ -42,6 +43,76 @@ function getSurahStats(surahNumber: number, totalAyahs: number) {
 }
 
 type SortMode = "number" | "progress" | "due";
+
+const DAY_NAMES_BN = ["শনি", "রবি", "সোম", "মঙ্গল", "বুধ", "বৃহ", "শুক্র"];
+const DAY_NAMES_EN = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+const DAY_NAMES_AR = ["سبت", "أحد", "اثن", "ثلا", "أرب", "خمي", "جمع"];
+
+function StreakCard() {
+  const { t, language } = useLanguage();
+  const streak = useMemo(() => getStreakStats(), []);
+  const maxMin = Math.max(...streak.last7Days.map(d => d.minutes), 1);
+  const dayNames = language === "bn" ? DAY_NAMES_BN : language === "ar" ? DAY_NAMES_AR : DAY_NAMES_EN;
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <Flame className="w-5 h-5 text-accent" />
+        <span className="font-semibold text-foreground">
+          {t("স্ট্রিক ট্র্যাকার", "Streak Tracker", "متتبع المتابعة")}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="rounded-lg bg-accent/10 p-3 text-center">
+          <div className="flex items-center justify-center gap-1 mb-1">
+            <Zap className="w-4 h-4 text-accent" />
+          </div>
+          <p className="text-2xl font-bold text-accent">{streak.currentStreak}</p>
+          <p className="text-[10px] text-muted-foreground">{t("বর্তমান স্ট্রিক", "Current", "الحالي")}</p>
+        </div>
+        <div className="rounded-lg bg-primary/10 p-3 text-center">
+          <div className="flex items-center justify-center gap-1 mb-1">
+            <Trophy className="w-4 h-4 text-primary" />
+          </div>
+          <p className="text-2xl font-bold text-primary">{streak.longestStreak}</p>
+          <p className="text-[10px] text-muted-foreground">{t("সর্বোচ্চ", "Best", "الأفضل")}</p>
+        </div>
+        <div className="rounded-lg bg-muted p-3 text-center">
+          <div className="flex items-center justify-center gap-1 mb-1">
+            <Clock className="w-4 h-4 text-foreground" />
+          </div>
+          <p className="text-2xl font-bold text-foreground">{streak.todayMinutes}<span className="text-xs font-normal text-muted-foreground">m</span></p>
+          <p className="text-[10px] text-muted-foreground">{t("আজ", "Today", "اليوم")}</p>
+        </div>
+      </div>
+
+      {/* Weekly bar chart */}
+      <div className="flex items-end gap-1.5 h-16">
+        {streak.last7Days.map((day, i) => {
+          const height = day.minutes > 0 ? Math.max((day.minutes / maxMin) * 100, 8) : 4;
+          const dayDate = new Date(day.date);
+          const dayIdx = dayDate.getDay();
+          return (
+            <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
+              <div
+                className={`w-full rounded-t transition-all ${day.minutes > 0 ? "bg-accent" : "bg-muted"}`}
+                style={{ height: `${height}%` }}
+                title={`${day.minutes}m`}
+              />
+              <span className="text-[9px] text-muted-foreground">{dayNames[dayIdx]}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+        <Calendar className="w-3 h-3" />
+        <span>{streak.totalDays} {t("দিন প্র্যাকটিস", "days practiced", "أيام تدريب")}</span>
+      </div>
+    </div>
+  );
+}
 
 export default function HifzDashboardPage() {
   const { t, language } = useLanguage();
@@ -114,6 +185,9 @@ export default function HifzDashboardPage() {
       </header>
 
       <div className="container py-4 space-y-4">
+        {/* Streak tracker */}
+        <StreakCard />
+
         {/* Global stats */}
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-center gap-2 mb-4">

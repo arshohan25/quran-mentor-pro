@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Eye, EyeOff, CheckCircle2, RotateCcw, ChevronLeft, ChevronRight, Brain, Flame, Zap, ThumbsUp, ThumbsDown, Minus } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import TajweedText from "@/components/TajweedText";
@@ -124,6 +124,7 @@ export default function HifzMode({ arabicAyahs, bengaliAyahs, englishAyahs, sura
   const [reviewMode, setReviewMode] = useState(false);
   const [reviewQueue, setReviewQueue] = useState<number[]>([]);
   const [reviewIdx, setReviewIdx] = useState(0);
+  const sessionStart = useRef<number>(Date.now());
 
   useEffect(() => {
     setCurrentAyah(0);
@@ -161,6 +162,17 @@ export default function HifzMode({ arabicAyahs, bengaliAyahs, englishAyahs, sura
     setRevealLevel("hidden");
     setReviewMode(true);
   };
+
+  // Log practice time on unmount or surah change
+  useEffect(() => {
+    sessionStart.current = Date.now();
+    return () => {
+      const elapsed = Date.now() - sessionStart.current;
+      if (elapsed > 5000) {
+        import("@/hooks/useStreakTracker").then(m => m.logPracticeSession(elapsed));
+      }
+    };
+  }, [surahNumber]);
 
   const rateAyah = (quality: number) => {
     const ayah = arabicAyahs[currentAyah];
