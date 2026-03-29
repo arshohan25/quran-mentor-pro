@@ -124,6 +124,7 @@ export default function HifzMode({ arabicAyahs, bengaliAyahs, englishAyahs, sura
   const [reviewMode, setReviewMode] = useState(false);
   const [reviewQueue, setReviewQueue] = useState<number[]>([]);
   const [reviewIdx, setReviewIdx] = useState(0);
+  const sessionStart = useRef<number>(Date.now());
 
   useEffect(() => {
     setCurrentAyah(0);
