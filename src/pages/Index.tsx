@@ -1,16 +1,98 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Book, Mic, Headphones, BookOpen } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
+  const { t } = useLanguage();
+
+  const sections = [
+    {
+      icon: Book,
+      title: t("কুরআন পড়ুন", "Read Quran", "اقرأ القرآن"),
+      desc: t("আরবি টেক্সট, বাংলা ও ইংরেজি তরজমা সহ", "Arabic text with Bengali & English translation", "النص العربي مع ترجمة"),
+      path: "/quran",
+      gradient: "from-primary to-primary/80",
+    },
+    {
+      icon: Mic,
+      title: t("প্র্যাকটিস করুন", "Practice", "تدرب"),
+      desc: t("তেলাওয়াত করুন, ভুল ধরা হবে স্বয়ংক্রিয়ভাবে", "Recite and get automatic error detection", "اقرأ واحصل على تصحيح تلقائي"),
+      path: "/practice",
+      gradient: "from-accent to-secondary",
+    },
+    {
+      icon: Headphones,
+      title: t("অডিও তেলাওয়াত", "Audio Recitation", "الاستماع"),
+      desc: t("বিখ্যাত কারীদের তেলাওয়াত শুনুন ও অনুসরণ করুন", "Listen to famous Qaris and follow along", "استمع إلى القراء المشهورين"),
+      path: "/audio",
+      gradient: "from-secondary to-accent",
+    },
+    {
+      icon: BookOpen,
+      title: t("নামাজ শিক্ষা", "Prayer Guide", "دليل الصلاة"),
+      desc: t("চার মাযহাব অনুযায়ী নামাজের নিয়ম ও দোয়া", "Prayer rules & duas according to 4 Madhabs", "أحكام الصلاة حسب المذاهب الأربعة"),
+      path: "/prayer",
+      gradient: "from-primary/80 to-accent",
+    },
+  ];
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="relative overflow-hidden bg-primary text-primary-foreground">
+        <div className="absolute inset-0 opacity-10">
+          <div className="font-arabic text-[200px] leading-none text-center pt-8 select-none">﷽</div>
+        </div>
+        <div className="relative z-10 container py-8 text-center">
+          <div className="flex justify-end mb-4">
+            <LanguageSwitcher />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">
+            {t("কুরআন শিক্ষা ও নামাজ", "Quran Learning & Prayer", "تعلم القرآن والصلاة")}
+          </h1>
+          <p className="text-primary-foreground/80 text-lg">
+            {t("পড়ুন, শিখুন, অনুশীলন করুন", "Read, Learn, Practice", "اقرأ، تعلم، تدرب")}
+          </p>
+        </div>
+      </header>
+
+      {/* Main Sections */}
+      <main className="container py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {sections.map((section) => (
+            <Link
+              key={section.path}
+              to={section.path}
+              className="group block rounded-xl border border-border bg-card p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+            >
+              <div className={`inline-flex p-3 rounded-lg bg-gradient-to-br ${section.gradient} text-primary-foreground mb-4 group-hover:scale-110 transition-transform`}>
+                <section.icon className="w-7 h-7" />
+              </div>
+              <h2 className="text-xl font-semibold text-card-foreground mb-2">
+                {section.title}
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                {section.desc}
+              </p>
+            </Link>
+          ))}
+        </div>
+
+        {/* Bismillah decoration */}
+        <div className="mt-12 text-center">
+          <p className="font-arabic text-4xl text-primary/60">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
+          <p className="text-muted-foreground text-sm mt-2">
+            {t(
+              "পরম করুণাময় অসীম দয়ালু আল্লাহর নামে",
+              "In the name of Allah, the Most Gracious, the Most Merciful",
+              "بسم الله الرحمن الرحيم"
+            )}
+          </p>
+        </div>
+      </main>
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
