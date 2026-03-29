@@ -46,6 +46,13 @@ const Index = () => {
       path: "/prayer-times",
       gradient: "from-accent to-primary",
     },
+    {
+      icon: Brain,
+      title: t("হিফজ ড্যাশবোর্ড", "Hifz Dashboard", "لوحة الحفظ"),
+      desc: t("সব সূরার মুখস্থ অগ্রগতি একনজরে দেখুন", "Track memorization progress across all surahs", "تتبع تقدم الحفظ"),
+      path: "/hifz",
+      gradient: "from-primary to-secondary",
+    },
   ];
 
   const lastReadSurah = bookmarks.lastRead
