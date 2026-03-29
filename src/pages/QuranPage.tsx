@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import TajweedText, { TajweedLegend } from "@/components/TajweedText";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import HifzMode from "@/components/HifzMode";
 
 export default function QuranPage() {
   const { t, language } = useLanguage();
