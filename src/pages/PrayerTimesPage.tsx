@@ -18,7 +18,7 @@ const prayerNames = {
 type PrayerKey = keyof typeof prayerNames;
 const prayerOrder: PrayerKey[] = ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"];
 
-function getNextPrayer(timings: Record<string, string>): { name: PrayerKey; countdown: string } | null {
+function getNextPrayer(timings: Record<string, string> | any): { name: PrayerKey; countdown: string } | null {
   const now = new Date();
   for (const key of prayerOrder) {
     if (key === "Sunrise") continue;
