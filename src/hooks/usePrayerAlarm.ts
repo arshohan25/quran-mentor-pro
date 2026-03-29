@@ -30,7 +30,7 @@ function getStoredAlarms(): AlarmState {
   }
 }
 
-export function usePrayerAlarm(timings: Record<string, string> | null | undefined) {
+export function usePrayerAlarm(timings: Record<string, string> | any) {
   const [alarms, setAlarms] = useState<AlarmState>(getStoredAlarms);
   const [permission, setPermission] = useState<NotificationPermission>(
     typeof Notification !== "undefined" ? Notification.permission : "denied"
