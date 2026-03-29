@@ -167,7 +167,23 @@ export default function QuranPage() {
           {/* Tajweed legend */}
           {tajweedEnabled && <div className="mb-4"><TajweedLegend /></div>}
 
-          {viewMode === "verse" ? (
+          {viewMode === "hifz" ? (
+            isLoading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-32 rounded-lg" />
+                ))}
+              </div>
+            ) : data ? (
+              <HifzMode
+                arabicAyahs={data.arabic.ayahs}
+                bengaliAyahs={data.bengali.ayahs}
+                englishAyahs={data.english.ayahs}
+                surahNumber={selectedSurah}
+                tajweedEnabled={tajweedEnabled}
+              />
+            ) : null
+          ) : viewMode === "verse" ? (
             isLoading ? (
               <div className="space-y-4">
                 {[...Array(5)].map((_, i) => (
