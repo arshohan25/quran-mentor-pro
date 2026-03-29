@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Eye, EyeOff, CheckCircle2, RotateCcw, ChevronLeft, ChevronRight, Brain, Flame, Zap, ThumbsUp, ThumbsDown, Minus } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import TajweedText from "@/components/TajweedText";
