@@ -181,6 +181,16 @@ export default function HifzMode({ arabicAyahs, bengaliAyahs, englishAyahs, sura
     const updated = reviewCard(card, quality);
     setSrs(prev => ({ ...prev, [ayah.numberInSurah]: updated }));
 
+    // Log daily review count
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const raw = localStorage.getItem("hifz-daily-log");
+      const log = raw ? JSON.parse(raw) : { date: today, reviewed: 0 };
+      if (log.date !== today) { log.date = today; log.reviewed = 0; }
+      log.reviewed++;
+      localStorage.setItem("hifz-daily-log", JSON.stringify(log));
+    } catch {}
+
     // Move to next in review queue
     if (reviewMode) {
       const nextIdx = reviewIdx + 1;
