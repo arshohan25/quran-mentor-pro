@@ -26,8 +26,8 @@ export default function QuranPage() {
   const [tajweedEnabled, setTajweedEnabled] = useState(() => {
     try { return localStorage.getItem("tajweedEnabled") !== "false"; } catch { return true; }
   });
-  const [viewMode, setViewMode] = useState<"verse" | "word">(() => {
-    try { return (localStorage.getItem("quranViewMode") as "verse" | "word") || "verse"; } catch { return "verse"; }
+  const [viewMode, setViewMode] = useState<"verse" | "word" | "hifz">(() => {
+    try { return (localStorage.getItem("quranViewMode") as "verse" | "word" | "hifz") || "verse"; } catch { return "verse"; }
   });
 
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
