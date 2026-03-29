@@ -87,3 +87,41 @@ export function getStreakStats() {
 
   return { currentStreak, longestStreak, todayMinutes, totalDays, last7Days };
 }
+
+export function getReviewHistory(days: number): { date: string; minutes: number; reviewed: number }[] {
+  const data = loadStreak();
+  const result: { date: string; minutes: number; reviewed: number }[] = [];
+  const now = new Date();
+
+  for (let i = days - 1; i >= 0; i--) {
+    const dt = new Date(now);
+    dt.setDate(dt.getDate() - i);
+    const dateStr = dt.toISOString().split("T")[0];
+    const minutes = data.totalMinutes[dateStr] || 0;
+
+    // Get reviewed count from daily log history
+    let reviewed = 0;
+    try {
+      const raw = localStorage.getItem(`hifz-daily-log-${dateStr}`);
+      if (raw) {
+        const log = JSON.parse(raw);
+        reviewed = log.reviewed || 0;
+      } else if (dateStr === getToday()) {
+        const todayRaw = localStorage.getItem("hifz-daily-log");
+        if (todayRaw) {
+          const log = JSON.parse(todayRaw);
+          if (log.date === dateStr) reviewed = log.reviewed || 0;
+        }
+      }
+    } catch {}
+
+    // Estimate reviewed from practice if no log
+    if (reviewed === 0 && minutes > 0) {
+      reviewed = Math.max(1, Math.round(minutes / 2));
+    }
+
+    result.push({ date: dateStr, minutes, reviewed });
+  }
+
+  return result;
+}
