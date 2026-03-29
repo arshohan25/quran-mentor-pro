@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { getStreakStats } from "@/hooks/useStreakTracker";
+import HifzProgressChart from "@/components/HifzProgressChart";
 
 interface SrsCard {
   ayahNum: number;
@@ -339,6 +340,9 @@ export default function HifzDashboardPage() {
           <DailyGoalCard />
           <StreakCard />
         </div>
+
+        {/* Progress chart */}
+        <HifzProgressChart />
 
         {/* Global stats */}
         <div className="rounded-xl border border-border bg-card p-5">
