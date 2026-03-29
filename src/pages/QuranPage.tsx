@@ -12,11 +12,21 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function QuranPage() {
   const { t, language } = useLanguage();
-  const [selectedSurah, setSelectedSurah] = useState(1);
+  const { saveLastRead } = useBookmark();
+  const [searchParams] = useSearchParams();
+  const [selectedSurah, setSelectedSurah] = useState(() => {
+    const s = searchParams.get("surah");
+    return s ? Number(s) : 1;
+  });
   const [search, setSearch] = useState("");
-  const [showList, setShowList] = useState(true);
+  const [showList, setShowList] = useState(!searchParams.get("surah"));
 
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
+
+  // Auto-save bookmark when surah changes
+  useEffect(() => {
+    saveLastRead(selectedSurah, 1);
+  }, [selectedSurah, saveLastRead]);
 
   const filtered = surahList.filter(
     (s) =>

@@ -36,6 +36,7 @@ export default function AudioPage() {
     audioRef.current = audio;
     setCurrentAyah(index);
     setIsPlaying(true);
+    saveLastAudio(selectedSurah, index + 1, selectedQari);
 
     audio.play();
     audio.onended = () => {
