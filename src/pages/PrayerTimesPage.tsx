@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Clock } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Bell, BellOff } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
+import { usePrayerAlarm } from "@/hooks/usePrayerAlarm";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const prayerNames = {
@@ -16,6 +18,7 @@ const prayerNames = {
 };
 
 type PrayerKey = keyof typeof prayerNames;
+type AlarmablePrayer = "Fajr" | "Dhuhr" | "Asr" | "Maghrib" | "Isha";
 const prayerOrder: PrayerKey[] = ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"];
 
 function getNextPrayer(timings: Record<string, string> | any): { name: PrayerKey; countdown: string } | null {
@@ -38,6 +41,7 @@ function getNextPrayer(timings: Record<string, string> | any): { name: PrayerKey
 export default function PrayerTimesPage() {
   const { t, language } = useLanguage();
   const { data: timings, isLoading, location, loadingLocation } = usePrayerTimes();
+  const { alarms, toggleAlarm, permission, requestPermission } = usePrayerAlarm(timings);
   const [nextPrayer, setNextPrayer] = useState<{ name: PrayerKey; countdown: string } | null>(null);
 
   useEffect(() => {
@@ -63,6 +67,23 @@ export default function PrayerTimesPage() {
       </header>
 
       <div className="container py-6 max-w-lg">
+        {/* Notification permission banner */}
+        {permission !== "granted" && (
+          <div className="bg-accent/20 border border-accent rounded-xl p-4 mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {t("🔔 নামাজের অ্যালার্ম চালু করুন", "🔔 Enable Prayer Alarms", "🔔 تفعيل تنبيهات الصلاة")}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t("নামাজের সময় হলে নোটিফিকেশন পাবেন", "Get notified at prayer times", "احصل على إشعارات أوقات الصلاة")}
+              </p>
+            </div>
+            <Button size="sm" onClick={requestPermission}>
+              {t("চালু করুন", "Enable", "تفعيل")}
+            </Button>
+          </div>
+        )}
+
         {/* Location */}
         <div className="flex items-center gap-2 text-muted-foreground mb-4">
           <MapPin className="w-4 h-4" />
@@ -98,6 +119,7 @@ export default function PrayerTimesPage() {
           <div className="space-y-3">
             {prayerOrder.map((key) => {
               const isNext = nextPrayer?.name === key;
+              const isAlarmable = key !== "Sunrise";
               return (
                 <div
                   key={key}
@@ -116,9 +138,28 @@ export default function PrayerTimesPage() {
                       )}
                     </div>
                   </div>
-                  <span className={`text-lg font-bold tabular-nums ${isNext ? "text-primary" : "text-foreground"}`}>
-                    {(timings as any)[key]?.split(" ")[0]}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-lg font-bold tabular-nums ${isNext ? "text-primary" : "text-foreground"}`}>
+                      {(timings as any)[key]?.split(" ")[0]}
+                    </span>
+                    {isAlarmable && (
+                      <button
+                        onClick={() => toggleAlarm(key as AlarmablePrayer)}
+                        className={`p-1.5 rounded-full transition-colors ${
+                          alarms[key as AlarmablePrayer]
+                            ? "text-primary bg-primary/10"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                        title={alarms[key as AlarmablePrayer] ? "Alarm On" : "Alarm Off"}
+                      >
+                        {alarms[key as AlarmablePrayer] ? (
+                          <Bell className="w-4 h-4" />
+                        ) : (
+                          <BellOff className="w-4 h-4" />
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, Search, Palette } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import TajweedText, { TajweedLegend } from "@/components/TajweedText";
 
 export default function QuranPage() {
   const { t, language } = useLanguage();
@@ -20,13 +21,19 @@ export default function QuranPage() {
   });
   const [search, setSearch] = useState("");
   const [showList, setShowList] = useState(!searchParams.get("surah"));
+  const [tajweedEnabled, setTajweedEnabled] = useState(() => {
+    try { return localStorage.getItem("tajweedEnabled") !== "false"; } catch { return true; }
+  });
 
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
 
-  // Auto-save bookmark when surah changes
   useEffect(() => {
     saveLastRead(selectedSurah, 1);
   }, [selectedSurah, saveLastRead]);
+
+  useEffect(() => {
+    localStorage.setItem("tajweedEnabled", String(tajweedEnabled));
+  }, [tajweedEnabled]);
 
   const filtered = surahList.filter(
     (s) =>
@@ -48,7 +55,20 @@ export default function QuranPage() {
             </Link>
             <h1 className="text-xl font-bold">{t("কুরআন পড়ুন", "Read Quran", "اقرأ القرآن")}</h1>
           </div>
-          <LanguageSwitcher />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setTajweedEnabled(!tajweedEnabled)}
+              className={`p-2 rounded-lg transition-colors ${
+                tajweedEnabled
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "text-primary-foreground/60 hover:text-primary-foreground"
+              }`}
+              title={t("তাজবীদ কালার", "Tajweed Colors", "ألوان التجويد")}
+            >
+              <Palette className="w-5 h-5" />
+            </button>
+            <LanguageSwitcher />
+          </div>
         </div>
       </header>
 
@@ -117,6 +137,9 @@ export default function QuranPage() {
             </div>
           )}
 
+          {/* Tajweed legend */}
+          {tajweedEnabled && <div className="mb-4"><TajweedLegend /></div>}
+
           {isLoading ? (
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
@@ -132,9 +155,11 @@ export default function QuranPage() {
                       <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
                         {ayah.numberInSurah}
                       </span>
-                      <p className="font-arabic text-2xl leading-loose text-foreground flex-1 text-right">
-                        {ayah.text}
-                      </p>
+                      <TajweedText
+                        text={ayah.text}
+                        enabled={tajweedEnabled}
+                        className="font-arabic text-2xl leading-loose text-foreground flex-1 text-right"
+                      />
                     </div>
                     <div className="border-t border-border pt-3 space-y-2 pl-11">
                       <p className="text-sm text-foreground leading-relaxed">
