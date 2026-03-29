@@ -69,6 +69,57 @@ export function useAyahAudio(surahNumber: number, ayahNumber: number, qariId: st
   });
 }
 
+export interface WordData {
+  id: number;
+  position: number;
+  text_uthmani: string;
+  translation: { text: string; language_name: string };
+  transliteration: { text: string };
+}
+
+export interface VerseWords {
+  verse_key: string;
+  verse_number: number;
+  words: WordData[];
+}
+
+export function useWordByWord(surahNumber: number, translationLang = "bn") {
+  return useQuery<VerseWords[]>({
+    queryKey: ["word-by-word", surahNumber, translationLang],
+    queryFn: async () => {
+      const allVerses: VerseWords[] = [];
+      let page = 1;
+      let totalPages = 1;
+      while (page <= totalPages) {
+        const res = await fetch(
+          `https://api.quran.com/api/v4/verses/by_chapter/${surahNumber}?language=${translationLang}&words=true&word_fields=text_uthmani&translation_fields=text&per_page=50&page=${page}`
+        );
+        const data = await res.json();
+        totalPages = data.pagination?.total_pages || 1;
+        for (const verse of data.verses) {
+          allVerses.push({
+            verse_key: verse.verse_key,
+            verse_number: verse.verse_number,
+            words: verse.words
+              .filter((w: any) => w.char_type_name === "word")
+              .map((w: any) => ({
+                id: w.id,
+                position: w.position,
+                text_uthmani: w.text_uthmani,
+                translation: w.translation || { text: "", language_name: "" },
+                transliteration: w.transliteration || { text: "" },
+              })),
+          });
+        }
+        page++;
+      }
+      return allVerses;
+    },
+    enabled: surahNumber > 0,
+    staleTime: 1000 * 60 * 60,
+  });
+}
+
 export function useSurahAudio(surahNumber: number, qariId: string) {
   return useQuery<Ayah[]>({
     queryKey: ["surah-audio", surahNumber, qariId],
