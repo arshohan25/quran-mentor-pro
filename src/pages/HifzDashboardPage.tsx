@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Brain, BookOpen, Search, Trophy, Flame, TrendingUp } from "lucide-react";
+import { ArrowLeft, Brain, BookOpen, Search, Trophy, Flame, TrendingUp, Calendar, Clock, Zap } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { getStreakStats } from "@/hooks/useStreakTracker";
 
 interface SrsCard {
   ayahNum: number;
