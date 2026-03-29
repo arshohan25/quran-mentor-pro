@@ -334,8 +334,11 @@ export default function HifzDashboardPage() {
       </header>
 
       <div className="container py-4 space-y-4">
-        {/* Streak tracker */}
-        <StreakCard />
+        {/* Daily goal + Streak */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <DailyGoalCard />
+          <StreakCard />
+        </div>
 
         {/* Global stats */}
         <div className="rounded-xl border border-border bg-card p-5">
