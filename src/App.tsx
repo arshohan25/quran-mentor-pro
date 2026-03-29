@@ -11,6 +11,7 @@ import PracticePage from "./pages/PracticePage.tsx";
 import AudioPage from "./pages/AudioPage.tsx";
 import PrayerPage from "./pages/PrayerPage.tsx";
 import PrayerTimesPage from "./pages/PrayerTimesPage.tsx";
+import HifzDashboardPage from "./pages/HifzDashboardPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/audio" element={<AudioPage />} />
               <Route path="/prayer" element={<PrayerPage />} />
               <Route path="/prayer-times" element={<PrayerTimesPage />} />
+              <Route path="/hifz" element={<HifzDashboardPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

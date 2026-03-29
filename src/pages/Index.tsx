@@ -1,4 +1,4 @@
-import { Book, Mic, Headphones, BookOpen, Clock, BookMarked } from "lucide-react";
+import { Book, Mic, Headphones, BookOpen, Clock, BookMarked, Brain } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
@@ -45,6 +45,13 @@ const Index = () => {
       desc: t("আপনার লোকেশন অনুযায়ী নামাজের সময়", "Prayer times based on your location", "أوقات الصلاة حسب موقعك"),
       path: "/prayer-times",
       gradient: "from-accent to-primary",
+    },
+    {
+      icon: Brain,
+      title: t("হিফজ ড্যাশবোর্ড", "Hifz Dashboard", "لوحة الحفظ"),
+      desc: t("সব সূরার মুখস্থ অগ্রগতি একনজরে দেখুন", "Track memorization progress across all surahs", "تتبع تقدم الحفظ"),
+      path: "/hifz",
+      gradient: "from-primary to-secondary",
     },
   ];
 
