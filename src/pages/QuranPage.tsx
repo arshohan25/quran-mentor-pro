@@ -66,6 +66,19 @@ export default function QuranPage() {
             <h1 className="text-xl font-bold">{t("কুরআন পড়ুন", "Read Quran", "اقرأ القرآن")}</h1>
           </div>
           <div className="flex items-center gap-2">
+            <ToggleGroup
+              type="single"
+              value={viewMode}
+              onValueChange={(v) => v && setViewMode(v as "verse" | "word")}
+              className="bg-primary-foreground/10 rounded-lg p-0.5"
+            >
+              <ToggleGroupItem value="verse" className="data-[state=on]:bg-primary-foreground/20 text-primary-foreground px-2 py-1 text-xs rounded" title={t("আয়াত মোড", "Verse Mode", "وضع الآية")}>
+                <AlignLeft className="w-4 h-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="word" className="data-[state=on]:bg-primary-foreground/20 text-primary-foreground px-2 py-1 text-xs rounded" title={t("শব্দ মোড", "Word Mode", "وضع الكلمة")}>
+                <LayoutGrid className="w-4 h-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
             <button
               onClick={() => setTajweedEnabled(!tajweedEnabled)}
               className={`p-2 rounded-lg transition-colors ${
