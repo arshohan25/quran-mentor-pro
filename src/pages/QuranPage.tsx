@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Search } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useBookmark } from "@/hooks/useBookmark";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
