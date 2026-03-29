@@ -44,6 +44,155 @@ function getSurahStats(surahNumber: number, totalAyahs: number) {
 
 type SortMode = "number" | "progress" | "due";
 
+// --- Daily Goal ---
+const GOAL_KEY = "hifz-daily-goal";
+const GOAL_LOG_KEY = "hifz-daily-log";
+
+interface DailyGoal {
+  target: number; // ayahs per day
+}
+
+interface DailyLog {
+  date: string;
+  reviewed: number;
+}
+
+function loadGoal(): DailyGoal {
+  try {
+    const raw = localStorage.getItem(GOAL_KEY);
+    return raw ? JSON.parse(raw) : { target: 10 };
+  } catch { return { target: 10 }; }
+}
+
+function saveGoal(goal: DailyGoal) {
+  localStorage.setItem(GOAL_KEY, JSON.stringify(goal));
+}
+
+function getTodayStr() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function getTodayReviewed(): number {
+  try {
+    const raw = localStorage.getItem(GOAL_LOG_KEY);
+    if (!raw) return 0;
+    const log: DailyLog = JSON.parse(raw);
+    return log.date === getTodayStr() ? log.reviewed : 0;
+  } catch { return 0; }
+}
+
+function DailyGoalCard() {
+  const { t } = useLanguage();
+  const [goal, setGoal] = useState<DailyGoal>(loadGoal);
+  const [editing, setEditing] = useState(false);
+  const [tempTarget, setTempTarget] = useState(goal.target.toString());
+  const todayReviewed = useMemo(() => getTodayReviewed(), []);
+  const progress = Math.min((todayReviewed / Math.max(goal.target, 1)) * 100, 100);
+  const achieved = todayReviewed >= goal.target;
+
+  const handleSave = useCallback(() => {
+    const val = Math.max(1, Math.min(100, parseInt(tempTarget) || 10));
+    const newGoal = { target: val };
+    setGoal(newGoal);
+    saveGoal(newGoal);
+    setEditing(false);
+  }, [tempTarget]);
+
+  const presets = [5, 10, 15, 20, 30];
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Target className="w-5 h-5 text-primary" />
+          <span className="font-semibold text-foreground">
+            {t("দৈনিক লক্ষ্য", "Daily Goal", "الهدف اليومي")}
+          </span>
+        </div>
+        <button
+          onClick={() => { setEditing(!editing); setTempTarget(goal.target.toString()); }}
+          className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+        >
+          <Settings2 className="w-4 h-4 text-muted-foreground" />
+        </button>
+      </div>
+
+      {editing ? (
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            {t("প্রতিদিন কতটি আয়াত রিভিউ করতে চান?", "How many ayahs to review daily?", "كم آية تريد مراجعتها يومياً؟")}
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            {presets.map(p => (
+              <button
+                key={p}
+                onClick={() => setTempTarget(p.toString())}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  tempTarget === p.toString()
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={tempTarget}
+              onChange={e => setTempTarget(e.target.value)}
+              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+            />
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              {t("সেভ", "Save", "حفظ")}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-baseline gap-1.5">
+              <span className={`text-3xl font-bold ${achieved ? "text-accent" : "text-foreground"}`}>
+                {todayReviewed}
+              </span>
+              <span className="text-sm text-muted-foreground">/ {goal.target}</span>
+            </div>
+            {achieved && (
+              <div className="flex items-center gap-1 text-accent text-xs font-medium">
+                <Check className="w-4 h-4" />
+                {t("সম্পন্ন!", "Done!", "تم!")}
+              </div>
+            )}
+          </div>
+
+          <div className="w-full h-3 rounded-full bg-muted overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${achieved ? "bg-accent" : "bg-primary"}`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          <p className="text-xs text-muted-foreground text-center">
+            {achieved
+              ? t("আজকের লক্ষ্য পূরণ হয়েছে! 🎉", "Today's goal achieved! 🎉", "تم تحقيق هدف اليوم! 🎉")
+              : t(
+                  `আরও ${goal.target - todayReviewed}টি আয়াত বাকি`,
+                  `${goal.target - todayReviewed} more ayahs to go`,
+                  `بقي ${goal.target - todayReviewed} آيات`
+                )}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const DAY_NAMES_BN = ["শনি", "রবি", "সোম", "মঙ্গল", "বুধ", "বৃহ", "শুক্র"];
 const DAY_NAMES_EN = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
 const DAY_NAMES_AR = ["سبت", "أحد", "اثن", "ثلا", "أرب", "خمي", "جمع"];
