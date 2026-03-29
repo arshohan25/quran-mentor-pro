@@ -11,6 +11,7 @@ import PracticePage from "./pages/PracticePage.tsx";
 import AudioPage from "./pages/AudioPage.tsx";
 import PrayerPage from "./pages/PrayerPage.tsx";
 import PrayerTimesPage from "./pages/PrayerTimesPage.tsx";
+import HifzDashboardPage from "./pages/HifzDashboardPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
