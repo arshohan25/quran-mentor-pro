@@ -41,6 +41,10 @@ export default function QuranPage() {
     localStorage.setItem("tajweedEnabled", String(tajweedEnabled));
   }, [tajweedEnabled]);
 
+  useEffect(() => {
+    localStorage.setItem("quranViewMode", viewMode);
+  }, [viewMode]);
+
   const filtered = surahList.filter(
     (s) =>
       s.name.includes(search) ||
