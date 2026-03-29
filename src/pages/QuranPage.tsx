@@ -25,8 +25,13 @@ export default function QuranPage() {
   const [tajweedEnabled, setTajweedEnabled] = useState(() => {
     try { return localStorage.getItem("tajweedEnabled") !== "false"; } catch { return true; }
   });
+  const [viewMode, setViewMode] = useState<"verse" | "word">(() => {
+    try { return (localStorage.getItem("quranViewMode") as "verse" | "word") || "verse"; } catch { return "verse"; }
+  });
 
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
+  const wordLang = language === "bn" ? "bn" : language === "ar" ? "ar" : "en";
+  const { data: wordData, isLoading: wordLoading } = useWordByWord(selectedSurah, wordLang);
 
   useEffect(() => {
     saveLastRead(selectedSurah, 1);
