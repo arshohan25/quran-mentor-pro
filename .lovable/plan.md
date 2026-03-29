@@ -1,51 +1,76 @@
 
 
-# ডার্ক মোড + বুকমার্ক + নামাজের সময়সূচী
+# নামাজের অ্যালার্ম + তাজবীদ কালার কোডিং
 
-## ১. ডার্ক মোড
+## ১. নামাজের অ্যালার্ম/নোটিফিকেশন
 
-Dark theme CSS variables already exist in `index.css` (`.dark` class). Need to:
+Browser Notification API ব্যবহার করে নামাজের সময় হলে নোটিফিকেশন দেখাবে।
 
-- **Create `ThemeProvider` context** (`src/contexts/ThemeContext.tsx`) — stores theme in localStorage, toggles `dark` class on `<html>`
-- **Add dark mode toggle button** to `LanguageSwitcher` or header — Moon/Sun icon
-- **Wrap App** with `ThemeProvider`
+### ফাইল পরিবর্তন
 
-## ২. বুকমার্ক ফিচার (শেষ পড়া আয়াত মনে রাখা)
+**`src/hooks/usePrayerAlarm.ts`** (নতুন)
+- localStorage-এ কোন কোন ওয়াক্তের অ্যালার্ম চালু সেটা সেভ করবে (`{ Fajr: true, Dhuhr: true, ... }`)
+- `Notification.requestPermission()` দিয়ে পারমিশন নেবে
+- `setInterval` (প্রতি ৩০ সেকেন্ডে চেক) — বর্তমান সময় কোনো ওয়াক্তের সাথে মিললে `new Notification(...)` দেখাবে
+- একই ওয়াক্তে দুইবার যেন নোটিফিকেশন না আসে সেজন্য `lastNotified` ট্র্যাক করবে
+- অডিও অ্যালার্ম: একটি ছোট আযানের সাউন্ড প্লে করবে (HTML5 Audio)
 
-- **Create `useBookmark` hook** — saves last-read surah + ayah to localStorage
-- **QuranPage**: Auto-save current surah/ayah on scroll/click; on load, restore last position
-- **Index page**: Show "Continue reading" card at top if bookmark exists — click to jump to last ayah
-- **AudioPage**: Also save last-listened position
+**`src/pages/PrayerTimesPage.tsx`** (আপডেট)
+- প্রতিটি নামাজের পাশে Bell/BellOff টগল বাটন যোগ করবে
+- উপরে "Enable Notifications" বাটন — পারমিশন না থাকলে দেখাবে
+- অ্যালার্ম অন/অফ স্টেট `usePrayerAlarm` থেকে আসবে
 
-Data structure in localStorage:
+### ডেটা স্ট্রাকচার (localStorage)
 ```json
 {
-  "lastRead": { "surah": 2, "ayah": 45 },
-  "lastAudio": { "surah": 1, "ayah": 3, "qari": "ar.alafasy" }
+  "prayerAlarms": {
+    "Fajr": true, "Dhuhr": true, "Asr": true, "Maghrib": true, "Isha": true
+  },
+  "lastNotifiedPrayer": "Fajr-2026-03-29"
 }
 ```
 
-## ৩. নামাজের সময়সূচী (লোকেশন অনুযায়ী)
+---
 
-- **Create `PrayerTimesPage`** — new route `/prayer-times`
-- Use **Aladhan API** (`https://api.aladhan.com/v1/timingsByCity`) — free, no API key needed
-- **Auto-detect location** via browser Geolocation API → reverse to city/country, or let user manually enter city
-- Show **5 waqt times** (Fajr, Dhuhr, Asr, Maghrib, Isha) + Sunrise in a clean card layout
-- Show **next prayer countdown** timer
-- Add link from **Index page** (new 5th section card with Clock icon)
-- **Add route** in `App.tsx`
+## ২. তাজবীদ কালার কোডিং
 
-## ফাইল পরিবর্তন
+আরবি টেক্সটে তাজবীদের নিয়ম অনুযায়ী হরফ/চিহ্ন রঙিন করা হবে। Client-side regex দিয়ে আরবি ক্যারেক্টার ম্যাচ করে `<span>` র‍্যাপ করবে।
+
+### তাজবীদ রুল ও কালার ম্যাপ
+
+| তাজবীদ নিয়ম | কালার | ম্যাচ প্যাটার্ন |
+|---|---|---|
+| গুন্নাহ (নাসালাইজেশন) | `#FF7F27` কমলা | নুন সাকিন/তানবীন + ইদগাম/ইখফা হরফ |
+| ইখফা | `#D946EF` বেগুনি | নুন সাকিন + ইখফা হরফের আগে |
+| ইদগাম | `#0EA5E9` নীল | নুন সাকিন + ইদগাম হরফ (ي ن م و ل ر) |
+| ইকলাব | `#22C55E` সবুজ | নুন সাকিন + ب |
+| কলকলা | `#EF4444` লাল | قطب جد সাকিন অবস্থায় |
+| মদ্দ (দীর্ঘ) | `#3B82F6` নীল | মদ্দ চিহ্ন (ٓ) বা আলিফ মদ্দ |
+
+### ফাইল পরিবর্তন
+
+**`src/utils/tajweed.ts`** (নতুন)
+- `applyTajweedColors(arabicText: string): string` — আরবি টেক্সট নিয়ে তাজবীদ রুল অনুযায়ী `<span style="color:...">` দিয়ে মার্কআপ রিটার্ন করবে
+- রেজেক্স-ভিত্তিক ম্যাচিং — ১০০% নির্ভুল না হলেও প্রধান তাজবীদ নিয়মগুলো কভার করবে
+
+**`src/components/TajweedText.tsx`** (নতুন)
+- `dangerouslySetInnerHTML` দিয়ে কালার-কোডেড আরবি রেন্ডার করবে
+- তাজবীদ মোড টগল বাটন — ইউজার চাইলে বন্ধ/চালু করতে পারবে
+- নিচে একটি ছোট legend (কোন রং = কোন নিয়ম)
+
+**`src/pages/QuranPage.tsx`** (আপডেট)
+- আয়াতের আরবি টেক্সটে `TajweedText` কম্পোনেন্ট ব্যবহার করবে
+- হেডারে তাজবীদ on/off টগল বাটন যোগ
+
+---
+
+## ফাইল সামারি
 
 | ফাইল | পরিবর্তন |
 |---|---|
-| `src/contexts/ThemeContext.tsx` | নতুন — dark mode context + localStorage |
-| `src/hooks/useBookmark.ts` | নতুন — localStorage bookmark hook |
-| `src/hooks/usePrayerTimes.ts` | নতুন — Aladhan API hook |
-| `src/pages/PrayerTimesPage.tsx` | নতুন — prayer times UI with countdown |
-| `src/components/LanguageSwitcher.tsx` | Dark mode toggle বাটন যোগ |
-| `src/pages/Index.tsx` | Bookmark "Continue" card + Prayer Times section card |
-| `src/pages/QuranPage.tsx` | Auto-save bookmark on ayah view |
-| `src/pages/AudioPage.tsx` | Auto-save last audio position |
-| `src/App.tsx` | ThemeProvider wrap + `/prayer-times` route |
+| `src/hooks/usePrayerAlarm.ts` | নতুন — Notification API + localStorage alarm state |
+| `src/utils/tajweed.ts` | নতুন — Arabic tajweed regex color mapping |
+| `src/components/TajweedText.tsx` | নতুন — Colored Arabic text + legend |
+| `src/pages/PrayerTimesPage.tsx` | Bell toggle per prayer + notification permission |
+| `src/pages/QuranPage.tsx` | TajweedText component + toggle button |
 
