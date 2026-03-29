@@ -1,4 +1,4 @@
-import { Book, Mic, Headphones, BookOpen, Clock, BookMarked } from "lucide-react";
+import { Book, Mic, Headphones, BookOpen, Clock, BookMarked, Brain } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
