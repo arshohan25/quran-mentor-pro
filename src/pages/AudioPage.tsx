@@ -14,6 +14,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function AudioPage() {
   const { t, language } = useLanguage();
+  const { saveLastAudio } = useBookmark();
   const [selectedSurah, setSelectedSurah] = useState(1);
   const [selectedQari, setSelectedQari] = useState(qariList[0].id);
   const [currentAyah, setCurrentAyah] = useState(0);
