@@ -70,7 +70,7 @@ export default function QuranPage() {
             <ToggleGroup
               type="single"
               value={viewMode}
-              onValueChange={(v) => v && setViewMode(v as "verse" | "word")}
+              onValueChange={(v) => v && setViewMode(v as "verse" | "word" | "hifz")}
               className="bg-primary-foreground/10 rounded-lg p-0.5"
             >
               <ToggleGroupItem value="verse" className="data-[state=on]:bg-primary-foreground/20 text-primary-foreground px-2 py-1 text-xs rounded" title={t("আয়াত মোড", "Verse Mode", "وضع الآية")}>
@@ -78,6 +78,9 @@ export default function QuranPage() {
               </ToggleGroupItem>
               <ToggleGroupItem value="word" className="data-[state=on]:bg-primary-foreground/20 text-primary-foreground px-2 py-1 text-xs rounded" title={t("শব্দ মোড", "Word Mode", "وضع الكلمة")}>
                 <LayoutGrid className="w-4 h-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="hifz" className="data-[state=on]:bg-primary-foreground/20 text-primary-foreground px-2 py-1 text-xs rounded" title={t("হিফজ মোড", "Hifz Mode", "وضع الحفظ")}>
+                <BookOpen className="w-4 h-4" />
               </ToggleGroupItem>
             </ToggleGroup>
             <button
