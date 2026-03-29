@@ -163,6 +163,17 @@ export default function HifzMode({ arabicAyahs, bengaliAyahs, englishAyahs, sura
     setReviewMode(true);
   };
 
+  // Log practice time on unmount or surah change
+  useEffect(() => {
+    sessionStart.current = Date.now();
+    return () => {
+      const elapsed = Date.now() - sessionStart.current;
+      if (elapsed > 5000) {
+        import("@/hooks/useStreakTracker").then(m => m.logPracticeSession(elapsed));
+      }
+    };
+  }, [surahNumber]);
+
   const rateAyah = (quality: number) => {
     const ayah = arabicAyahs[currentAyah];
     if (!ayah) return;
