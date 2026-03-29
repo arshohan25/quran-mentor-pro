@@ -1,10 +1,13 @@
-import { Book, Mic, Headphones, BookOpen } from "lucide-react";
+import { Book, Mic, Headphones, BookOpen, Clock, BookMarked } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useBookmark } from "@/hooks/useBookmark";
+import { surahList } from "@/data/surahList";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const Index = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { bookmarks } = useBookmark();
 
   const sections = [
     {
@@ -35,7 +38,18 @@ const Index = () => {
       path: "/prayer",
       gradient: "from-primary/80 to-accent",
     },
+    {
+      icon: Clock,
+      title: t("নামাজের সময়সূচী", "Prayer Times", "أوقات الصلاة"),
+      desc: t("আপনার লোকেশন অনুযায়ী নামাজের সময়", "Prayer times based on your location", "أوقات الصلاة حسب موقعك"),
+      path: "/prayer-times",
+      gradient: "from-accent to-primary",
+    },
   ];
+
+  const lastReadSurah = bookmarks.lastRead
+    ? surahList.find((s) => s.number === bookmarks.lastRead!.surah)
+    : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -59,6 +73,26 @@ const Index = () => {
 
       {/* Main Sections */}
       <main className="container py-8">
+        {/* Bookmark / Continue Reading */}
+        {lastReadSurah && (
+          <Link
+            to={`/quran?surah=${bookmarks.lastRead!.surah}&ayah=${bookmarks.lastRead!.ayah}`}
+            className="mb-6 block rounded-xl border border-primary/30 bg-primary/5 p-4 hover:bg-primary/10 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <BookMarked className="w-5 h-5 text-primary shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-primary">
+                  {t("পড়া চালিয়ে যান", "Continue Reading", "أكمل القراءة")}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {language === "bn" ? lastReadSurah.bengaliName : lastReadSurah.englishName} — {t("আয়াত", "Ayah", "آية")} {bookmarks.lastRead!.ayah}
+                </p>
+              </div>
+            </div>
+          </Link>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {sections.map((section) => (
             <Link

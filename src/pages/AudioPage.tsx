@@ -5,6 +5,7 @@ import { surahList } from "@/data/surahList";
 import { qariList } from "@/data/prayerData";
 import { useSurahWithTranslations, useSurahAudio } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useBookmark } from "@/hooks/useBookmark";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +14,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function AudioPage() {
   const { t, language } = useLanguage();
+  const { saveLastAudio } = useBookmark();
   const [selectedSurah, setSelectedSurah] = useState(1);
   const [selectedQari, setSelectedQari] = useState(qariList[0].id);
   const [currentAyah, setCurrentAyah] = useState(0);
@@ -34,6 +36,7 @@ export default function AudioPage() {
     audioRef.current = audio;
     setCurrentAyah(index);
     setIsPlaying(true);
+    saveLastAudio(selectedSurah, index + 1, selectedQari);
 
     audio.play();
     audio.onended = () => {
