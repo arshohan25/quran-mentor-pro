@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid } from "lucide-react";
+import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid, BookOpen } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations, useWordByWord } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
