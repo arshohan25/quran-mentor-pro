@@ -94,6 +94,9 @@ const Index = () => {
           </Link>
         )}
 
+        {/* Daily Ayah */}
+        <DailyAyah />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {sections.map((section) => (
             <Link
