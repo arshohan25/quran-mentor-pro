@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search, Palette } from "lucide-react";
+import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid } from "lucide-react";
 import { surahList } from "@/data/surahList";
-import { useSurahWithTranslations } from "@/hooks/useQuranApi";
+import { useSurahWithTranslations, useWordByWord } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import TajweedText, { TajweedLegend } from "@/components/TajweedText";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export default function QuranPage() {
   const { t, language } = useLanguage();
