@@ -31,6 +31,7 @@ const App = () => (
               <Route path="/audio" element={<AudioPage />} />
               <Route path="/prayer" element={<PrayerPage />} />
               <Route path="/prayer-times" element={<PrayerTimesPage />} />
+              <Route path="/hifz" element={<HifzDashboardPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
