@@ -341,6 +341,9 @@ export default function HifzDashboardPage() {
           <StreakCard />
         </div>
 
+        {/* Progress chart */}
+        <HifzProgressChart />
+
         {/* Global stats */}
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-center gap-2 mb-4">
