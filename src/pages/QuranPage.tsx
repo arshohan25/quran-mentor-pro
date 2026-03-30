@@ -199,9 +199,17 @@ export default function QuranPage() {
                   {data.arabic.ayahs.map((ayah, idx) => (
                     <div key={ayah.number} className="rounded-xl border border-border bg-card p-4">
                       <div className="flex items-start gap-3 mb-3">
-                        <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
-                          {ayah.numberInSurah}
-                        </span>
+                        <div className="flex flex-col items-center gap-1 shrink-0">
+                          <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                            {ayah.numberInSurah}
+                          </span>
+                          <AyahAudioPlayer
+                            audioUrl={audioData?.[idx]?.audio}
+                            isActive={playingAyah === ayah.numberInSurah}
+                            onPlay={() => setPlayingAyah(ayah.numberInSurah)}
+                            onStop={() => setPlayingAyah(null)}
+                          />
+                        </div>
                         <TajweedText
                           text={ayah.text}
                           enabled={tajweedEnabled}
