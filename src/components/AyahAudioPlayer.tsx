@@ -6,6 +6,7 @@ interface AyahAudioPlayerProps {
   isActive: boolean;
   onPlay: () => void;
   onStop: () => void;
+  autoPlay?: boolean;
 }
 
 export default function AyahAudioPlayer({ audioUrl, isActive, onPlay, onStop }: AyahAudioPlayerProps) {
