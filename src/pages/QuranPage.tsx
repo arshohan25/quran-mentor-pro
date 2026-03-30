@@ -119,6 +119,18 @@ export default function QuranPage() {
             >
               <Palette className="w-5 h-5" />
             </button>
+            <Select value={selectedQari} onValueChange={setSelectedQari}>
+              <SelectTrigger className="w-auto min-w-[120px] h-8 text-xs bg-primary-foreground/10 border-none text-primary-foreground">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {QARI_LIST.map((q) => (
+                  <SelectItem key={q.id} value={q.id} className="text-xs">
+                    {language === "bn" ? q.name : language === "ar" ? q.nameAr : q.nameEn}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <LanguageSwitcher />
           </div>
         </div>
