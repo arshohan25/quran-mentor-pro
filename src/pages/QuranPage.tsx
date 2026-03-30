@@ -66,6 +66,11 @@ export default function QuranPage() {
     localStorage.setItem("quranViewMode", viewMode);
   }, [viewMode]);
 
+  useEffect(() => {
+    localStorage.setItem("selectedQari", selectedQari);
+    setPlayingAyah(null);
+  }, [selectedQari]);
+
   const filtered = surahList.filter(
     (s) =>
       s.name.includes(search) ||
