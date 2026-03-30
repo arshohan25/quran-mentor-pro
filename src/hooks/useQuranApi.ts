@@ -8,6 +8,8 @@ export interface Ayah {
   text: string;
   juz: number;
   page: number;
+  audio?: string;
+  audioSecondary?: string[];
 }
 
 export interface SurahData {
