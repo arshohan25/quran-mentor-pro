@@ -242,7 +242,14 @@ export default function QuranPage() {
                             audioUrl={audioData?.[idx]?.audio}
                             isActive={playingAyah === ayah.numberInSurah}
                             onPlay={() => setPlayingAyah(ayah.numberInSurah)}
-                            onStop={() => setPlayingAyah(null)}
+                            onStop={() => {
+                              if (autoPlay && data && idx < data.arabic.ayahs.length - 1) {
+                                setPlayingAyah(data.arabic.ayahs[idx + 1].numberInSurah);
+                              } else {
+                                setPlayingAyah(null);
+                              }
+                            }}
+                            autoPlay={autoPlay && playingAyah === ayah.numberInSurah}
                           />
                         </div>
                         <TajweedText
