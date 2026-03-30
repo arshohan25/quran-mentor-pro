@@ -11,8 +11,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import TajweedText, { TajweedLegend } from "@/components/TajweedText";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import HifzMode from "@/components/HifzMode";
 import AyahAudioPlayer from "@/components/AyahAudioPlayer";
+
+const QARI_LIST = [
+  { id: "ar.alafasy", name: "মিশারি আল-আফাসি", nameEn: "Mishary Al-Afasy", nameAr: "مشاري العفاسي" },
+  { id: "ar.abdulbasitmurattal", name: "আব্দুল বাসিত", nameEn: "Abdul Basit", nameAr: "عبد الباسط" },
+  { id: "ar.abdurrahmaansudais", name: "সুদাইস", nameEn: "Abdurrahmaan As-Sudais", nameAr: "عبدالرحمن السديس" },
+  { id: "ar.husaborek", name: "হুসা বোরেক", nameEn: "Husa Borek", nameAr: "هزاع البلوشي" },
+  { id: "ar.maaborek", name: "মা'আকিল", nameEn: "Maaqil", nameAr: "ماعقل" },
+  { id: "ar.minshawi", name: "মিনশাওয়ি", nameEn: "Al-Minshawi", nameAr: "المنشاوي" },
+  { id: "ar.muhammadayyoub", name: "মুহাম্মদ আইয়ুব", nameEn: "Muhammad Ayyoub", nameAr: "محمد أيوب" },
+  { id: "ar.muhammadjibreel", name: "মুহাম্মদ জিবরীল", nameEn: "Muhammad Jibreel", nameAr: "محمد جبريل" },
+  { id: "ar.shaatree", name: "আবু বকর শাতরি", nameEn: "Abu Bakr Ash-Shaatree", nameAr: "أبو بكر الشاطري" },
+];
 
 export default function QuranPage() {
   const { t, language } = useLanguage();
@@ -31,8 +44,12 @@ export default function QuranPage() {
     try { return (localStorage.getItem("quranViewMode") as "verse" | "word" | "hifz") || "verse"; } catch { return "verse"; }
   });
 
+  const [selectedQari, setSelectedQari] = useState(() => {
+    try { return localStorage.getItem("selectedQari") || "ar.alafasy"; } catch { return "ar.alafasy"; }
+  });
+
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
-  const { data: audioData } = useSurahAudio(selectedSurah, "ar.alafasy");
+  const { data: audioData } = useSurahAudio(selectedSurah, selectedQari);
   const [playingAyah, setPlayingAyah] = useState<number | null>(null);
   const wordLang = language === "bn" ? "bn" : language === "ar" ? "ar" : "en";
   const { data: wordData, isLoading: wordLoading } = useWordByWord(selectedSurah, wordLang);
@@ -48,6 +65,11 @@ export default function QuranPage() {
   useEffect(() => {
     localStorage.setItem("quranViewMode", viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    localStorage.setItem("selectedQari", selectedQari);
+    setPlayingAyah(null);
+  }, [selectedQari]);
 
   const filtered = surahList.filter(
     (s) =>
@@ -97,6 +119,18 @@ export default function QuranPage() {
             >
               <Palette className="w-5 h-5" />
             </button>
+            <Select value={selectedQari} onValueChange={setSelectedQari}>
+              <SelectTrigger className="w-auto min-w-[120px] h-8 text-xs bg-primary-foreground/10 border-none text-primary-foreground">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {QARI_LIST.map((q) => (
+                  <SelectItem key={q.id} value={q.id} className="text-xs">
+                    {language === "bn" ? q.name : language === "ar" ? q.nameAr : q.nameEn}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <LanguageSwitcher />
           </div>
         </div>
