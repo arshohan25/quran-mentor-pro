@@ -44,8 +44,12 @@ export default function QuranPage() {
     try { return (localStorage.getItem("quranViewMode") as "verse" | "word" | "hifz") || "verse"; } catch { return "verse"; }
   });
 
+  const [selectedQari, setSelectedQari] = useState(() => {
+    try { return localStorage.getItem("selectedQari") || "ar.alafasy"; } catch { return "ar.alafasy"; }
+  });
+
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
-  const { data: audioData } = useSurahAudio(selectedSurah, "ar.alafasy");
+  const { data: audioData } = useSurahAudio(selectedSurah, selectedQari);
   const [playingAyah, setPlayingAyah] = useState<number | null>(null);
   const wordLang = language === "bn" ? "bn" : language === "ar" ? "ar" : "en";
   const { data: wordData, isLoading: wordLoading } = useWordByWord(selectedSurah, wordLang);
