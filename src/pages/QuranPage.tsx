@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid, BookOpen } from "lucide-react";
 import { surahList } from "@/data/surahList";
-import { useSurahWithTranslations, useWordByWord } from "@/hooks/useQuranApi";
+import { useSurahWithTranslations, useWordByWord, useSurahAudio } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import TajweedText, { TajweedLegend } from "@/components/TajweedText";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import HifzMode from "@/components/HifzMode";
+import AyahAudioPlayer from "@/components/AyahAudioPlayer";
 
 export default function QuranPage() {
   const { t, language } = useLanguage();
