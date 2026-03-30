@@ -41,8 +41,8 @@ export default function AyahAudioPlayer({ audioUrl, isActive, onPlay, onStop, au
     const audio = new Audio(audioUrl);
     audioRef.current = audio;
     audio.oncanplaythrough = () => setLoading(false);
-    audio.onended = () => onStop();
-    audio.onerror = () => { setLoading(false); onStop(); };
+    audio.onended = () => { audioRef.current = null; onStop(); };
+    audio.onerror = () => { setLoading(false); audioRef.current = null; onStop(); };
     audio.play().then(() => { setLoading(false); onPlay(); }).catch(() => setLoading(false));
   };
 
