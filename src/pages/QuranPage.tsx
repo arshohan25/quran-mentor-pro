@@ -32,6 +32,8 @@ export default function QuranPage() {
   });
 
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
+  const { data: audioData } = useSurahAudio(selectedSurah, "ar.alafasy");
+  const [playingAyah, setPlayingAyah] = useState<number | null>(null);
   const wordLang = language === "bn" ? "bn" : language === "ar" ? "ar" : "en";
   const { data: wordData, isLoading: wordLoading } = useWordByWord(selectedSurah, wordLang);
 
