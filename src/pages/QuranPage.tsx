@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid, BookOpen } from "lucide-react";
+import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid, BookOpen, Repeat } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations, useWordByWord, useSurahAudio } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -51,6 +51,7 @@ export default function QuranPage() {
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
   const { data: audioData } = useSurahAudio(selectedSurah, selectedQari);
   const [playingAyah, setPlayingAyah] = useState<number | null>(null);
+  const [autoPlay, setAutoPlay] = useState(false);
   const wordLang = language === "bn" ? "bn" : language === "ar" ? "ar" : "en";
   const { data: wordData, isLoading: wordLoading } = useWordByWord(selectedSurah, wordLang);
 
@@ -108,6 +109,17 @@ export default function QuranPage() {
                 <BookOpen className="w-4 h-4" />
               </ToggleGroupItem>
             </ToggleGroup>
+            <button
+              onClick={() => setAutoPlay(!autoPlay)}
+              className={`p-2 rounded-lg transition-colors ${
+                autoPlay
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "text-primary-foreground/60 hover:text-primary-foreground"
+              }`}
+              title={t("অটো-প্লে", "Auto-Play", "تشغيل تلقائي")}
+            >
+              <Repeat className="w-5 h-5" />
+            </button>
             <button
               onClick={() => setTajweedEnabled(!tajweedEnabled)}
               className={`p-2 rounded-lg transition-colors ${
@@ -241,7 +253,14 @@ export default function QuranPage() {
                             audioUrl={audioData?.[idx]?.audio}
                             isActive={playingAyah === ayah.numberInSurah}
                             onPlay={() => setPlayingAyah(ayah.numberInSurah)}
-                            onStop={() => setPlayingAyah(null)}
+                            onStop={() => {
+                              if (autoPlay && data && idx < data.arabic.ayahs.length - 1) {
+                                setPlayingAyah(data.arabic.ayahs[idx + 1].numberInSurah);
+                              } else {
+                                setPlayingAyah(null);
+                              }
+                            }}
+                            autoPlay={autoPlay && playingAyah === ayah.numberInSurah}
                           />
                         </div>
                         <TajweedText
