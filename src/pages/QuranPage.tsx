@@ -11,8 +11,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import TajweedText, { TajweedLegend } from "@/components/TajweedText";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import HifzMode from "@/components/HifzMode";
 import AyahAudioPlayer from "@/components/AyahAudioPlayer";
+
+const QARI_LIST = [
+  { id: "ar.alafasy", name: "মিশারি আল-আফাসি", nameEn: "Mishary Al-Afasy", nameAr: "مشاري العفاسي" },
+  { id: "ar.abdulbasitmurattal", name: "আব্দুল বাসিত", nameEn: "Abdul Basit", nameAr: "عبد الباسط" },
+  { id: "ar.abdurrahmaansudais", name: "সুদাইস", nameEn: "Abdurrahmaan As-Sudais", nameAr: "عبدالرحمن السديس" },
+  { id: "ar.husaborek", name: "হুসা বোরেক", nameEn: "Husa Borek", nameAr: "هزاع البلوشي" },
+  { id: "ar.maaborek", name: "মা'আকিল", nameEn: "Maaqil", nameAr: "ماعقل" },
+  { id: "ar.minshawi", name: "মিনশাওয়ি", nameEn: "Al-Minshawi", nameAr: "المنشاوي" },
+  { id: "ar.muhammadayyoub", name: "মুহাম্মদ আইয়ুব", nameEn: "Muhammad Ayyoub", nameAr: "محمد أيوب" },
+  { id: "ar.muhammadjibreel", name: "মুহাম্মদ জিবরীল", nameEn: "Muhammad Jibreel", nameAr: "محمد جبريل" },
+  { id: "ar.shaatree", name: "আবু বকর শাতরি", nameEn: "Abu Bakr Ash-Shaatree", nameAr: "أبو بكر الشاطري" },
+];
 
 export default function QuranPage() {
   const { t, language } = useLanguage();
