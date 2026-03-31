@@ -293,16 +293,16 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                         if (!displayText && currentPage === 0 && idx === 0) return null;
                         return (
                           <div key={ayah.number}
-                            className="border-b border-[#8B7355]/12 dark:border-[#C4A96A]/12 flex items-center min-h-[2.4em]"
+                            className="border-b border-[#8B7355]/40 dark:border-[#C4A96A]/30 flex items-center min-h-[2.8em]"
                           >
-                            <p className="font-arabic text-[20px] md:text-[22px] font-bold leading-[2.2] md:leading-[2.4] text-[#1a1008] dark:text-[#E8DCC8] text-justify w-full py-[1px]"
+                            <p className="font-arabic text-[26px] md:text-[30px] font-bold leading-[2.6] md:leading-[2.8] text-[#1a1008] dark:text-[#E8DCC8] text-justify w-full py-[2px]"
                                style={{ wordSpacing: '0.08em', letterSpacing: '0.01em', textAlignLast: 'center' }}>
                               {tajweedEnabled ? (
                                 <TajweedText text={displayText} enabled={true} className="inline" />
                               ) : (
                                 <span>{displayText}</span>
                               )}
-                              <span className="inline-flex items-center justify-center mx-1 text-[#2D5016] dark:text-[#7BAF4C] text-[12px] md:text-[14px] font-bold select-none align-middle"
+                              <span className="inline-flex items-center justify-center mx-1 text-[#2D5016] dark:text-[#7BAF4C] text-[15px] md:text-[17px] font-bold select-none align-middle"
                                     style={{ fontFamily: 'serif' }}>
                                 ﴿{toArabicNum(ayah.numberInSurah)}﴾
                               </span>
