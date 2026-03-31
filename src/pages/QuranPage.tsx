@@ -461,11 +461,17 @@ export default function QuranPage() {
                 if (!arabicAyah) return null;
                 return (
                   <Card key={arabicAyah.number} className="p-4 space-y-3">
-                    {/* Ayah number badge */}
-                    <div className="flex items-center gap-2">
+                    {/* Ayah number badge + bookmark */}
+                    <div className="flex items-center justify-between">
                       <span className="bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full">
                         {arabicAyah.numberInSurah}
                       </span>
+                      <button
+                        onClick={() => toggleFavorite(selectedSurah, arabicAyah.numberInSurah, arabicAyah.text)}
+                        className="p-1 rounded-full hover:bg-accent/10 transition-colors"
+                      >
+                        <Star className={`w-4 h-4 ${isFavorite(selectedSurah, arabicAyah.numberInSurah) ? "fill-accent text-accent" : "text-muted-foreground"}`} />
+                      </button>
                     </div>
                     {/* Arabic text */}
                     <p className="font-arabic text-lg md:text-xl leading-[2.2] text-foreground" dir="rtl">
