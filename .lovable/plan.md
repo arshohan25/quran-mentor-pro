@@ -1,55 +1,30 @@
 
-আপনি একদম ঠিক ধরেছেন — Mushaf view “দেখতে” আপডেট হয়েছে, কিন্তু “core behavior” এখনো ভুল ছিল। তাই ফিক্সটা অসম্পূর্ণ মনে হচ্ছে।
 
-## কেন ঠিকমতো কাজ করছে না (Root Causes)
+# Mushaf View — Full-Screen Single Page (No Scroll)
 
-1. **Pagination logic এখনও fake (character-based)**  
-   `ReadingView` এখনো `LINES_PER_PAGE` + `CHARS_PER_LINE` দিয়ে page বানাচ্ছে।  
-   ফলে real Mushaf page flow (API `ayah.page`) এর সাথে content match করে না।
+## Problem
+The Mushaf content currently scrolls because the layout uses `min-h-screen` with variable content height. The reference screenshot shows the entire page fitting within the viewport — no scrolling, just the ornate frame filled edge-to-edge.
 
-2. **Prev navigation bug আছে**  
-   প্রথম page থেকে আগের সূরায় গেলে `setCurrentPage(999)` সেট হচ্ছে, কিন্তু পরে clamp/restore হচ্ছে না।  
-   এতে blank/odd page jump হতে পারে।
+## Solution
+Make the entire Mushaf view a fixed viewport-height layout where the MushafFrame and its content fill all available space between the header and bottom nav. The Arabic text area will use `flex-1 overflow-hidden` so text fills the space without scrolling.
 
-3. **Ref warnings (console) unresolved**  
-   `ReadingSettings` এবং `SurahNav` নিয়ে `Function components cannot be given refs` warning আছে।  
-   এগুলো interaction stability (popover/nav behavior) degrade করতে পারে, especially mobile এ।
+## Changes
 
-4. **Visual polish হয়েছে, structural Mushaf engine হয়নি**  
-   শুধু flowing text/UI change করা হয়েছে, কিন্তু page model/restore/navigation এখনো Mushaf-grade হয়নি।
+### `src/components/quran/ReadingView.tsx`
+1. **Root container**: Change from `min-h-screen` to `h-screen overflow-hidden` with `flex flex-col`
+2. **Remove extra elements**: Remove progress label below header, TajweedLegend block, SurahNav, and page dot navigation — these cause overflow. Keep only the header bar and the MushafFrame content area.
+3. **Content area**: Replace `container py-3 max-w-xl mx-auto px-2` wrapper with `flex-1 overflow-hidden flex flex-col px-1 py-1`
+4. **MushafFrame content**: The flowing paragraph div gets `flex-1 overflow-hidden` so text fills available space without scrolling
+5. **Navigation**: Remove the prev/next buttons and page dots below the frame. Navigation is swipe-only (already implemented) — keeps the view clean like the reference.
+6. **Font size auto-fit**: Keep user's `arabicFontSize` but add `overflow-hidden` on the text container so if content exceeds the frame, it clips rather than scrolls (matching real Mushaf behavior where each page has fixed content).
 
-## Fix Plan (Implementation)
+### `src/components/quran/MushafFrame.tsx`
+7. **Make frame fill height**: Update MushafFrame to accept and pass through `className` so the parent can make it `flex-1 flex flex-col`. The inner content wrapper also needs `flex-1 flex flex-col`.
 
-### Step 1 — Pagination engine rewrite (Mushaf-first)
-- `ReadingView`-এ char-count pagination বাদ।
-- `data.arabic.ayahs` কে `ayah.page` দিয়ে group করে page বানানো।
-- UI page indicator, swipe, next/prev সব এই real page groups থেকে চালানো।
+## Key Behavior
+- Header (surah selector + progress bar) stays at top
+- MushafFrame fills remaining viewport height
+- Arabic text fills the frame, clipped if overflow (no scroll)
+- Swipe left/right to navigate pages
+- Bottom nav bar remains visible beneath
 
-### Step 2 — Cross-surah navigation hard fix
-- `currentPage=999` hack remove।
-- Surah change হলে safe page index clamp/restore করা।
-- Prev/Next transitions deterministic করা (no blank state)।
-
-### Step 3 — Ref warning cleanup
-- `ReadingSettings` ও `SurahNav` কে `forwardRef` compatible করা (or ref path remove)।
-- Popover trigger/nav root ref-safe করা।
-
-### Step 4 — Last-read restore correctness
-- saved `lastRead.page/section` থেকে Mushaf route open হলে exact page restore করা।
-- Invalid/outdated index হলে graceful fallback (page 0 বা nearest valid page)।
-
-### Step 5 — UI parity pass (reference-like)
-- Mobile (390x638) এ spacing, line-height, ayah marker baseline, header density tune।
-- Tajweed on/off এ layout shift minimize করা।
-
-## Technical Notes
-- Remove dependence on `LINES_PER_PAGE`/`CHARS_PER_LINE` for Mushaf.
-- Keep existing theme/font settings logic; only reading layout engine replace.
-- Add index guard: `currentPage = min(max(currentPage,0), totalPages-1)` everywhere state can drift.
-
-## Acceptance Criteria
-- Mushaf page content real-page grouped (no random jump).
-- Surah boundary navigation works without blank pages.
-- Console shows no ref warning for `ReadingView`.
-- Reload করলে last-read Mushaf page reliably restore হয়।
-- Mobile swipe + page buttons + surah selector end-to-end stable.
