@@ -490,7 +490,7 @@ export default function QuranPage() {
                     const ayah = data.arabic.ayahs[idx];
                     const inLoopRange = loopRange && ayah.numberInSurah >= loopRange.start && ayah.numberInSurah <= loopRange.end;
                     return (
-                    <div key={ayah.number} className={`rounded-xl border bg-card p-4 ${inLoopRange ? "border-accent/50 ring-1 ring-accent/20" : "border-border"}`}>
+                    <div key={ayah.number} className={`rounded-xl border bg-card p-3 md:p-4 ${inLoopRange ? "border-accent/50 ring-1 ring-accent/20" : "border-border"}`}>
                       <div className="flex items-start gap-3 mb-3">
                         <div className="flex flex-col items-center gap-1 shrink-0">
                           <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
