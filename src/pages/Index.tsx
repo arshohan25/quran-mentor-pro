@@ -1,56 +1,46 @@
-import { Book, Mic, Headphones, BookOpen, Clock, BookMarked, Brain, Heart } from "lucide-react";
+import { Book, Mic, Headphones, BookOpen, Clock, BookMarked, Brain, Heart, Calendar, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
 import { surahList } from "@/data/surahList";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import DailyAyah from "@/components/DailyAyah";
+import ReadingProgress from "@/components/ReadingProgress";
 
 const Index = () => {
   const { t, language } = useLanguage();
   const { bookmarks } = useBookmark();
 
+  const quickActions = [
+    { icon: Book, label: t("কুরআন", "Quran", "القرآن"), path: "/quran", color: "text-primary" },
+    { icon: Headphones, label: t("অডিও", "Audio", "صوتي"), path: "/audio", color: "text-primary" },
+    { icon: Mic, label: t("প্র্যাকটিস", "Practice", "تدرب"), path: "/practice", color: "text-primary" },
+    { icon: Calendar, label: t("প্ল্যানার", "Planner", "مخطط"), path: "/planner", color: "text-primary" },
+  ];
+
   const sections = [
-    {
-      icon: Book,
-      title: t("কুরআন পড়ুন", "Read Quran", "اقرأ القرآن"),
-      desc: t("আরবি টেক্সট, বাংলা ও ইংরেজি তরজমা সহ", "Arabic text with Bengali & English translation", "النص العربي مع ترجمة"),
-      path: "/quran",
-    },
-    {
-      icon: Mic,
-      title: t("প্র্যাকটিস করুন", "Practice", "تدرب"),
-      desc: t("তেলাওয়াত করুন, ভুল ধরা হবে স্বয়ংক্রিয়ভাবে", "Recite and get automatic error detection", "اقرأ واحصل على تصحيح تلقائي"),
-      path: "/practice",
-    },
-    {
-      icon: Headphones,
-      title: t("অডিও তেলাওয়াত", "Audio Recitation", "الاستماع"),
-      desc: t("বিখ্যাত কারীদের তেলাওয়াত শুনুন ও অনুসরণ করুন", "Listen to famous Qaris and follow along", "استمع إلى القراء المشهورين"),
-      path: "/audio",
-    },
     {
       icon: BookOpen,
       title: t("নামাজ শিক্ষা", "Prayer Guide", "دليل الصلاة"),
-      desc: t("চার মাযহাব অনুযায়ী নামাজের নিয়ম ও দোয়া", "Prayer rules & duas according to 4 Madhabs", "أحكام الصلاة حسب المذاهب الأربعة"),
+      desc: t("চার মাযহাব অনুযায়ী নামাজ", "Prayer rules by 4 Madhabs", "أحكام الصلاة"),
       path: "/prayer",
     },
     {
       icon: Clock,
-      title: t("নামাজের সময়সূচী", "Prayer Times", "أوقات الصلاة"),
-      desc: t("আপনার লোকেশন অনুযায়ী নামাজের সময়", "Prayer times based on your location", "أوقات الصلاة حسب موقعك"),
+      title: t("নামাজের সময়", "Prayer Times", "أوقات الصلاة"),
+      desc: t("আপনার লোকেশন অনুযায়ী", "Based on your location", "حسب موقعك"),
       path: "/prayer-times",
     },
     {
       icon: Brain,
-      title: t("হিফজ ড্যাশবোর্ড", "Hifz Dashboard", "لوحة الحفظ"),
-      desc: t("সব সূরার মুখস্থ অগ্রগতি একনজরে দেখুন", "Track memorization progress across all surahs", "تتبع تقدم الحفظ"),
+      title: t("হিফজ", "Hifz Dashboard", "لوحة الحفظ"),
+      desc: t("মুখস্থ অগ্রগতি দেখুন", "Track memorization", "تتبع الحفظ"),
       path: "/hifz",
     },
     {
       icon: Heart,
       title: t("বুকমার্ক", "Bookmarks", "المحفوظات"),
-      desc: t("সেভ করা আয়াতগুলো পড়ুন", "Read your saved ayahs", "اقرأ آياتك المحفوظة"),
+      desc: t("সেভ করা আয়াত", "Saved ayahs", "الآيات المحفوظة"),
       path: "/bookmarks",
     },
   ];
@@ -61,91 +51,107 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Compact Header */}
       <header className="islamic-header relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.06]">
-          <div className="font-arabic text-[100px] sm:text-[150px] md:text-[200px] leading-none text-center pt-8 select-none">﷽</div>
+        <div className="absolute inset-0 opacity-[0.04]">
+          <div className="font-arabic text-[120px] leading-none text-center pt-4 select-none">﷽</div>
         </div>
-        <div className="relative z-10 container py-8 text-center">
-          <div className="flex justify-end mb-4">
+        <div className="relative z-10 container py-5 sm:py-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-accent text-xl">☪</span>
+              <h1 className="text-lg sm:text-xl font-bold">
+                {t("কুরআন ও নামাজ", "Quran & Prayer", "القرآن والصلاة")}
+              </h1>
+            </div>
             <LanguageSwitcher />
           </div>
-          {/* Crescent decoration */}
-          <div className="text-accent text-3xl mb-2">☪</div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">
-            {t("কুরআন শিক্ষা ও নামাজ", "Quran Learning & Prayer", "تعلم القرآن والصلاة")}
-          </h1>
-          <p className="text-primary-foreground/80 text-lg">
+          <p className="text-primary-foreground/70 text-sm">
             {t("পড়ুন, শিখুন, অনুশীলন করুন", "Read, Learn, Practice", "اقرأ، تعلم، تدرب")}
           </p>
         </div>
       </header>
 
-      {/* Main Sections */}
-      <main className="container py-8">
-        {/* Continue Reading */}
-        {lastReadSurah && (
-          <Link
-            to={`/quran?surah=${bookmarks.lastRead!.surah}&ayah=${bookmarks.lastRead!.ayah}`}
-            className="mb-6 block islamic-card p-4 hover:scale-[1.01] relative overflow-hidden"
-          >
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-accent rounded-l-xl" />
-            <div className="flex items-center gap-3 pl-2">
-              <BookMarked className="w-5 h-5 text-accent shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-accent">
-                  {t("পড়া চালিয়ে যান", "Continue Reading", "أكمل القراءة")}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {language === "bn" ? lastReadSurah.bengaliName : lastReadSurah.englishName} — {t("আয়াত", "Ayah", "آية")} {bookmarks.lastRead!.ayah}
-                </p>
-              </div>
-            </div>
-          </Link>
-        )}
-
-        {/* Daily Ayah */}
-        <DailyAyah />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
-          {sections.map((section) => (
+      <main className="container py-5 space-y-5">
+        {/* Quick Actions */}
+        <div className="grid grid-cols-4 gap-2">
+          {quickActions.map((action) => (
             <Link
-              key={section.path}
-              to={section.path}
-              className="group block islamic-card p-4 sm:p-6 relative overflow-hidden hover:scale-[1.02] active:scale-[0.98]"
+              key={action.path}
+              to={action.path}
+              className="islamic-card flex flex-col items-center justify-center p-3 sm:p-4 gap-1.5 hover:scale-[1.03] active:scale-[0.97] transition-all"
             >
-              {/* Corner ornaments */}
-              <span className="corner-ornament top-0 right-0 border-t-2 border-r-2 rounded-tr-lg" />
-              <span className="corner-ornament bottom-0 left-0 border-b-2 border-l-2 rounded-bl-lg" />
-
-              <div className="inline-flex p-2.5 sm:p-3 rounded-xl bg-primary/10 text-primary mb-3 sm:mb-4 group-hover:scale-110 transition-transform border border-primary/20">
-                <section.icon className="w-6 h-6 sm:w-7 sm:h-7" />
+              <div className="p-2 rounded-xl bg-primary/8">
+                <action.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${action.color}`} />
               </div>
-              <h2 className="text-lg sm:text-xl font-semibold text-card-foreground mb-1.5 sm:mb-2">
-                {section.title}
-              </h2>
-              <p className="text-muted-foreground text-sm">
-                {section.desc}
-              </p>
+              <span className="text-[11px] sm:text-xs font-medium text-foreground">{action.label}</span>
             </Link>
           ))}
         </div>
 
-        {/* Bismillah decoration */}
-        <div className="mt-12 text-center">
-          <div className="gold-divider mb-4">
-            <span className="text-accent/50 text-sm">✦</span>
+        {/* Continue Reading */}
+        {lastReadSurah && (
+          <Link
+            to={`/quran?surah=${bookmarks.lastRead!.surah}&ayah=${bookmarks.lastRead!.ayah}`}
+            className="block islamic-card p-3.5 relative overflow-hidden group"
+          >
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-accent rounded-l-xl" />
+            <div className="flex items-center justify-between pl-2">
+              <div className="flex items-center gap-3">
+                <BookMarked className="w-4 h-4 text-accent shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-accent">
+                    {t("পড়া চালিয়ে যান", "Continue Reading", "أكمل القراءة")}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {language === "bn" ? lastReadSurah.bengaliName : lastReadSurah.englishName} — {t("আয়াত", "Ayah", "آية")} {bookmarks.lastRead!.ayah}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-accent transition-colors" />
+            </div>
+          </Link>
+        )}
+
+        {/* Reading Progress Widget */}
+        <ReadingProgress />
+
+        {/* Daily Ayah */}
+        <DailyAyah />
+
+        {/* More Features */}
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3">
+            {t("আরও ফিচার", "More Features", "المزيد")}
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            {sections.map((section) => (
+              <Link
+                key={section.path}
+                to={section.path}
+                className="group islamic-card p-3.5 sm:p-4 relative overflow-hidden hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                <span className="corner-ornament top-0 right-0 border-t-2 border-r-2 rounded-tr-lg" />
+                <span className="corner-ornament bottom-0 left-0 border-b-2 border-l-2 rounded-bl-lg" />
+
+                <div className="inline-flex p-2 rounded-lg bg-primary/8 text-primary mb-2 group-hover:scale-110 transition-transform">
+                  <section.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                </div>
+                <h4 className="text-sm font-semibold text-card-foreground mb-0.5">
+                  {section.title}
+                </h4>
+                <p className="text-muted-foreground text-[11px] leading-tight">
+                  {section.desc}
+                </p>
+              </Link>
+            ))}
           </div>
-          <p className="font-arabic text-2xl sm:text-3xl md:text-4xl text-primary/60">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
-          <p className="text-muted-foreground text-sm mt-2">
-            {t(
-              "পরম করুণাময় অসীম দয়ালু আল্লাহর নামে",
-              "In the name of Allah, the Most Gracious, the Most Merciful",
-              "بسم الله الرحمن الرحيم"
-            )}
-          </p>
-          <div className="gold-divider mt-4">
-            <span className="text-accent/50 text-sm">✦</span>
+        </div>
+
+        {/* Footer decoration */}
+        <div className="text-center pt-2 pb-4">
+          <div className="gold-divider">
+            <span className="text-accent/40 text-sm">✦</span>
           </div>
         </div>
       </main>
