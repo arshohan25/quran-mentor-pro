@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, BookOpen, BookText, Headphones, Languages, GraduationCap, Star, ChevronLeft, ChevronRight, Palette, Search, Play, Pause, SkipForward, SkipBack, Eye, EyeOff, Heart, Trash2 } from "lucide-react";
+import { ArrowLeft, BookOpen, BookText, Headphones, Languages, GraduationCap, Star, ChevronLeft, ChevronRight, Palette, Search, Play, Pause, SkipForward, SkipBack, Eye, EyeOff, Heart, Trash2, CheckCircle, Circle } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations, useWordByWord, useSurahAudio } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -60,6 +60,39 @@ export default function QuranPage() {
   const [hifzPage, setHifzPage] = useState(0);
   const [hiddenAyahs, setHiddenAyahs] = useState<Set<number>>(new Set());
   const [hifzMode, setHifzMode] = useState<"manual" | "all-hidden">("manual");
+
+  // Hifz progress — persisted per surah in localStorage
+  const HIFZ_KEY = "hifz-progress";
+  const loadHifzProgress = (): Record<number, number[]> => {
+    try { return JSON.parse(localStorage.getItem(HIFZ_KEY) || "{}"); } catch { return {}; }
+  };
+  const [hifzProgress, setHifzProgress] = useState<Record<number, number[]>>(loadHifzProgress);
+
+  const isMemorized = (surah: number, ayahNum: number) =>
+    (hifzProgress[surah] || []).includes(ayahNum);
+
+  const toggleMemorized = (surah: number, ayahNum: number) => {
+    setHifzProgress(prev => {
+      const list = prev[surah] || [];
+      const next = list.includes(ayahNum)
+        ? { ...prev, [surah]: list.filter(a => a !== ayahNum) }
+        : { ...prev, [surah]: [...list, ayahNum] };
+      localStorage.setItem(HIFZ_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const markAllMemorized = (surah: number, ayahNums: number[]) => {
+    setHifzProgress(prev => {
+      const list = prev[surah] || [];
+      const allDone = ayahNums.every(a => list.includes(a));
+      const next = allDone
+        ? { ...prev, [surah]: list.filter(a => !ayahNums.includes(a)) }
+        : { ...prev, [surah]: [...new Set([...list, ...ayahNums])] };
+      localStorage.setItem(HIFZ_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
 
   const toggleHideAyah = (num: number) => {
     setHiddenAyahs(prev => {
@@ -875,15 +908,46 @@ export default function QuranPage() {
         </header>
 
         <div className="container py-4 max-w-2xl mx-auto">
-          {/* Surah info */}
-          {currentSurah && clampedHifzPage === 0 && (
-            <div className="bg-primary/5 rounded-xl p-4 mb-4 text-center space-y-1">
-              <h2 className="font-arabic text-2xl text-primary">{currentSurah.name}</h2>
-              <p className="text-foreground font-semibold text-sm">
-                {language === "bn" ? currentSurah.bengaliName : currentSurah.englishName}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {t("আয়াতে ট্যাপ করে লুকান/দেখান", "Tap an ayah to hide/reveal", "اضغط على الآية للإخفاء/الإظهار")}
+          {/* Surah info + progress */}
+          {currentSurah && (
+            <div className="bg-primary/5 rounded-xl p-4 mb-4 text-center space-y-2">
+              {clampedHifzPage === 0 && (
+                <>
+                  <h2 className="font-arabic text-2xl text-primary">{currentSurah.name}</h2>
+                  <p className="text-foreground font-semibold text-sm">
+                    {language === "bn" ? currentSurah.bengaliName : currentSurah.englishName}
+                  </p>
+                </>
+              )}
+              {/* Progress bar */}
+              {(() => {
+                const memorizedCount = (hifzProgress[selectedSurah] || []).length;
+                const totalAyahs = currentSurah.numberOfAyahs;
+                const pct = totalAyahs > 0 ? Math.round((memorizedCount / totalAyahs) * 100) : 0;
+                return (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">
+                        {t("মুখস্থ", "Memorized", "محفوظ")}
+                      </span>
+                      <span className="font-semibold text-primary">{memorizedCount}/{totalAyahs} ({pct}%)</span>
+                    </div>
+                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all duration-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    {pct === 100 && (
+                      <p className="text-xs text-primary font-semibold">
+                        {t("🎉 আলহামদুলিল্লাহ! সম্পূর্ণ মুখস্থ!", "🎉 Alhamdulillah! Fully memorized!", "🎉 الحمد لله! تم الحفظ كاملاً!")}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+              <p className="text-[10px] text-muted-foreground">
+                {t("ট্যাপ = লুকান/দেখান • ✓ = মুখস্থ চিহ্নিত", "Tap = hide/show • ✓ = mark memorized", "اضغط = إخفاء/إظهار • ✓ = تحديد كمحفوظ")}
               </p>
             </div>
           )}
@@ -900,39 +964,60 @@ export default function QuranPage() {
               <div className="space-y-1" dir="rtl">
                 {currentHifzAyahs.map((ayah) => {
                   const isHidden = hiddenAyahs.has(ayah.number);
+                  const memorized = isMemorized(selectedSurah, ayah.numberInSurah);
                   return (
-                    <button
+                    <div
                       key={ayah.number}
-                      onClick={() => toggleHideAyah(ayah.number)}
-                      className={`w-full flex items-baseline gap-2 py-2 px-1 border-b border-border/30 last:border-b-0 rounded transition-all text-right ${
-                        isHidden ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50"
+                      className={`flex items-center gap-1 py-1.5 border-b border-border/30 last:border-b-0 rounded transition-all ${
+                        memorized ? "bg-primary/8" : ""
                       }`}
                     >
-                      <span className="text-[10px] text-muted-foreground font-bold min-w-[20px] text-center shrink-0 font-sans" dir="ltr">
-                        {ayah.numberInSurah}
-                      </span>
-                      <span className={`font-arabic text-lg md:text-xl lg:text-2xl leading-[2.2] flex-1 transition-all ${
-                        isHidden ? "blur-md select-none text-muted-foreground" : "text-foreground"
-                      }`}>
-                        {ayah.text}
-                      </span>
-                    </button>
+                      {/* Memorize toggle */}
+                      <button
+                        onClick={() => toggleMemorized(selectedSurah, ayah.numberInSurah)}
+                        className="p-0.5 shrink-0"
+                        dir="ltr"
+                        title={memorized ? t("মুখস্থ বাতিল", "Unmark", "إلغاء") : t("মুখস্থ চিহ্নিত", "Mark memorized", "تحديد")}
+                      >
+                        {memorized
+                          ? <CheckCircle className="w-4 h-4 text-primary" />
+                          : <Circle className="w-4 h-4 text-muted-foreground/40" />
+                        }
+                      </button>
+                      {/* Ayah text (tap to hide/show) */}
+                      <button
+                        onClick={() => toggleHideAyah(ayah.number)}
+                        className={`flex-1 flex items-baseline gap-2 py-0.5 px-1 text-right rounded transition-all ${
+                          isHidden ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50"
+                        }`}
+                      >
+                        <span className="text-[10px] text-muted-foreground font-bold min-w-[20px] text-center shrink-0 font-sans" dir="ltr">
+                          {ayah.numberInSurah}
+                        </span>
+                        <span className={`font-arabic text-lg md:text-xl lg:text-2xl leading-[2.2] flex-1 transition-all ${
+                          isHidden ? "blur-md select-none text-muted-foreground" : "text-foreground"
+                        }`}>
+                          {ayah.text}
+                        </span>
+                      </button>
+                    </div>
                   );
                 })}
               </div>
+              {/* Mark all on page */}
+              <div className="mt-3 text-center">
+                <button
+                  onClick={() => markAllMemorized(selectedSurah, currentHifzAyahs.map(a => a.numberInSurah))}
+                  className="text-xs text-primary hover:underline"
+                >
+                  {currentHifzAyahs.every(a => isMemorized(selectedSurah, a.numberInSurah))
+                    ? t("এই পৃষ্ঠা আনমার্ক করুন", "Unmark this page", "إلغاء تحديد الصفحة")
+                    : t("এই পৃষ্ঠা মুখস্থ চিহ্নিত করুন", "Mark this page as memorized", "تحديد الصفحة كمحفوظة")
+                  }
+                </button>
+              </div>
             </div>
           ) : null}
-
-          {/* Stats */}
-          <div className="mt-3 text-center">
-            <span className="text-xs text-muted-foreground">
-              {t(
-                `${hiddenAyahs.size} টি আয়াত লুকানো`,
-                `${hiddenAyahs.size} ayahs hidden`,
-                `${hiddenAyahs.size} آيات مخفية`
-              )}
-            </span>
-          </div>
 
           {/* Page navigation */}
           <div className="flex items-center justify-between mt-4 mb-2 gap-2">
