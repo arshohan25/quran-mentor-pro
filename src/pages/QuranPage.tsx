@@ -393,7 +393,8 @@ export default function QuranPage() {
             ) : data ? (
               <ScrollArea className="h-[calc(100vh-320px)]">
                 <div className="space-y-4">
-                  {data.arabic.ayahs.map((ayah, idx) => {
+                  {filteredIndices.map((idx) => {
+                    const ayah = data.arabic.ayahs[idx];
                     const inLoopRange = loopRange && ayah.numberInSurah >= loopRange.start && ayah.numberInSurah <= loopRange.end;
                     return (
                     <div key={ayah.number} className={`rounded-xl border bg-card p-4 ${inLoopRange ? "border-accent/50 ring-1 ring-accent/20" : "border-border"}`}>
