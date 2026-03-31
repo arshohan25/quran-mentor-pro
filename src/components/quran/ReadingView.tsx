@@ -58,31 +58,23 @@ const SURAH_RUKU_COUNT: Record<number, number> = {
   101:1,102:1,103:1,104:1,105:1,106:1,107:1,108:1,109:1,110:1,111:1,112:1,113:1,114:1,
 };
 
-// Strip bismillah from text - aggressive multi-strategy approach
+// Strip bismillah from text - find الرحيم and take everything after it
 function stripBismillah(text: string): string {
-  const original = text.trim();
-  // Strategy 1: exact match
-  let result = original.replace(/بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ/, '').trim();
-  if (result.length > 0 && result !== original) return result;
-  // Strategy 2: broad regex - any text starting with بسم up to الرحيم variants
-  result = original.replace(/^بِ?سْ?مِ?\s*.{0,50}?(الرَّحِيمِ|ٱلرَّحِيمِ|الرحيم)\s*/, '').trim();
-  if (result.length > 0 && result !== original) return result;
-  // Strategy 3: find الرحيم within first 60 chars and cut everything before+including it
+  const t = text.trim();
   const markers = ['ٱلرَّحِيمِ', 'الرَّحِيمِ', 'الرحيم', 'لرَّحِيمِ', 'لرحيم'];
   for (const marker of markers) {
-    const idx = original.indexOf(marker);
-    if (idx >= 0 && idx < 70) {
-      const after = original.substring(idx + marker.length).trim();
-      if (after.length > 0) return after;
-      return ''; // entire text was bismillah
+    const idx = t.indexOf(marker);
+    if (idx >= 0 && idx < 80) {
+      const after = t.substring(idx + marker.length).trim();
+      return after.length > 0 ? after : '';
     }
   }
-  // Strategy 4: if starts with بسم or بِسْ, strip first 50 chars as bismillah
-  if (original.startsWith('بِسْ') || original.startsWith('بسم') || original.startsWith('بِسۡ')) {
-    const stripped = original.substring(Math.min(50, original.length)).trim();
+  // Fallback: if starts with بسم, strip up to 50 chars
+  if (t.startsWith('بِسْ') || t.startsWith('بسم') || t.startsWith('بِسۡ')) {
+    const stripped = t.substring(Math.min(50, t.length)).trim();
     if (stripped.length > 0) return stripped;
   }
-  return original;
+  return t;
 }
 
 interface QuranSectionProps {
@@ -113,11 +105,10 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     const result: typeof ayahs[] = [];
     let currentPageAyahs: typeof ayahs = [];
     let currentLineCount = 0;
+    // First page: surah header (3 lines) + bismillah (1 line) = 4 lines reserved → 8 lines for ayahs
+    // Subsequent pages: full 15 lines
     const hasBismillah = selectedSurah !== 9;
-
-    // First page: surah header (1 line) + bismillah (1 line) = 2 lines reserved
-    // Last page: no limit (can be < 15 lines)
-    const firstPageLines = hasBismillah ? LINES_PER_PAGE - 2 : LINES_PER_PAGE - 1;
+    const firstPageLines = hasBismillah ? LINES_PER_PAGE - 4 : LINES_PER_PAGE - 3; // header always 3 lines
     let maxLinesForCurrentPage = firstPageLines;
 
     for (const ayah of ayahs) {
@@ -267,26 +258,26 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                     {/* Top ornamental bar */}
                     <div className="h-[3px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/60 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/60 dark:to-[#C4A96A]/10" />
 
-                    {/* Surah header band — counted as 1 line */}
+                    {/* Surah header band — 3-line layout matching PDF */}
                     {currentPage === 0 && (
-                      <div className="border-b-2 border-[#8B7355]/30 dark:border-[#C4A96A]/30 bg-gradient-to-r from-[#F5EFE0]/80 via-[#E8DCC8]/60 to-[#F5EFE0]/80 dark:from-[#2a1f0e]/60 dark:via-[#1e1708]/40 dark:to-[#2a1f0e]/60 py-2 px-3" dir="rtl">
-                        <div className="flex items-center justify-between font-arabic text-[12px] md:text-[14px] text-[#5C4A2A] dark:text-[#C4A96A]">
-                          <span>آياتها {toArabicNum(surah?.numberOfAyahs || 0)}</span>
-                          <span className="text-[15px] md:text-[17px] font-bold flex items-center gap-2">
+                      <div className="border-b-2 border-[#8B7355]/40 dark:border-[#C4A96A]/30 bg-gradient-to-r from-[#F5EFE0]/80 via-[#E8DCC8]/60 to-[#F5EFE0]/80 dark:from-[#2a1f0e]/60 dark:via-[#1e1708]/40 dark:to-[#2a1f0e]/60 py-2 px-3" dir="rtl">
+                        <div className="text-center font-arabic text-[#5C4A2A] dark:text-[#C4A96A] space-y-0.5">
+                          <div className="text-[13px] md:text-[15px]">آياتها {toArabicNum(surah?.numberOfAyahs || 0)}</div>
+                          <div className="text-[17px] md:text-[20px] font-bold flex items-center justify-center gap-2">
                             <span className="text-[10px] font-normal opacity-70">❁</span>
-                            سُورَةُ {surah?.name}
+                            ({toArabicNum(selectedSurah)}) سُورَةُ {surah?.name}
                             {surah?.revelationType === "Meccan" ? " مَكِّيَّة" : " مَدَنِيَّة"}
                             <span className="text-[10px] font-normal opacity-70">❁</span>
-                          </span>
-                          <span>ركوعها {toArabicNum(SURAH_RUKU_COUNT[selectedSurah] || 1)}</span>
+                          </div>
+                          <div className="text-[13px] md:text-[15px]">ركوعاتها {toArabicNum(SURAH_RUKU_COUNT[selectedSurah] || 1)}</div>
                         </div>
                       </div>
                     )}
 
-                    {/* Bismillah — counted as 1 line */}
+                    {/* Bismillah — 1 line, centered, large */}
                     {currentPage === 0 && selectedSurah !== 9 && (
-                      <div className="border-b border-[#8B7355]/15 dark:border-[#C4A96A]/15 py-2 text-center">
-                        <p className="font-arabic text-[20px] md:text-[22px] font-bold text-[#2D5016] dark:text-[#7BAF4C] leading-relaxed">
+                      <div className="border-b border-[#8B7355]/40 dark:border-[#C4A96A]/30 py-2.5 text-center">
+                        <p className="font-arabic text-[26px] md:text-[30px] font-bold text-[#2D5016] dark:text-[#7BAF4C] leading-relaxed">
                           بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                         </p>
                       </div>
@@ -302,16 +293,16 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                         if (!displayText && currentPage === 0 && idx === 0) return null;
                         return (
                           <div key={ayah.number}
-                            className="border-b border-[#8B7355]/12 dark:border-[#C4A96A]/12 flex items-center min-h-[2.4em]"
+                            className="border-b border-[#8B7355]/40 dark:border-[#C4A96A]/30 flex items-center min-h-[2.8em]"
                           >
-                            <p className="font-arabic text-[20px] md:text-[22px] font-bold leading-[2.2] md:leading-[2.4] text-[#1a1008] dark:text-[#E8DCC8] text-justify w-full py-[1px]"
+                            <p className="font-arabic text-[26px] md:text-[30px] font-bold leading-[2.6] md:leading-[2.8] text-[#1a1008] dark:text-[#E8DCC8] text-justify w-full py-[2px]"
                                style={{ wordSpacing: '0.08em', letterSpacing: '0.01em', textAlignLast: 'center' }}>
                               {tajweedEnabled ? (
                                 <TajweedText text={displayText} enabled={true} className="inline" />
                               ) : (
                                 <span>{displayText}</span>
                               )}
-                              <span className="inline-flex items-center justify-center mx-1 text-[#2D5016] dark:text-[#7BAF4C] text-[12px] md:text-[14px] font-bold select-none align-middle"
+                              <span className="inline-flex items-center justify-center mx-1 text-[#2D5016] dark:text-[#7BAF4C] text-[15px] md:text-[17px] font-bold select-none align-middle"
                                     style={{ fontFamily: 'serif' }}>
                                 ﴿{toArabicNum(ayah.numberInSurah)}﴾
                               </span>
