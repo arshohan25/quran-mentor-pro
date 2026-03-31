@@ -29,7 +29,7 @@ const QARI_LIST = [
 
 export default function QuranPage() {
   const { t, language } = useLanguage();
-  const { saveLastRead } = useBookmark();
+  const { saveLastRead, toggleFavorite, isFavorite } = useBookmark();
   const [searchParams] = useSearchParams();
   const [selectedSurah, setSelectedSurah] = useState(() => {
     const s = searchParams.get("surah");
