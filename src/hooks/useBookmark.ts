@@ -3,6 +3,9 @@ import { useState, useCallback } from "react";
 interface Bookmark {
   surah: number;
   ayah: number;
+  page?: number;
+  section?: string;
+  timestamp?: number;
 }
 
 interface AudioBookmark extends Bookmark {
@@ -40,9 +43,9 @@ function save(bookmarks: Bookmarks) {
 export function useBookmark() {
   const [bookmarks, setBookmarks] = useState<Bookmarks>(load);
 
-  const saveLastRead = useCallback((surah: number, ayah: number) => {
+  const saveLastRead = useCallback((surah: number, ayah: number, page?: number, section?: string) => {
     setBookmarks((prev) => {
-      const next = { ...prev, lastRead: { surah, ayah } };
+      const next = { ...prev, lastRead: { surah, ayah, page, section, timestamp: Date.now() } };
       save(next);
       return next;
     });

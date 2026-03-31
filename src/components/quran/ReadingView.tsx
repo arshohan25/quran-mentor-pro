@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { juzList } from "@/data/juzData";
@@ -9,6 +9,7 @@ import TajweedText, { TajweedLegend } from "@/components/TajweedText";
 import SurahSelector from "./SurahSelector";
 import SurahNav from "./SurahNav";
 import ReadingSettings from "./ReadingSettings";
+import { useBookmark } from "@/hooks/useBookmark";
 import { LINES_PER_PAGE, CHARS_PER_LINE } from "./types";
 
 function toArabicNum(n: number): string {
@@ -68,6 +69,7 @@ interface QuranSectionProps {
 }
 
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
+  const { saveLastRead } = useBookmark();
   const { t } = useLanguage();
   const [currentPage, setCurrentPage] = useState(0);
   const [tajweedEnabled, setTajweedEnabled] = useState(() => {
@@ -126,6 +128,14 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     if (currentPageAyahs.length) result.push(currentPageAyahs);
     return result;
   }, [data, selectedSurah]);
+
+  // Auto-save reading position
+  useEffect(() => {
+    const firstAyah = pages[currentPage]?.[0];
+    if (firstAyah) {
+      saveLastRead(selectedSurah, firstAyah.numberInSurah, currentPage, "reading");
+    }
+  }, [selectedSurah, currentPage, pages, saveLastRead]);
 
   const totalPages = pages.length;
   const canGoPrev = currentPage > 0 || selectedSurah > 1;

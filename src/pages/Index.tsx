@@ -132,6 +132,9 @@ const Index = () => {
                   </p>
                   <p className="text-[11px] text-muted-foreground">
                     {language === "bn" ? lastReadSurah.bengaliName : lastReadSurah.englishName} — {t("আয়াত", "Ayah", "آية")} {bookmarks.lastRead!.ayah}
+                    {bookmarks.lastRead!.timestamp && (
+                      <span className="ml-1 opacity-60">• {new Date(bookmarks.lastRead!.timestamp).toLocaleDateString()}</span>
+                    )}
                   </p>
                 </div>
               </div>
