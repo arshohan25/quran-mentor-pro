@@ -107,6 +107,8 @@ export default function QuranPage() {
   useEffect(() => {
     setTranslationPage(0);
     setWordPage(0);
+    setHifzPage(0);
+    setHiddenAyahs(new Set());
   }, [selectedSurah]);
 
   useEffect(() => {
