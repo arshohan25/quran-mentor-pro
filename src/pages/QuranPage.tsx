@@ -565,7 +565,7 @@ export default function QuranPage() {
                 ))}
               </div>
             ) : wordData ? (
-              <ScrollArea className="h-[calc(100vh-320px)]">
+              <ScrollArea className="h-[calc(100vh-280px)] md:h-[calc(100vh-320px)]">
                 <div className="space-y-4">
                   {wordData.map((verse) => (
                     <div key={verse.verse_key} className="rounded-xl border border-border bg-card p-4">
