@@ -4,6 +4,7 @@ import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid, BookOpen, Repeat, He
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations, useWordByWord, useSurahAudio } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { juzList } from "@/data/juzData";
 import { useBookmark } from "@/hooks/useBookmark";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
