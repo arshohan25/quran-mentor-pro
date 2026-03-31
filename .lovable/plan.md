@@ -1,73 +1,55 @@
 
+আপনি একদম ঠিক ধরেছেন — Mushaf view “দেখতে” আপডেট হয়েছে, কিন্তু “core behavior” এখনো ভুল ছিল। তাই ফিক্সটা অসম্পূর্ণ মনে হচ্ছে।
 
-# Al Quran App — 5 New Features Plan
+## কেন ঠিকমতো কাজ করছে না (Root Causes)
 
-Inspired by **Al Quran (Greentech)** and **Al QURAN (9D Muslim)**, these features will bring the app closer to professional Quran apps.
+1. **Pagination logic এখনও fake (character-based)**  
+   `ReadingView` এখনো `LINES_PER_PAGE` + `CHARS_PER_LINE` দিয়ে page বানাচ্ছে।  
+   ফলে real Mushaf page flow (API `ayah.page`) এর সাথে content match করে না।
 
-## Features to Build
+2. **Prev navigation bug আছে**  
+   প্রথম page থেকে আগের সূরায় গেলে `setCurrentPage(999)` সেট হচ্ছে, কিন্তু পরে clamp/restore হচ্ছে না।  
+   এতে blank/odd page jump হতে পারে।
 
-### 1. Juz & Surah Info Pages
-Add detailed info cards showing surah summary (revelation type, ayah count, juz range, virtues) and a Juz browser to navigate the Quran by juz instead of only by surah.
+3. **Ref warnings (console) unresolved**  
+   `ReadingSettings` এবং `SurahNav` নিয়ে `Function components cannot be given refs` warning আছে।  
+   এগুলো interaction stability (popover/nav behavior) degrade করতে পারে, especially mobile এ।
 
-**Changes:**
-- **New file: `src/components/quran/JuzBrowser.tsx`** — Scrollable list of 30 juz with name (Arabic/Bengali/English), surah range, tap to navigate to that surah/ayah
-- **New file: `src/components/quran/SurahInfoCard.tsx`** — Shows surah name, meaning, revelation type (Meccan/Medinan with icon), ayah count, juz range, ruku count. Displayed at top of Translation/Reading views
-- **Edit `src/data/surahList.ts`** — Add `summary` and `virtues` fields (short Bengali/English descriptions) for at least the most popular surahs
-- **Edit `src/pages/QuranPage.tsx`** — Add "Juz Browser" as a new category in the grid
+4. **Visual polish হয়েছে, structural Mushaf engine হয়নি**  
+   শুধু flowing text/UI change করা হয়েছে, কিন্তু page model/restore/navigation এখনো Mushaf-grade হয়নি।
 
-### 2. Topic-Based Quran Browse
-Browse ayahs by topic (Salah, Tawba, Patience, etc.) — each topic shows relevant ayahs with references.
+## Fix Plan (Implementation)
 
-**Changes:**
-- **New file: `src/data/quranTopics.ts`** — Static data: ~15-20 topics with surah:ayah references, topic name in bn/en/ar
-- **New file: `src/components/quran/TopicBrowser.tsx`** — Grid of topic cards; tapping a topic shows list of ayahs (fetched from API) with translations
-- **Edit `src/pages/QuranPage.tsx`** — Add "Topics" category to the grid
-- **Edit `src/components/quran/types.ts`** — Add `"topics" | "juz"` to `ActiveSection` type
+### Step 1 — Pagination engine rewrite (Mushaf-first)
+- `ReadingView`-এ char-count pagination বাদ।
+- `data.arabic.ayahs` কে `ayah.page` দিয়ে group করে page বানানো।
+- UI page indicator, swipe, next/prev সব এই real page groups থেকে চালানো।
 
-### 3. Night Mode Toggle & Font Size Control
-Add a settings panel accessible from reading views with dark/light toggle and Arabic font size slider.
+### Step 2 — Cross-surah navigation hard fix
+- `currentPage=999` hack remove।
+- Surah change হলে safe page index clamp/restore করা।
+- Prev/Next transitions deterministic করা (no blank state)।
 
-**Changes:**
-- **New file: `src/components/quran/ReadingSettings.tsx`** — Popover/sheet with: dark/light toggle (uses existing `useTheme`), Arabic font size slider (stored in localStorage, default 20px, range 16-36px), Tajweed on/off toggle (already exists but move here)
-- **Edit `src/components/quran/ReadingView.tsx`** — Add settings button in header, read `arabicFontSize` from localStorage and apply to ayah text
-- **Edit `src/components/quran/TranslationView.tsx`** — Same font size support
+### Step 3 — Ref warning cleanup
+- `ReadingSettings` ও `SurahNav` কে `forwardRef` compatible করা (or ref path remove)।
+- Popover trigger/nav root ref-safe করা।
 
-### 4. Copy & Share Ayah
-Long-press or tap a share button on any ayah to copy text or share via Web Share API.
+### Step 4 — Last-read restore correctness
+- saved `lastRead.page/section` থেকে Mushaf route open হলে exact page restore করা।
+- Invalid/outdated index হলে graceful fallback (page 0 বা nearest valid page)।
 
-**Changes:**
-- **New file: `src/components/quran/AyahActions.tsx`** — Small action bar with Copy and Share buttons. Copy puts Arabic + translation to clipboard. Share uses `navigator.share()` with fallback to clipboard
-- **Edit `src/components/quran/TranslationView.tsx`** — Add `AyahActions` component to each ayah card (alongside existing Star button)
-- **Edit `src/components/quran/ReadingView.tsx`** — Add tap-to-select ayah with copy/share popup
+### Step 5 — UI parity pass (reference-like)
+- Mobile (390x638) এ spacing, line-height, ayah marker baseline, header density tune।
+- Tajweed on/off এ layout shift minimize করা।
 
-### 5. Mushaf View Mode (Enhanced Reading)
-The current ReadingView is already mushaf-like. Enhance it to feel more authentic: add a "Mushaf" category entry point, smooth page-flip animation, and page number matching real Quran pages.
+## Technical Notes
+- Remove dependence on `LINES_PER_PAGE`/`CHARS_PER_LINE` for Mushaf.
+- Keep existing theme/font settings logic; only reading layout engine replace.
+- Add index guard: `currentPage = min(max(currentPage,0), totalPages-1)` everywhere state can drift.
 
-**Changes:**
-- **Edit `src/pages/QuranPage.tsx`** — Add "মুসহাফ / Mushaf" as the first category (reuses ReadingView)
-- **Edit `src/components/quran/ReadingView.tsx`** — Add header bar with back button + SurahSelector + settings gear icon. Add CSS page-flip animation on swipe. Show real Quran page number (from API `ayah.page` field) in footer instead of computed page
-
-## Technical Details
-
-- **Font size**: Stored as `arabicFontSize` in localStorage (number, px). Applied via inline style on Arabic text elements
-- **Topics data**: Static JSON with `{ id, nameBn, nameEn, nameAr, references: [{surah, ayah}] }`. Ayah text fetched on-demand from existing API
-- **Share API**: `navigator.share({ title, text })` with `navigator.clipboard.writeText()` fallback
-- **Juz navigation**: Clicking a juz sets `selectedSurah` to `juz.startSurah` and navigates to ReadingView
-- **No new dependencies** — all features use existing APIs, hooks, and UI components
-
-## File Summary
-
-| Action | File |
-|--------|------|
-| Create | `src/components/quran/JuzBrowser.tsx` |
-| Create | `src/components/quran/SurahInfoCard.tsx` |
-| Create | `src/data/quranTopics.ts` |
-| Create | `src/components/quran/TopicBrowser.tsx` |
-| Create | `src/components/quran/ReadingSettings.tsx` |
-| Create | `src/components/quran/AyahActions.tsx` |
-| Edit | `src/pages/QuranPage.tsx` |
-| Edit | `src/components/quran/types.ts` |
-| Edit | `src/components/quran/ReadingView.tsx` |
-| Edit | `src/components/quran/TranslationView.tsx` |
-| Edit | `src/data/surahList.ts` |
-
+## Acceptance Criteria
+- Mushaf page content real-page grouped (no random jump).
+- Surah boundary navigation works without blank pages.
+- Console shows no ref warning for `ReadingView`.
+- Reload করলে last-read Mushaf page reliably restore হয়।
+- Mobile swipe + page buttons + surah selector end-to-end stable.
