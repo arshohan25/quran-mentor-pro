@@ -266,7 +266,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                           <div className="text-[17px] md:text-[20px] font-bold flex items-center justify-center gap-2">
                             <span className="text-[10px] font-normal opacity-70">❁</span>
                             ({toArabicNum(selectedSurah)}) سُورَةُ {surah?.name}
-                            {surah?.revealType === "Meccan" ? " مَكِّيَّة" : " مَدَنِيَّة"}
+                            {surah?.revelationType === "Meccan" ? " مَكِّيَّة" : " مَدَنِيَّة"}
                             <span className="text-[10px] font-normal opacity-70">❁</span>
                           </div>
                           <div className="text-[13px] md:text-[15px]">ركوعاتها {toArabicNum(SURAH_RUKU_COUNT[selectedSurah] || 1)}</div>
