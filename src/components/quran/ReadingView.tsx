@@ -200,6 +200,11 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const currentJuz = firstAyah ? getJuzNumber(selectedSurah, firstAyah.numberInSurah) : 1;
   const isFirstPageOfSurah = currentPageData?.ayahs.some(a => a.numberInSurah === 1);
 
+  // Reading progress: last ayah on current page / total ayahs in surah
+  const surahTotalAyahs = data?.arabic.ayahs.length || 1;
+  const lastAyahOnPage = currentPageData?.ayahs[currentPageData.ayahs.length - 1];
+  const readProgress = lastAyahOnPage ? Math.round((lastAyahOnPage.numberInSurah / surahTotalAyahs) * 100) : 0;
+
   return (
     <div className="min-h-screen bg-[#F5EFE0] dark:bg-[#1a1510] flex flex-col">
       {/* Header bar */}
