@@ -279,7 +279,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                               ) : (
                                 <span>{displayText}</span>
                               )}
-                              <span className="inline-flex items-center justify-center mx-1 text-[#2D5016] dark:text-[#7BAF4C] text-[15px] md:text-[17px] font-bold select-none align-middle"
+                              <span className="inline-flex items-center justify-center mx-1 text-[#2D5016] dark:text-[#7BAF4C] text-[11px] sm:text-[14px] md:text-[17px] font-bold select-none align-middle"
                                     style={{ fontFamily: 'serif' }}>
                                 ﴿{toArabicNum(ayah.numberInSurah)}﴾
                               </span>

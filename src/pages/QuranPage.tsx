@@ -137,7 +137,7 @@ export default function QuranPage() {
         </p>
 
         {/* Islamic styled grid */}
-        <div className="grid grid-cols-3 gap-3 md:gap-4 max-w-lg mx-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 max-w-lg mx-auto">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             return (

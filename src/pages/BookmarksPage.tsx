@@ -59,7 +59,7 @@ export default function BookmarksPage() {
             <p className="text-sm text-muted-foreground mb-4">
               {sorted.length} {t("টি আয়াত সেভ করা আছে", " ayahs saved", " آيات محفوظة")}
             </p>
-            <ScrollArea className="h-[calc(100vh-200px)]">
+            <ScrollArea className="h-[calc(100vh-180px)] min-h-[300px]">
               <div className="space-y-3">
                 {sorted.map((fav) => {
                   const surah = surahList.find((s) => s.number === fav.surah);

@@ -133,7 +133,7 @@ const Index = () => {
 
         {/* Bismillah decoration */}
         <div className="mt-12 text-center">
-          <p className="font-arabic text-4xl text-primary/60">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
+          <p className="font-arabic text-2xl sm:text-3xl md:text-4xl text-primary/60">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
           <p className="text-muted-foreground text-sm mt-2">
             {t(
               "পরম করুণাময় অসীম দয়ালু আল্লাহর নামে",

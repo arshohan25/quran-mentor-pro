@@ -74,7 +74,7 @@ export default function PrayerPage() {
                 </p>
               </div>
 
-              <ScrollArea className="h-[calc(100vh-400px)]">
+              <ScrollArea className="h-[calc(100vh-350px)] min-h-[200px]">
                 <Accordion type="multiple" className="space-y-2">
                   {prayer.steps.map((step, idx) => (
                     <AccordionItem key={idx} value={`step-${idx}`} className="border border-border rounded-lg px-4">

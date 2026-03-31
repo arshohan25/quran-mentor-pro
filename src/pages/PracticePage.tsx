@@ -179,7 +179,7 @@ export default function PracticePage() {
                 : "bg-primary text-primary-foreground hover:scale-105"
             }`}
           >
-            {isRecording ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
+            {isRecording ? <MicOff className="w-6 h-6 sm:w-8 sm:h-8" /> : <Mic className="w-6 h-6 sm:w-8 sm:h-8" />}
           </button>
           <p className="text-sm text-muted-foreground">
             {isRecording

@@ -138,7 +138,7 @@ export default function AudioPage() {
         {loadingSurah ? (
           <div className="space-y-3">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
         ) : surahData ? (
-          <ScrollArea className="h-[calc(100vh-450px)]">
+          <ScrollArea className="h-[calc(100vh-380px)] min-h-[200px]">
             <div className="space-y-3">
               {surahData.arabic.ayahs.map((ayah, idx) => (
                 <button
