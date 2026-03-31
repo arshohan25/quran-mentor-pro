@@ -227,6 +227,35 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
         </div>
       </header>
 
+      {/* Page jump panel */}
+      {showPageJump && (
+        <div className="bg-[#2D5016]/90 dark:bg-[#1a3009]/95 px-4 py-2.5 flex items-center gap-2">
+          <input
+            type="number"
+            min={1}
+            max={604}
+            value={pageJumpInput}
+            onChange={(e) => setPageJumpInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handlePageJump()}
+            placeholder="1-604"
+            autoFocus
+            className="w-20 px-2 py-1 rounded text-sm bg-white/15 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-white/40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          />
+          <button
+            onClick={handlePageJump}
+            className="px-3 py-1 rounded bg-white/20 hover:bg-white/30 text-white text-xs font-medium transition-colors"
+          >
+            {t("যাও", "Go", "اذهب")}
+          </button>
+          <button
+            onClick={() => setShowPageJump(false)}
+            className="ml-auto text-white/60 hover:text-white text-xs"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="container py-3 max-w-xl mx-auto px-2">
         {tajweedEnabled && <div className="mb-3"><TajweedLegend /></div>}
 
