@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { juzList } from "@/data/juzData";
+import { surahForPage } from "@/data/mushafPages";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -58,6 +59,9 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const { t } = useLanguage();
   const [pageIndex, setPageIndex] = useState(0);
   const [goToLastPage, setGoToLastPage] = useState(false);
+  const [targetMushafPage, setTargetMushafPage] = useState<number | null>(null);
+  const [showPageJump, setShowPageJump] = useState(false);
+  const [pageJumpInput, setPageJumpInput] = useState("");
   const [tajweedEnabled, setTajweedEnabled] = useState(() => {
     try { return localStorage.getItem("tajweedEnabled") !== "false"; } catch { return true; }
   });
@@ -102,16 +106,37 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
 
   const totalPages = pages.length;
 
-  // Clamp pageIndex whenever pages change
+  // Clamp pageIndex whenever pages change, or jump to target Mushaf page
   useEffect(() => {
     if (totalPages === 0) return;
-    if (goToLastPage) {
+    if (targetMushafPage !== null) {
+      const idx = pages.findIndex(p => p.pageNum === targetMushafPage);
+      setPageIndex(idx >= 0 ? idx : 0);
+      setTargetMushafPage(null);
+    } else if (goToLastPage) {
       setPageIndex(totalPages - 1);
       setGoToLastPage(false);
     } else {
       setPageIndex(prev => Math.min(prev, totalPages - 1));
     }
-  }, [totalPages, goToLastPage]);
+  }, [totalPages, goToLastPage, targetMushafPage, pages]);
+
+  const handlePageJump = () => {
+    const num = parseInt(pageJumpInput, 10);
+    if (isNaN(num) || num < 1 || num > 604) return;
+    setShowPageJump(false);
+    setPageJumpInput("");
+    // Check if this page is within current surah
+    const idx = pages.findIndex(p => p.pageNum === num);
+    if (idx >= 0) {
+      setPageIndex(idx);
+    } else {
+      // Navigate to the surah that contains this page
+      const targetSurah = surahForPage(num);
+      setTargetMushafPage(num);
+      setSelectedSurah(targetSurah);
+    }
+  };
 
   // Auto-save reading position
   useEffect(() => {
@@ -184,9 +209,13 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
             <button onClick={onBack} className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></button>
             <div>
               <SurahSelector value={selectedSurah} onChange={handleSurahChange} />
-              <p className="text-[10px] opacity-70 pl-1">
-                {t("পৃষ্ঠা", "Page", "صفحة")} {realPageNum || pageIndex + 1}
-              </p>
+              <button
+                onClick={() => { setShowPageJump(!showPageJump); setPageJumpInput(String(realPageNum || "")); }}
+                className="text-[10px] opacity-70 pl-1 hover:opacity-100 transition-opacity flex items-center gap-1"
+              >
+                <Search className="w-2.5 h-2.5" />
+                {t("পৃষ্ঠা", "Page", "صفحة")} {realPageNum || pageIndex + 1} / 604
+              </button>
             </div>
           </div>
           <ReadingSettings
@@ -197,6 +226,35 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
           />
         </div>
       </header>
+
+      {/* Page jump panel */}
+      {showPageJump && (
+        <div className="bg-[#2D5016]/90 dark:bg-[#1a3009]/95 px-4 py-2.5 flex items-center gap-2">
+          <input
+            type="number"
+            min={1}
+            max={604}
+            value={pageJumpInput}
+            onChange={(e) => setPageJumpInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handlePageJump()}
+            placeholder="1-604"
+            autoFocus
+            className="w-20 px-2 py-1 rounded text-sm bg-white/15 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-white/40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          />
+          <button
+            onClick={handlePageJump}
+            className="px-3 py-1 rounded bg-white/20 hover:bg-white/30 text-white text-xs font-medium transition-colors"
+          >
+            {t("যাও", "Go", "اذهب")}
+          </button>
+          <button
+            onClick={() => setShowPageJump(false)}
+            className="ml-auto text-white/60 hover:text-white text-xs"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <div className="container py-3 max-w-xl mx-auto px-2">
         {tajweedEnabled && <div className="mb-3"><TajweedLegend /></div>}
