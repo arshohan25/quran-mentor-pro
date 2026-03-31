@@ -239,12 +239,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
         </div>
       </header>
 
-      {/* Progress label */}
-      <div className="bg-[#F5EFE0] dark:bg-[#1a1510] text-center py-0.5">
-        <span className="text-[9px] text-[#5C4A2A]/60 dark:text-[#9B8365]/60 font-medium">
-          {readProgress}% {t("পড়া হয়েছে", "read", "مقروء")}
-        </span>
-      </div>
+
 
       {/* Page jump panel */}
       {showPageJump && (
