@@ -1,37 +1,73 @@
 
 
-# Daily Dua Notification Feature
+# Al Quran App — 5 New Features Plan
 
-## Overview
-Create a hook that shows a daily random dua as a browser notification, with a toggle to enable/disable it. Reuses the existing DUAS data from `DuaPage.tsx` and follows the same notification pattern as `usePrayerAlarm.ts`.
+Inspired by **Al Quran (Greentech)** and **Al QURAN (9D Muslim)**, these features will bring the app closer to professional Quran apps.
 
-## Changes
+## Features to Build
 
-### 1. Extract DUAS data to shared file
-**New file: `src/data/duaData.ts`**
-- Move the `DUAS` array and `Dua` interface from `DuaPage.tsx` to a shared data file
-- Export both so `DuaPage.tsx` and the new hook can import them
+### 1. Juz & Surah Info Pages
+Add detailed info cards showing surah summary (revelation type, ayah count, juz range, virtues) and a Juz browser to navigate the Quran by juz instead of only by surah.
 
-### 2. Create `useDailyDuaNotification` hook
-**New file: `src/hooks/useDailyDuaNotification.ts`**
-- Uses a date-seeded random index to pick one dua per day (same dua all day, new one next day)
-- On app load, checks if today's dua notification was already sent (via `localStorage` key `lastDuaNotifDate`)
-- If not sent and notifications are granted and feature is enabled, sends a browser `Notification` with the dua's Bengali/English text and Arabic snippet
-- Exposes: `{ enabled, toggleEnabled, todaysDua, permission, requestPermission }`
-- Stores enabled state in `localStorage` key `duaDailyNotif`
+**Changes:**
+- **New file: `src/components/quran/JuzBrowser.tsx`** — Scrollable list of 30 juz with name (Arabic/Bengali/English), surah range, tap to navigate to that surah/ayah
+- **New file: `src/components/quran/SurahInfoCard.tsx`** — Shows surah name, meaning, revelation type (Meccan/Medinan with icon), ayah count, juz range, ruku count. Displayed at top of Translation/Reading views
+- **Edit `src/data/surahList.ts`** — Add `summary` and `virtues` fields (short Bengali/English descriptions) for at least the most popular surahs
+- **Edit `src/pages/QuranPage.tsx`** — Add "Juz Browser" as a new category in the grid
 
-### 3. Integrate into Home page
-**Edit: `src/pages/Index.tsx`**
-- Add a small "Daily Dua Reminder" card/toggle in the features section
-- Call `useDailyDuaNotification()` so the check runs on app open
-- Show today's dua as a preview card with notification toggle
+### 2. Topic-Based Quran Browse
+Browse ayahs by topic (Salah, Tawba, Patience, etc.) — each topic shows relevant ayahs with references.
 
-### 4. Update DuaPage imports
-**Edit: `src/pages/DuaPage.tsx`**
-- Import `DUAS` and `Dua` from `src/data/duaData.ts` instead of defining inline
+**Changes:**
+- **New file: `src/data/quranTopics.ts`** — Static data: ~15-20 topics with surah:ayah references, topic name in bn/en/ar
+- **New file: `src/components/quran/TopicBrowser.tsx`** — Grid of topic cards; tapping a topic shows list of ayahs (fetched from API) with translations
+- **Edit `src/pages/QuranPage.tsx`** — Add "Topics" category to the grid
+- **Edit `src/components/quran/types.ts`** — Add `"topics" | "juz"` to `ActiveSection` type
+
+### 3. Night Mode Toggle & Font Size Control
+Add a settings panel accessible from reading views with dark/light toggle and Arabic font size slider.
+
+**Changes:**
+- **New file: `src/components/quran/ReadingSettings.tsx`** — Popover/sheet with: dark/light toggle (uses existing `useTheme`), Arabic font size slider (stored in localStorage, default 20px, range 16-36px), Tajweed on/off toggle (already exists but move here)
+- **Edit `src/components/quran/ReadingView.tsx`** — Add settings button in header, read `arabicFontSize` from localStorage and apply to ayah text
+- **Edit `src/components/quran/TranslationView.tsx`** — Same font size support
+
+### 4. Copy & Share Ayah
+Long-press or tap a share button on any ayah to copy text or share via Web Share API.
+
+**Changes:**
+- **New file: `src/components/quran/AyahActions.tsx`** — Small action bar with Copy and Share buttons. Copy puts Arabic + translation to clipboard. Share uses `navigator.share()` with fallback to clipboard
+- **Edit `src/components/quran/TranslationView.tsx`** — Add `AyahActions` component to each ayah card (alongside existing Star button)
+- **Edit `src/components/quran/ReadingView.tsx`** — Add tap-to-select ayah with copy/share popup
+
+### 5. Mushaf View Mode (Enhanced Reading)
+The current ReadingView is already mushaf-like. Enhance it to feel more authentic: add a "Mushaf" category entry point, smooth page-flip animation, and page number matching real Quran pages.
+
+**Changes:**
+- **Edit `src/pages/QuranPage.tsx`** — Add "মুসহাফ / Mushaf" as the first category (reuses ReadingView)
+- **Edit `src/components/quran/ReadingView.tsx`** — Add header bar with back button + SurahSelector + settings gear icon. Add CSS page-flip animation on swipe. Show real Quran page number (from API `ayah.page` field) in footer instead of computed page
 
 ## Technical Details
-- Date-seeded random: `(year * 10000 + month * 100 + day) % DUAS.length`
-- Notification fires once per day on first app visit (like prayer alarm pattern)
-- No new dependencies — uses Web Notification API already in use
+
+- **Font size**: Stored as `arabicFontSize` in localStorage (number, px). Applied via inline style on Arabic text elements
+- **Topics data**: Static JSON with `{ id, nameBn, nameEn, nameAr, references: [{surah, ayah}] }`. Ayah text fetched on-demand from existing API
+- **Share API**: `navigator.share({ title, text })` with `navigator.clipboard.writeText()` fallback
+- **Juz navigation**: Clicking a juz sets `selectedSurah` to `juz.startSurah` and navigates to ReadingView
+- **No new dependencies** — all features use existing APIs, hooks, and UI components
+
+## File Summary
+
+| Action | File |
+|--------|------|
+| Create | `src/components/quran/JuzBrowser.tsx` |
+| Create | `src/components/quran/SurahInfoCard.tsx` |
+| Create | `src/data/quranTopics.ts` |
+| Create | `src/components/quran/TopicBrowser.tsx` |
+| Create | `src/components/quran/ReadingSettings.tsx` |
+| Create | `src/components/quran/AyahActions.tsx` |
+| Edit | `src/pages/QuranPage.tsx` |
+| Edit | `src/components/quran/types.ts` |
+| Edit | `src/components/quran/ReadingView.tsx` |
+| Edit | `src/components/quran/TranslationView.tsx` |
+| Edit | `src/data/surahList.ts` |
 
