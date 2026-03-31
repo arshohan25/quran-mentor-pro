@@ -111,8 +111,8 @@ export default function AudioView({ selectedSurah, setSelectedSurah, onBack }: Q
                   <div className="flex items-start gap-2">
                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-1 ${currentAyah === idx ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{ayah.numberInSurah}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="font-arabic text-base md:text-lg leading-relaxed text-right text-foreground" dir="rtl">{ayah.text}</p>
-                      <p className="text-xs text-muted-foreground mt-1 truncate">{data.bengali?.ayahs[idx]?.text}</p>
+                      <p className="font-arabic text-base md:text-lg leading-relaxed text-right text-foreground break-words" dir="rtl">{ayah.text}</p>
+                      <p className="text-xs text-muted-foreground mt-1 break-words">{data.bengali?.ayahs[idx]?.text}</p>
                     </div>
                   </div>
                 </button>
