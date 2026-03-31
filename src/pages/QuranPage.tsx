@@ -22,7 +22,7 @@ const CATEGORIES = [
   { id: "reading" as const, icon: BookOpen, labelBn: "কুরআন তেলাওয়াত", labelEn: "Quran Reading", labelAr: "تلاوة القرآن", active: true },
   { id: "translation" as const, icon: BookText, labelBn: "তরজমা ও তাফসির", labelEn: "Translation & Tafsir", labelAr: "الترجمة والتفسير", active: true },
   { id: "audio" as const, icon: Headphones, labelBn: "অডিও তেলাওয়াত", labelEn: "Audio Recitation", labelAr: "التلاوة الصوتية", active: false },
-  { id: "wordmeaning" as const, icon: Languages, labelBn: "শব্দার্থ", labelEn: "Word Meaning", labelAr: "معاني الكلمات", active: false },
+  { id: "wordmeaning" as const, icon: Languages, labelBn: "শব্দার্থ", labelEn: "Word Meaning", labelAr: "معاني الكلمات", active: true },
   { id: "hifz" as const, icon: GraduationCap, labelBn: "হিফয", labelEn: "Hifz", labelAr: "الحفظ", active: false },
   { id: "bookmarks" as const, icon: Star, labelBn: "বুকমার্ক", labelEn: "Bookmarks", labelAr: "الإشارات المرجعية", active: false },
 ];
@@ -47,6 +47,13 @@ export default function QuranPage() {
     activeSection === "reading" || activeSection === "translation" ? selectedSurah : 0
   );
 
+  const { data: wordData, isLoading: wordLoading } = useWordByWord(
+    activeSection === "wordmeaning" ? selectedSurah : 0,
+    language === "bn" ? "bn" : "en"
+  );
+
+  const [wordPage, setWordPage] = useState(0);
+
   // Translation pages
   const translationPages = useMemo(() => {
     if (!data) return [];
@@ -62,6 +69,7 @@ export default function QuranPage() {
 
   useEffect(() => {
     setTranslationPage(0);
+    setWordPage(0);
   }, [selectedSurah]);
 
   useEffect(() => {
@@ -430,6 +438,147 @@ export default function QuranPage() {
             <button
               onClick={() => translationPage < totalTransPages - 1 ? setTranslationPage(translationPage + 1) : selectedSurah < 114 && (setSelectedSurah(selectedSurah + 1), setTranslationPage(0))}
               disabled={translationPage >= totalTransPages - 1 && selectedSurah >= 114}
+              className="flex items-center gap-1 px-3 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+            >
+              {t("পরের", "Next", "التالية")}
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Surah nav */}
+          <div className="flex items-center justify-between mt-2 mb-4 gap-2">
+            <button
+              onClick={() => { if (selectedSurah > 1) setSelectedSurah(selectedSurah - 1); }}
+              disabled={selectedSurah <= 1}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
+            >
+              <ChevronLeft className="w-3 h-3" />
+              {selectedSurah > 1 && (language === "bn" ? surahList[selectedSurah - 2]?.bengaliName : surahList[selectedSurah - 2]?.englishName)}
+            </button>
+            <span className="text-xs text-muted-foreground">{selectedSurah} / 114</span>
+            <button
+              onClick={() => { if (selectedSurah < 114) setSelectedSurah(selectedSurah + 1); }}
+              disabled={selectedSurah >= 114}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
+            >
+              {selectedSurah < 114 && (language === "bn" ? surahList[selectedSurah]?.bengaliName : surahList[selectedSurah]?.englishName)}
+              <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Word Meaning View
+  if (activeSection === "wordmeaning") {
+    const VERSES_PER_PAGE = 5;
+    const wordPages = wordData ? Math.ceil(wordData.length / VERSES_PER_PAGE) : 0;
+    const clampedWordPage = Math.min(wordPage, Math.max(0, wordPages - 1));
+    const currentVerses = wordData?.slice(clampedWordPage * VERSES_PER_PAGE, (clampedWordPage + 1) * VERSES_PER_PAGE) || [];
+
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="bg-primary text-primary-foreground py-3">
+          <div className="container">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button onClick={() => setActiveSection(null)} className="hover:opacity-80">
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <h1 className="text-base md:text-lg font-bold">{t("শব্দার্থ", "Word Meaning", "معاني الكلمات")}</h1>
+              </div>
+              <Select value={String(selectedSurah)} onValueChange={(v) => setSelectedSurah(Number(v))}>
+                <SelectTrigger className="w-auto min-w-[100px] md:min-w-[140px] h-7 md:h-8 text-xs bg-primary-foreground/10 border-none text-primary-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-80">
+                  {surahList.map((s) => (
+                    <SelectItem key={s.number} value={String(s.number)} className="text-xs">
+                      {s.number}. {language === "bn" ? s.bengaliName : s.englishName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </header>
+
+        <div className="container py-4 max-w-2xl mx-auto">
+          {/* Surah info */}
+          {currentSurah && clampedWordPage === 0 && (
+            <div className="bg-primary/5 rounded-xl p-4 mb-4 text-center space-y-1">
+              <h2 className="font-arabic text-2xl text-primary">{currentSurah.name}</h2>
+              <p className="text-foreground font-semibold text-sm">
+                {language === "bn" ? currentSurah.bengaliName : currentSurah.englishName}
+              </p>
+              <div className="flex items-center justify-center gap-2 text-xs">
+                <span className="text-muted-foreground">{currentSurah.numberOfAyahs} {t("আয়াত", "Ayahs", "آيات")}</span>
+              </div>
+            </div>
+          )}
+
+          {wordLoading ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-32 rounded-xl" />
+              ))}
+            </div>
+          ) : currentVerses.length > 0 ? (
+            <div className="space-y-4">
+              {currentVerses.map((verse) => (
+                <Card key={verse.verse_key} className="p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full">
+                      {t(`আয়াত ${verse.verse_number}`, `Ayah ${verse.verse_number}`, `آية ${verse.verse_number}`)}
+                    </span>
+                  </div>
+                  {/* Word grid */}
+                  <div className="flex flex-wrap gap-2 justify-end" dir="rtl">
+                    {verse.words.map((word) => (
+                      <div
+                        key={word.id}
+                        className="flex flex-col items-center bg-primary/5 rounded-lg px-3 py-2 min-w-[70px] hover:bg-primary/10 transition-colors"
+                      >
+                        <span className="font-arabic text-lg md:text-xl text-foreground leading-relaxed">
+                          {word.text_uthmani}
+                        </span>
+                        {word.transliteration?.text && (
+                          <span className="text-[10px] text-muted-foreground italic mt-0.5">
+                            {word.transliteration.text}
+                          </span>
+                        )}
+                        <span className="text-xs text-primary font-medium mt-1 text-center leading-tight">
+                          {word.translation?.text || ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : null}
+
+          {/* Page navigation */}
+          <div className="flex items-center justify-between mt-4 mb-2 gap-2">
+            <button
+              onClick={() => clampedWordPage > 0 ? setWordPage(clampedWordPage - 1) : selectedSurah > 1 && (setSelectedSurah(selectedSurah - 1), setWordPage(999))}
+              disabled={clampedWordPage === 0 && selectedSurah <= 1}
+              className="flex items-center gap-1 px-3 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              {t("আগের", "Previous", "السابقة")}
+            </button>
+            <span className="text-xs text-muted-foreground">
+              {t(
+                `পৃষ্ঠা ${clampedWordPage + 1} / ${wordPages || 1}`,
+                `Page ${clampedWordPage + 1} / ${wordPages || 1}`,
+                `صفحة ${clampedWordPage + 1} / ${wordPages || 1}`
+              )}
+            </span>
+            <button
+              onClick={() => clampedWordPage < wordPages - 1 ? setWordPage(clampedWordPage + 1) : selectedSurah < 114 && (setSelectedSurah(selectedSurah + 1), setWordPage(0))}
+              disabled={clampedWordPage >= wordPages - 1 && selectedSurah >= 114}
               className="flex items-center gap-1 px-3 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-sm"
             >
               {t("পরের", "Next", "التالية")}
