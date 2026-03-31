@@ -1,48 +1,41 @@
 
 
-# কুরআন পেজে Word-by-Word অনুবাদ মোড
+# Make Quran Page Fully Responsive
 
-## পদ্ধতি
+## Problem
+The header has too many controls crammed into one row — on mobile (390px), the toolbar buttons, qari selector, speed control, and language switcher overflow or get squished. The content area also uses fixed `calc()` heights that may not adapt well.
 
-**Quran.com API (v4)** ব্যবহার করব — এটি word-by-word translation সাপোর্ট করে।
+## Plan
 
-**API:** `https://api.quran.com/api/v4/verses/by_chapter/{surah}?words=true&language=bn&per_page=50&page={page}`
+### 1. Responsive Header Toolbar
+- Break the header into two rows on mobile: top row = back button + title + language switcher; bottom row = view mode toggle, speed, auto-play, loop, search, tajweed, qari selector
+- Use `flex-wrap` with proper gap so buttons wrap naturally on small screens
+- Make the qari `Select` use a shorter `min-w` on mobile (`min-w-[90px]` instead of `120px`)
 
-প্রতিটি আয়াতের `words[]` অ্যারেতে থাকবে:
-- `text_uthmani` — আরবি শব্দ
-- `translation.text` — বাংলা/ইংরেজি অনুবাদ
+### 2. Mobile-Friendly Control Bar
+- Move the toolbar controls (speed, auto-play, loop, search, tajweed) into a scrollable horizontal strip below the header on small screens
+- Use `overflow-x-auto` with `flex-nowrap` so all controls are accessible via horizontal scroll
 
-## ফাইল পরিবর্তন
+### 3. Surah Info Banner
+- Reduce font sizes on mobile: Arabic name `text-2xl` instead of `text-3xl`, smaller padding
+- Stack metadata badges vertically on very small screens
 
-### ১. `src/hooks/useQuranApi.ts` — নতুন hook যোগ
-- `useWordByWord(surahNumber, language)` — Quran.com v4 API কল করবে `words=true` দিয়ে
-- Pagination হ্যান্ডেল করবে (per_page=50, multiple pages for long surahs)
-- ক্যাশ 1 ঘণ্টা
+### 4. Ayah Cards
+- Reduce padding on mobile (`p-3` instead of `p-4`)
+- Arabic text size: `text-xl` on mobile, `text-2xl` on desktop
+- Translation section: reduce left padding on mobile (`pl-0` instead of `pl-11`)
 
-### ২. `src/pages/QuranPage.tsx` — মোড সুইচার + UI
-- নতুন state: `viewMode: "verse" | "word"` (localStorage-এ সেভ)
-- হেডারে ToggleGroup দিয়ে মোড সুইচ বাটন (AlignLeft icon = verse, Grid icon = word)
-- **Verse মোড**: বর্তমান UI যেমন আছে
-- **Word মোড**: প্রতিটি আয়াতের ভেতর শব্দগুলো flex-wrap grid-এ দেখাবে — উপরে আরবি, নিচে বাংলা/ইংরেজি
+### 5. Navigation Buttons
+- On mobile, show shorter labels or just arrows with surah number
+- Reduce button padding for mobile
 
-### ৩. Word-by-Word UI লেআউট
+### 6. ScrollArea Heights
+- Replace fixed `calc(100vh-320px)` with responsive values using `md:` breakpoints
+- Use `h-[calc(100vh-280px)]` on mobile accounting for the taller wrapped header
 
-```text
-┌─────────────────────────────────┐
-│  ১  │  بِسْمِ    اللَّهِ    الرَّحْمَٰنِ  │
-│     │  নামে      আল্লাহর    পরম দয়ালু  │
-│     │ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─│
-│     │  الرَّحِيمِ                       │
-│     │  পরম করুণাময়                   │
-└─────────────────────────────────┘
-```
+### 7. Loop Range Selector
+- Stack the from/to selectors vertically on mobile instead of horizontal row
 
-প্রতিটি শব্দ একটি ছোট কার্ড — আরবি বড় ফন্ট, নিচে ছোট ফন্টে অনুবাদ। শব্দগুলো RTL flex-wrap দিয়ে সাজানো হবে।
-
-## সারসংক্ষেপ
-
-| ফাইল | পরিবর্তন |
-|---|---|
-| `src/hooks/useQuranApi.ts` | `useWordByWord` hook যোগ (Quran.com v4 API) |
-| `src/pages/QuranPage.tsx` | verse/word মোড toggle + word-by-word রেন্ডারিং UI |
+## Files to Edit
+- `src/pages/QuranPage.tsx` — all responsive changes in one file
 
