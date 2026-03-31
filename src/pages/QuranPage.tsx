@@ -47,6 +47,13 @@ export default function QuranPage() {
     activeSection === "reading" || activeSection === "translation" ? selectedSurah : 0
   );
 
+  const { data: wordData, isLoading: wordLoading } = useWordByWord(
+    activeSection === "wordmeaning" ? selectedSurah : 0,
+    language === "bn" ? "bn" : "en"
+  );
+
+  const [wordPage, setWordPage] = useState(0);
+
   // Translation pages
   const translationPages = useMemo(() => {
     if (!data) return [];
