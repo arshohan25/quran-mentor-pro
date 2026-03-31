@@ -52,6 +52,7 @@ export default function QuranPage() {
   const { data: audioData } = useSurahAudio(selectedSurah, selectedQari);
   const [playingAyah, setPlayingAyah] = useState<number | null>(null);
   const [autoPlay, setAutoPlay] = useState(false);
+  const [repeatAyah, setRepeatAyah] = useState<number | null>(null);
   const [playbackRate, setPlaybackRate] = useState(() => {
     try { return Number(localStorage.getItem("playbackRate")) || 1; } catch { return 1; }
   });
@@ -278,6 +279,8 @@ export default function QuranPage() {
                             }}
                             autoPlay={autoPlay && playingAyah === ayah.numberInSurah}
                             playbackRate={playbackRate}
+                            repeatMode={repeatAyah === ayah.numberInSurah}
+                            onToggleRepeat={() => setRepeatAyah(repeatAyah === ayah.numberInSurah ? null : ayah.numberInSurah)}
                           />
                           <button
                             onClick={() => toggleFavorite(selectedSurah, ayah.numberInSurah, ayah.text)}
