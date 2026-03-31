@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid, BookOpen, Repeat, Heart } from "lucide-react";
+import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid, BookOpen, Repeat, Heart, ListMusic } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations, useWordByWord, useSurahAudio } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -53,6 +53,8 @@ export default function QuranPage() {
   const [playingAyah, setPlayingAyah] = useState<number | null>(null);
   const [autoPlay, setAutoPlay] = useState(false);
   const [repeatAyah, setRepeatAyah] = useState<number | null>(null);
+  const [loopRange, setLoopRange] = useState<{ start: number; end: number } | null>(null);
+  const [showLoopRange, setShowLoopRange] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(() => {
     try { return Number(localStorage.getItem("playbackRate")) || 1; } catch { return 1; }
   });
@@ -136,6 +138,17 @@ export default function QuranPage() {
               title={t("অটো-প্লে", "Auto-Play", "تشغيل تلقائي")}
             >
               <Repeat className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowLoopRange(!showLoopRange)}
+              className={`p-2 rounded-lg transition-colors ${
+                loopRange
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "text-primary-foreground/60 hover:text-primary-foreground"
+              }`}
+              title={t("আয়াত রেঞ্জ লুপ", "Ayah Range Loop", "تكرار نطاق الآيات")}
+            >
+              <ListMusic className="w-5 h-5" />
             </button>
             <button
               onClick={() => setTajweedEnabled(!tajweedEnabled)}
@@ -233,6 +246,80 @@ export default function QuranPage() {
           {/* Tajweed legend */}
           {tajweedEnabled && <div className="mb-4"><TajweedLegend /></div>}
 
+          {/* Loop Range Selector */}
+          {showLoopRange && currentSurah && (
+            <div className="mb-4 rounded-xl border border-accent/30 bg-accent/5 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <ListMusic className="w-4 h-4 text-accent" />
+                  {t("আয়াত রেঞ্জ লুপ", "Ayah Range Loop", "تكرار نطاق الآيات")}
+                </h3>
+                {loopRange && (
+                  <button
+                    onClick={() => { setLoopRange(null); setPlayingAyah(null); }}
+                    className="text-xs text-destructive hover:underline"
+                  >
+                    {t("বন্ধ করুন", "Clear", "مسح")}
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground">{t("শুরু", "From", "من")}</label>
+                  <select
+                    className="rounded-lg border border-border bg-background text-foreground text-sm px-2 py-1.5"
+                    value={loopRange?.start || 1}
+                    onChange={(e) => {
+                      const start = Number(e.target.value);
+                      const end = loopRange?.end || Math.min(start + 4, currentSurah.numberOfAyahs);
+                      setLoopRange({ start, end: Math.max(start, end) });
+                    }}
+                  >
+                    {Array.from({ length: currentSurah.numberOfAyahs }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground">{t("শেষ", "To", "إلى")}</label>
+                  <select
+                    className="rounded-lg border border-border bg-background text-foreground text-sm px-2 py-1.5"
+                    value={loopRange?.end || Math.min(5, currentSurah.numberOfAyahs)}
+                    onChange={(e) => {
+                      const end = Number(e.target.value);
+                      const start = loopRange?.start || 1;
+                      setLoopRange({ start: Math.min(start, end), end });
+                    }}
+                  >
+                    {Array.from({ length: currentSurah.numberOfAyahs }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  onClick={() => {
+                    const start = loopRange?.start || 1;
+                    const end = loopRange?.end || Math.min(5, currentSurah.numberOfAyahs);
+                    setLoopRange({ start, end });
+                    setPlayingAyah(start);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-accent text-accent-foreground text-xs font-bold hover:bg-accent/80 transition-colors"
+                >
+                  ▶ {t("প্লে করুন", "Play", "تشغيل")}
+                </button>
+              </div>
+              {loopRange && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  {t(
+                    `আয়াত ${loopRange.start} থেকে ${loopRange.end} পর্যন্ত লুপে চলবে`,
+                    `Looping ayah ${loopRange.start} to ${loopRange.end}`,
+                    `تكرار الآية ${loopRange.start} إلى ${loopRange.end}`
+                  )}
+                </p>
+              )}
+            </div>
+          )}
+
           {viewMode === "hifz" ? (
             isLoading ? (
               <div className="space-y-4">
@@ -259,8 +346,10 @@ export default function QuranPage() {
             ) : data ? (
               <ScrollArea className="h-[calc(100vh-320px)]">
                 <div className="space-y-4">
-                  {data.arabic.ayahs.map((ayah, idx) => (
-                    <div key={ayah.number} className="rounded-xl border border-border bg-card p-4">
+                  {data.arabic.ayahs.map((ayah, idx) => {
+                    const inLoopRange = loopRange && ayah.numberInSurah >= loopRange.start && ayah.numberInSurah <= loopRange.end;
+                    return (
+                    <div key={ayah.number} className={`rounded-xl border bg-card p-4 ${inLoopRange ? "border-accent/50 ring-1 ring-accent/20" : "border-border"}`}>
                       <div className="flex items-start gap-3 mb-3">
                         <div className="flex flex-col items-center gap-1 shrink-0">
                           <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
@@ -271,13 +360,21 @@ export default function QuranPage() {
                             isActive={playingAyah === ayah.numberInSurah}
                             onPlay={() => setPlayingAyah(ayah.numberInSurah)}
                             onStop={() => {
-                              if (autoPlay && data && idx < data.arabic.ayahs.length - 1) {
+                              // Loop range takes priority
+                              if (loopRange && ayah.numberInSurah >= loopRange.start && ayah.numberInSurah <= loopRange.end) {
+                                if (ayah.numberInSurah < loopRange.end) {
+                                  setPlayingAyah(ayah.numberInSurah + 1);
+                                } else {
+                                  // End of range, loop back to start
+                                  setPlayingAyah(loopRange.start);
+                                }
+                              } else if (autoPlay && data && idx < data.arabic.ayahs.length - 1) {
                                 setPlayingAyah(data.arabic.ayahs[idx + 1].numberInSurah);
                               } else {
                                 setPlayingAyah(null);
                               }
                             }}
-                            autoPlay={autoPlay && playingAyah === ayah.numberInSurah}
+                            autoPlay={(loopRange ? inLoopRange : autoPlay) && playingAyah === ayah.numberInSurah}
                             playbackRate={playbackRate}
                             repeatMode={repeatAyah === ayah.numberInSurah}
                             onToggleRepeat={() => setRepeatAyah(repeatAyah === ayah.numberInSurah ? null : ayah.numberInSurah)}
@@ -313,7 +410,8 @@ export default function QuranPage() {
                         </p>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </ScrollArea>
             ) : null
