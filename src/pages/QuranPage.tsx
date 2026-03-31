@@ -540,7 +540,7 @@ export default function QuranPage() {
                           className="font-arabic text-xl md:text-2xl leading-loose text-foreground flex-1 text-right"
                         />
                       </div>
-                      <div className="border-t border-border pt-3 space-y-2 pl-11">
+                      <div className="border-t border-border pt-3 space-y-2 pl-0 md:pl-11">
                         <p className="text-sm text-foreground leading-relaxed">
                           <span className="text-xs text-muted-foreground font-semibold">বাংলা: </span>
                           {data.bengali.ayahs[idx]?.text}
