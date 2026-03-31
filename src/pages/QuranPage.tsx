@@ -126,10 +126,6 @@ export default function QuranPage() {
         </div>
       </header>
 
-      {/* Decorative bismillah */}
-      <div className="text-center pt-6 pb-2">
-        <p className="font-arabic text-[#8B7355] dark:text-[#C4A96A] text-lg opacity-60">﷽</p>
-      </div>
 
       <div className="container pb-8">
         <p className="text-[#5C4A2A] dark:text-[#C4A96A]/80 text-sm md:text-base mb-6 text-center font-medium">
