@@ -107,7 +107,7 @@ export default function AudioPage() {
         </div>
 
         {/* Player controls */}
-        <div className="bg-primary/5 rounded-xl p-6 mb-6 text-center">
+        <div className="bg-primary/5 rounded-xl p-4 sm:p-6 mb-6 text-center">
           {currentSurahInfo && (
             <div className="mb-4">
               <h2 className="font-arabic text-2xl text-primary">{currentSurahInfo.name}</h2>
