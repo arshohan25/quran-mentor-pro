@@ -200,6 +200,11 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const currentJuz = firstAyah ? getJuzNumber(selectedSurah, firstAyah.numberInSurah) : 1;
   const isFirstPageOfSurah = currentPageData?.ayahs.some(a => a.numberInSurah === 1);
 
+  // Reading progress: last ayah on current page / total ayahs in surah
+  const surahTotalAyahs = data?.arabic.ayahs.length || 1;
+  const lastAyahOnPage = currentPageData?.ayahs[currentPageData.ayahs.length - 1];
+  const readProgress = lastAyahOnPage ? Math.round((lastAyahOnPage.numberInSurah / surahTotalAyahs) * 100) : 0;
+
   return (
     <div className="min-h-screen bg-[#F5EFE0] dark:bg-[#1a1510] flex flex-col">
       {/* Header bar */}
@@ -225,7 +230,21 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
             onTajweedToggle={handleTajweedToggle}
           />
         </div>
+        {/* Reading progress bar */}
+        <div className="h-1 bg-[#1a3009]/50 dark:bg-[#0d1a05]">
+          <div
+            className="h-full bg-gradient-to-r from-[#7BAF4C] to-[#A3D977] transition-all duration-300 ease-out"
+            style={{ width: `${readProgress}%` }}
+          />
+        </div>
       </header>
+
+      {/* Progress label */}
+      <div className="bg-[#F5EFE0] dark:bg-[#1a1510] text-center py-0.5">
+        <span className="text-[9px] text-[#5C4A2A]/60 dark:text-[#9B8365]/60 font-medium">
+          {readProgress}% {t("পড়া হয়েছে", "read", "مقروء")}
+        </span>
+      </div>
 
       {/* Page jump panel */}
       {showPageJump && (
