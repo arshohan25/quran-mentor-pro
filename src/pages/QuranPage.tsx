@@ -63,6 +63,21 @@ export default function QuranPage() {
   const wordLang = language === "bn" ? "bn" : language === "ar" ? "ar" : "en";
   const { data: wordData, isLoading: wordLoading } = useWordByWord(selectedSurah, wordLang);
 
+  // Filter ayah indices based on search
+  const filteredIndices = useMemo(() => {
+    if (!ayahSearch.trim() || !data) return data?.arabic.ayahs.map((_: any, i: number) => i) || [];
+    const q = ayahSearch.trim().toLowerCase();
+    return data.arabic.ayahs
+      .map((ayah, idx) => {
+        const matchAr = ayah.text.includes(q);
+        const matchBn = data.bengali.ayahs[idx]?.text?.toLowerCase().includes(q);
+        const matchEn = data.english.ayahs[idx]?.text?.toLowerCase().includes(q);
+        const matchNum = ayah.numberInSurah.toString() === q;
+        return (matchAr || matchBn || matchEn || matchNum) ? idx : -1;
+      })
+      .filter((i) => i !== -1);
+  }, [ayahSearch, data]);
+
   useEffect(() => {
     saveLastRead(selectedSurah, 1);
   }, [selectedSurah, saveLastRead]);
