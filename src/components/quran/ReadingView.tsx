@@ -270,16 +270,14 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
         </div>
       )}
 
-      <div className="container py-3 max-w-xl mx-auto px-2">
-        {tajweedEnabled && <div className="mb-3"><TajweedLegend /></div>}
-
+      <div className="flex-1 overflow-hidden flex flex-col px-1 py-1">
         {isLoading ? (
-          <div className="space-y-3 p-4">
-            {[...Array(12)].map((_, i) => <Skeleton key={i} className="h-8 rounded" />)}
+          <div className="space-y-3 p-4 flex-1">
+            {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-8 rounded" />)}
           </div>
         ) : currentPageData ? (
           <div
-            className="relative select-none"
+            className="relative select-none flex-1 flex flex-col"
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
