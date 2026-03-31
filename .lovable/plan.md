@@ -1,41 +1,50 @@
 
 
-# Make Quran Page Fully Responsive
+# কুরআন পেজ রিডিজাইন — ক্যাটাগরি কার্ড + মুসহাফ স্টাইল রিডিং
 
-## Problem
-The header has too many controls crammed into one row — on mobile (390px), the toolbar buttons, qari selector, speed control, and language switcher overflow or get squished. The content area also uses fixed `calc()` heights that may not adapt well.
+## সারাংশ
+কুরআন পেজটি রিডিজাইন করা হবে। প্রথমে একটি **3×2 আইকন কার্ড গ্রিড** দেখাবে যেখানে বিভিন্ন সাব-ক্যাটাগরি থাকবে। প্রথম ধাপে শুধু **"কুরআন রিডিং"** কার্ডটি তৈরি করা হবে — বাকিগুলো পরবর্তীতে যোগ হবে।
 
-## Plan
+## কার্ড ক্যাটাগরিগুলো (3×2 গ্রিড)
 
-### 1. Responsive Header Toolbar
-- Break the header into two rows on mobile: top row = back button + title + language switcher; bottom row = view mode toggle, speed, auto-play, loop, search, tajweed, qari selector
-- Use `flex-wrap` with proper gap so buttons wrap naturally on small screens
-- Make the qari `Select` use a shorter `min-w` on mobile (`min-w-[90px]` instead of `120px`)
+```text
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│   📖         │  │   📝         │  │   🎧         │
+│  কুরআন      │  │  তরজমা ও    │  │   অডিও      │
+│  তেলাওয়াত   │  │  তাফসির     │  │  তেলাওয়াত   │
+└──────────────┘  └──────────────┘  └──────────────┘
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│   🔤         │  │   📚         │  │   ⭐         │
+│  শব্দার্থ    │  │   হিফয      │  │  বুকমার্ক    │
+└──────────────┘  └──────────────┘  └──────────────┘
+```
 
-### 2. Mobile-Friendly Control Bar
-- Move the toolbar controls (speed, auto-play, loop, search, tajweed) into a scrollable horizontal strip below the header on small screens
-- Use `overflow-x-auto` with `flex-nowrap` so all controls are accessible via horizontal scroll
+কার্ডে ক্লিক করলে সেই ভিউ ওপেন হবে। এই ধাপে শুধু **"কুরআন তেলাওয়াত"** কার্ডটি কাজ করবে।
 
-### 3. Surah Info Banner
-- Reduce font sizes on mobile: Arabic name `text-2xl` instead of `text-3xl`, smaller padding
-- Stack metadata badges vertically on very small screens
+## কুরআন তেলাওয়াত ভিউ (মুসহাফ স্টাইল)
 
-### 4. Ayah Cards
-- Reduce padding on mobile (`p-3` instead of `p-4`)
-- Arabic text size: `text-xl` on mobile, `text-2xl` on desktop
-- Translation section: reduce left padding on mobile (`pl-0` instead of `pl-11`)
+- **প্রতি পৃষ্ঠায় ১৫ লাইন** — প্রতিটি লাইনে আরবি টেক্সট, তাজউইদ কালার কোডিং সহ
+- **কোন তরজমা নেই, কোন তাফসির নেই** — শুধু আরবি
+- **পেজ নেভিগেশন** — আগের/পরের পৃষ্ঠা বাটন
+- **সূরা সিলেক্টর** — কোন সূরা থেকে পড়া শুরু করবে
+- **তাজউইদ কালার কোডিং** চালু/বন্ধ টগল
 
-### 5. Navigation Buttons
-- On mobile, show shorter labels or just arrows with surah number
-- Reduce button padding for mobile
+## টেকনিক্যাল ডিটেইলস
 
-### 6. ScrollArea Heights
-- Replace fixed `calc(100vh-320px)` with responsive values using `md:` breakpoints
-- Use `h-[calc(100vh-280px)]` on mobile accounting for the taller wrapped header
+### ফাইল পরিবর্তন
 
-### 7. Loop Range Selector
-- Stack the from/to selectors vertically on mobile instead of horizontal row
+1. **`src/pages/QuranPage.tsx`** — সম্পূর্ণ রিডিজাইন:
+   - নতুন state: `activeSection` (null = কার্ড গ্রিড, "reading" = মুসহাফ ভিউ, ইত্যাদি)
+   - কার্ড গ্রিড: `grid grid-cols-3 gap-3` লেআউট, প্রতিটি কার্ডে Lucide আইকন + লেবেল
+   - মুসহাফ ভিউ: API থেকে আরবি টেক্সট fetch, ১৫ লাইন করে ভাগ, `TajweedText` দিয়ে রেন্ডার
+   - ব্যাক বাটন দিয়ে কার্ড গ্রিডে ফেরত যাওয়া
 
-## Files to Edit
-- `src/pages/QuranPage.tsx` — all responsive changes in one file
+2. **API ব্যবহার**: বিদ্যমান `useSurahWithTranslations` হুক ব্যবহার, শুধু `arabic` ডাটা নেওয়া হবে। পৃষ্ঠা ভিত্তিক ন্যাভিগেশনের জন্য আয়াতগুলোকে ১৫টি করে গ্রুপ করা হবে।
+
+3. **ডিজাইন**: বিদ্যমান Islamic green/gold থিম অনুসরণ, কার্ডে সূক্ষ্ম বর্ডার ও আইকন, আরবি টেক্সটে Amiri ফন্ট।
+
+### প্রথম ধাপে যা করা হবে
+- কার্ড গ্রিড UI
+- "কুরআন তেলাওয়াত" কার্ড ক্লিকে মুসহাফ রিডিং ভিউ
+- বাকি কার্ডগুলো placeholder (শুধু আইকন + নাম, ক্লিকে কিছু হবে না)
 
