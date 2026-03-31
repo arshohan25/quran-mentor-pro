@@ -209,9 +209,13 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
             <button onClick={onBack} className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></button>
             <div>
               <SurahSelector value={selectedSurah} onChange={handleSurahChange} />
-              <p className="text-[10px] opacity-70 pl-1">
-                {t("পৃষ্ঠা", "Page", "صفحة")} {realPageNum || pageIndex + 1}
-              </p>
+              <button
+                onClick={() => { setShowPageJump(!showPageJump); setPageJumpInput(String(realPageNum || "")); }}
+                className="text-[10px] opacity-70 pl-1 hover:opacity-100 transition-opacity flex items-center gap-1"
+              >
+                <Search className="w-2.5 h-2.5" />
+                {t("পৃষ্ঠা", "Page", "صفحة")} {realPageNum || pageIndex + 1} / 604
+              </button>
             </div>
           </div>
           <ReadingSettings
