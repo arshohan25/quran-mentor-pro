@@ -259,6 +259,25 @@ export default function QuranPage() {
           {/* Tajweed legend */}
           {tajweedEnabled && <div className="mb-4"><TajweedLegend /></div>}
 
+          {/* Ayah Search Bar */}
+          {showAyahSearch && (
+            <div className="mb-4 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder={t("আয়াতে শব্দ খুঁজুন...", "Search in ayahs...", "ابحث في الآيات...")}
+                value={ayahSearch}
+                onChange={(e) => setAyahSearch(e.target.value)}
+                className="pl-9"
+                autoFocus
+              />
+              {ayahSearch && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                  {filteredIndices.length} {t("ফলাফল", "results", "نتائج")}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Loop Range Selector */}
           {showLoopRange && currentSurah && (
             <div className="mb-4 rounded-xl border border-accent/30 bg-accent/5 p-4">
