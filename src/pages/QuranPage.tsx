@@ -53,7 +53,12 @@ export default function QuranPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const { data, isLoading } = useSurahWithTranslations(
-    activeSection === "reading" || activeSection === "translation" ? selectedSurah : 0
+    activeSection === "reading" || activeSection === "translation" || activeSection === "audio" ? selectedSurah : 0
+  );
+
+  const { data: audioData, isLoading: loadingAudio } = useSurahAudio(
+    activeSection === "audio" ? selectedSurah : 0,
+    selectedQari
   );
 
   const { data: wordData, isLoading: wordLoading } = useWordByWord(
