@@ -208,11 +208,11 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                   {/* Inner decorative border */}
                   <div className="m-[5px] border-[3px] border-[#8B7355]/40 dark:border-[#C4A96A]/35 rounded-sm relative">
                     
-                    {/* Corner Ornaments */}
-                    <span className="absolute -top-[2px] -left-[2px] text-[#8B7355]/70 dark:text-[#C4A96A]/60 text-[22px] leading-none select-none z-10">❦</span>
-                    <span className="absolute -top-[2px] -right-[2px] text-[#8B7355]/70 dark:text-[#C4A96A]/60 text-[22px] leading-none select-none z-10 scale-x-[-1]">❦</span>
-                    <span className="absolute -bottom-[2px] -left-[2px] text-[#8B7355]/70 dark:text-[#C4A96A]/60 text-[22px] leading-none select-none z-10 scale-y-[-1]">❦</span>
-                    <span className="absolute -bottom-[2px] -right-[2px] text-[#8B7355]/70 dark:text-[#C4A96A]/60 text-[22px] leading-none select-none z-10 scale-[-1]">❦</span>
+                    {/* Corner Ornaments — larger, more ornate */}
+                    <span className="absolute -top-[6px] -left-[6px] text-[#8B7355] dark:text-[#C4A96A] text-[36px] leading-none select-none z-10 drop-shadow-sm">❧</span>
+                    <span className="absolute -top-[6px] -right-[6px] text-[#8B7355] dark:text-[#C4A96A] text-[36px] leading-none select-none z-10 scale-x-[-1] drop-shadow-sm">❧</span>
+                    <span className="absolute -bottom-[6px] -left-[6px] text-[#8B7355] dark:text-[#C4A96A] text-[36px] leading-none select-none z-10 scale-y-[-1] drop-shadow-sm">❧</span>
+                    <span className="absolute -bottom-[6px] -right-[6px] text-[#8B7355] dark:text-[#C4A96A] text-[36px] leading-none select-none z-10 scale-[-1] drop-shadow-sm">❧</span>
 
                     {/* Top ornamental bar */}
                     <div className="h-[3px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/60 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/60 dark:to-[#C4A96A]/10" />
