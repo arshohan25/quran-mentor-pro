@@ -58,20 +58,31 @@ const SURAH_RUKU_COUNT: Record<number, number> = {
   101:1,102:1,103:1,104:1,105:1,106:1,107:1,108:1,109:1,110:1,111:1,112:1,113:1,114:1,
 };
 
-// Strip bismillah from text - handles various diacritic forms
+// Strip bismillah from text - aggressive multi-strategy approach
 function stripBismillah(text: string): string {
-  let result = text.replace(/بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ/, '').trim();
-  if (result !== text.trim() && result.length > 0) return result;
-  result = text.replace(/^بِ?سْ?مِ?\s*.{0,50}?لرَّ?حِ?يمِ?\s*/, '').trim();
-  if (result.length > 0 && result !== text.trim()) return result;
-  if (text.startsWith('بِسْ') || text.startsWith('بسم')) {
-    const idx = text.indexOf('لرحيم');
-    if (idx > 0 && idx < 60) {
-      result = text.substring(idx + 5).trim();
-      if (result.length > 0) return result;
+  const original = text.trim();
+  // Strategy 1: exact match
+  let result = original.replace(/بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ/, '').trim();
+  if (result.length > 0 && result !== original) return result;
+  // Strategy 2: broad regex - any text starting with بسم up to الرحيم variants
+  result = original.replace(/^بِ?سْ?مِ?\s*.{0,50}?(الرَّحِيمِ|ٱلرَّحِيمِ|الرحيم)\s*/, '').trim();
+  if (result.length > 0 && result !== original) return result;
+  // Strategy 3: find الرحيم within first 60 chars and cut everything before+including it
+  const markers = ['ٱلرَّحِيمِ', 'الرَّحِيمِ', 'الرحيم', 'لرَّحِيمِ', 'لرحيم'];
+  for (const marker of markers) {
+    const idx = original.indexOf(marker);
+    if (idx >= 0 && idx < 70) {
+      const after = original.substring(idx + marker.length).trim();
+      if (after.length > 0) return after;
+      return ''; // entire text was bismillah
     }
   }
-  return text;
+  // Strategy 4: if starts with بسم or بِسْ, strip first 50 chars as bismillah
+  if (original.startsWith('بِسْ') || original.startsWith('بسم') || original.startsWith('بِسۡ')) {
+    const stripped = original.substring(Math.min(50, original.length)).trim();
+    if (stripped.length > 0) return stripped;
+  }
+  return original;
 }
 
 interface QuranSectionProps {
@@ -216,13 +227,13 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
             >
               {/* === OUTER HEADER (above frame) === */}
               <div className="flex items-center justify-between px-2 pb-1.5" dir="rtl">
-                <span className="font-arabic text-[11px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
+                <span className="font-arabic text-[13px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
                   {getJuzName(currentJuz)}
                 </span>
-                <span className="text-[12px] text-[#8B7355] dark:text-[#9B8365] font-bold tabular-nums">
+                <span className="text-[14px] text-[#8B7355] dark:text-[#9B8365] font-bold tabular-nums">
                   {toArabicNum(currentPage + 1)}
                 </span>
-                <span className="font-arabic text-[11px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
+                <span className="font-arabic text-[13px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
                   {surah?.name} {toArabicNum(selectedSurah)}
                 </span>
               </div>
@@ -234,11 +245,11 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                   {/* Inner decorative border */}
                   <div className="m-[5px] border-[3px] border-[#8B7355]/40 dark:border-[#C4A96A]/35 rounded-sm relative">
                     
-                    {/* Corner Ornaments — larger, more ornate */}
-                    <span className="absolute -top-[6px] -left-[6px] text-[#8B7355] dark:text-[#C4A96A] text-[36px] leading-none select-none z-10 drop-shadow-sm">❧</span>
-                    <span className="absolute -top-[6px] -right-[6px] text-[#8B7355] dark:text-[#C4A96A] text-[36px] leading-none select-none z-10 scale-x-[-1] drop-shadow-sm">❧</span>
-                    <span className="absolute -bottom-[6px] -left-[6px] text-[#8B7355] dark:text-[#C4A96A] text-[36px] leading-none select-none z-10 scale-y-[-1] drop-shadow-sm">❧</span>
-                    <span className="absolute -bottom-[6px] -right-[6px] text-[#8B7355] dark:text-[#C4A96A] text-[36px] leading-none select-none z-10 scale-[-1] drop-shadow-sm">❧</span>
+                    {/* Corner Ornaments — CSS L-shape scrollwork */}
+                    <span className="absolute -top-[3px] -right-[3px] w-10 h-10 border-t-[3px] border-r-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-tr-2xl z-10" />
+                    <span className="absolute -top-[3px] -left-[3px] w-10 h-10 border-t-[3px] border-l-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-tl-2xl z-10" />
+                    <span className="absolute -bottom-[3px] -right-[3px] w-10 h-10 border-b-[3px] border-r-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-br-2xl z-10" />
+                    <span className="absolute -bottom-[3px] -left-[3px] w-10 h-10 border-b-[3px] border-l-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-bl-2xl z-10" />
 
                     {/* Top ornamental bar */}
                     <div className="h-[3px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/60 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/60 dark:to-[#C4A96A]/10" />
@@ -273,7 +284,13 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                     {/* === FLOWING AYAH TEXT === */}
                     <div className="px-4 py-4 md:px-6 md:py-5 flex items-start" dir="rtl">
                       <p className="font-arabic text-[28px] md:text-[32px] font-bold leading-[2.8] md:leading-[3] text-[#1a1008] dark:text-[#E8DCC8] text-justify w-full"
-                         style={{ wordSpacing: '0.15em', letterSpacing: '0.02em', textAlignLast: 'justify' }}>
+                         style={{
+                           wordSpacing: '0.15em',
+                           letterSpacing: '0.02em',
+                           textAlignLast: 'justify',
+                           backgroundImage: 'repeating-linear-gradient(to bottom, transparent 0px, transparent calc(2.8em - 2px), rgba(139,115,85,0.12) calc(2.8em - 2px), rgba(139,115,85,0.12) 2.8em)',
+                           backgroundSize: '100% 2.8em',
+                         }}>
                         {pages[currentPage]?.map((ayah, idx) => {
                           // Strip bismillah from first ayah to avoid duplicate
                           let displayText = ayah.text;
