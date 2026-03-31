@@ -105,11 +105,10 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     const result: typeof ayahs[] = [];
     let currentPageAyahs: typeof ayahs = [];
     let currentLineCount = 0;
+    // First page: surah header (3 lines) + bismillah (1 line) = 4 lines reserved → 8 lines for ayahs
+    // Subsequent pages: full 15 lines
     const hasBismillah = selectedSurah !== 9;
-
-    // First page: surah header (1 line) + bismillah (1 line) = 2 lines reserved
-    // Last page: no limit (can be < 15 lines)
-    const firstPageLines = hasBismillah ? LINES_PER_PAGE - 2 : LINES_PER_PAGE - 1;
+    const firstPageLines = hasBismillah ? LINES_PER_PAGE - 4 : LINES_PER_PAGE - 3; // header always 3 lines
     let maxLinesForCurrentPage = firstPageLines;
 
     for (const ayah of ayahs) {
