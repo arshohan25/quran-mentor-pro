@@ -328,16 +328,16 @@ export default function QuranPage() {
           </button>
 
           {currentSurah && (
-            <div className="bg-primary/5 rounded-xl p-5 mb-4 text-center space-y-3">
-              <h2 className="font-arabic text-3xl text-primary">{currentSurah.name}</h2>
-              <p className="text-foreground font-semibold">
+             <div className="bg-primary/5 rounded-xl p-3 md:p-5 mb-4 text-center space-y-2 md:space-y-3">
+              <h2 className="font-arabic text-2xl md:text-3xl text-primary">{currentSurah.name}</h2>
+              <p className="text-foreground font-semibold text-sm md:text-base">
                 {language === "bn" ? currentSurah.bengaliName : currentSurah.englishName}
               </p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground text-xs md:text-sm">
                 {currentSurah.englishNameTranslation} • {currentSurah.numberOfAyahs}{" "}
                 {t("আয়াত", "Ayahs", "آيات")}
               </p>
-              <div className="flex items-center justify-center gap-3 text-xs">
+              <div className="flex items-center justify-center gap-2 md:gap-3 text-xs flex-wrap">
                 <span className={`px-2.5 py-1 rounded-full font-medium ${
                   currentSurah.revelationType === "Meccan"
                     ? "bg-accent/15 text-accent"
@@ -351,10 +351,9 @@ export default function QuranPage() {
                   {t(`নাযিলের ক্রম: ${currentSurah.number}`, `Revelation order: ${currentSurah.number}`, `ترتيب النزول: ${currentSurah.number}`)}
                 </span>
               </div>
-              {/* Bismillah banner - not shown for Surah At-Tawba (9) */}
               {currentSurah.number !== 9 && (
                 <div className="pt-2">
-                  <p className="font-arabic text-2xl text-primary/80 leading-relaxed">
+                  <p className="font-arabic text-xl md:text-2xl text-primary/80 leading-relaxed">
                     بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
