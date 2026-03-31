@@ -245,11 +245,11 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                   {/* Inner decorative border */}
                   <div className="m-[5px] border-[3px] border-[#8B7355]/40 dark:border-[#C4A96A]/35 rounded-sm relative">
                     
-                    {/* Corner Ornaments — larger, more ornate */}
-                    <span className="absolute -top-[6px] -left-[6px] text-[#8B7355] dark:text-[#C4A96A] text-[36px] leading-none select-none z-10 drop-shadow-sm">❧</span>
-                    <span className="absolute -top-[6px] -right-[6px] text-[#8B7355] dark:text-[#C4A96A] text-[36px] leading-none select-none z-10 scale-x-[-1] drop-shadow-sm">❧</span>
-                    <span className="absolute -bottom-[6px] -left-[6px] text-[#8B7355] dark:text-[#C4A96A] text-[36px] leading-none select-none z-10 scale-y-[-1] drop-shadow-sm">❧</span>
-                    <span className="absolute -bottom-[6px] -right-[6px] text-[#8B7355] dark:text-[#C4A96A] text-[36px] leading-none select-none z-10 scale-[-1] drop-shadow-sm">❧</span>
+                    {/* Corner Ornaments — CSS L-shape scrollwork */}
+                    <span className="absolute -top-[3px] -right-[3px] w-10 h-10 border-t-[3px] border-r-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-tr-2xl z-10" />
+                    <span className="absolute -top-[3px] -left-[3px] w-10 h-10 border-t-[3px] border-l-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-tl-2xl z-10" />
+                    <span className="absolute -bottom-[3px] -right-[3px] w-10 h-10 border-b-[3px] border-r-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-br-2xl z-10" />
+                    <span className="absolute -bottom-[3px] -left-[3px] w-10 h-10 border-b-[3px] border-l-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-bl-2xl z-10" />
 
                     {/* Top ornamental bar */}
                     <div className="h-[3px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/60 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/60 dark:to-[#C4A96A]/10" />
