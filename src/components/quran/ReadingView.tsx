@@ -106,16 +106,37 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
 
   const totalPages = pages.length;
 
-  // Clamp pageIndex whenever pages change
+  // Clamp pageIndex whenever pages change, or jump to target Mushaf page
   useEffect(() => {
     if (totalPages === 0) return;
-    if (goToLastPage) {
+    if (targetMushafPage !== null) {
+      const idx = pages.findIndex(p => p.pageNum === targetMushafPage);
+      setPageIndex(idx >= 0 ? idx : 0);
+      setTargetMushafPage(null);
+    } else if (goToLastPage) {
       setPageIndex(totalPages - 1);
       setGoToLastPage(false);
     } else {
       setPageIndex(prev => Math.min(prev, totalPages - 1));
     }
-  }, [totalPages, goToLastPage]);
+  }, [totalPages, goToLastPage, targetMushafPage, pages]);
+
+  const handlePageJump = () => {
+    const num = parseInt(pageJumpInput, 10);
+    if (isNaN(num) || num < 1 || num > 604) return;
+    setShowPageJump(false);
+    setPageJumpInput("");
+    // Check if this page is within current surah
+    const idx = pages.findIndex(p => p.pageNum === num);
+    if (idx >= 0) {
+      setPageIndex(idx);
+    } else {
+      // Navigate to the surah that contains this page
+      const targetSurah = surahForPage(num);
+      setTargetMushafPage(num);
+      setSelectedSurah(targetSurah);
+    }
+  };
 
   // Auto-save reading position
   useEffect(() => {
