@@ -41,6 +41,15 @@ export default function TranslationView({ selectedSurah, setSelectedSurah, onBac
     return result;
   }, [data]);
 
+  // Auto-save reading position
+  useEffect(() => {
+    const firstIdx = pages[page]?.[0];
+    const firstAyah = data?.arabic.ayahs[firstIdx];
+    if (firstAyah) {
+      saveLastRead(selectedSurah, firstAyah.numberInSurah, page, "translation");
+    }
+  }, [selectedSurah, page, pages, data, saveLastRead]);
+
   const totalPages = pages.length;
   const currentIndices = pages[page] || [];
 
