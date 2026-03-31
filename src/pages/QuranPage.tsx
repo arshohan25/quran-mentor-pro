@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid, BookOpen, Repeat, Heart, ListMusic } from "lucide-react";
+import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid, BookOpen, Repeat, Heart, ListMusic, SearchX } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations, useWordByWord, useSurahAudio } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -58,8 +58,25 @@ export default function QuranPage() {
   const [playbackRate, setPlaybackRate] = useState(() => {
     try { return Number(localStorage.getItem("playbackRate")) || 1; } catch { return 1; }
   });
+  const [ayahSearch, setAyahSearch] = useState("");
+  const [showAyahSearch, setShowAyahSearch] = useState(false);
   const wordLang = language === "bn" ? "bn" : language === "ar" ? "ar" : "en";
   const { data: wordData, isLoading: wordLoading } = useWordByWord(selectedSurah, wordLang);
+
+  // Filter ayah indices based on search
+  const filteredIndices = useMemo(() => {
+    if (!ayahSearch.trim() || !data) return data?.arabic.ayahs.map((_: any, i: number) => i) || [];
+    const q = ayahSearch.trim().toLowerCase();
+    return data.arabic.ayahs
+      .map((ayah, idx) => {
+        const matchAr = ayah.text.includes(q);
+        const matchBn = data.bengali.ayahs[idx]?.text?.toLowerCase().includes(q);
+        const matchEn = data.english.ayahs[idx]?.text?.toLowerCase().includes(q);
+        const matchNum = ayah.numberInSurah.toString() === q;
+        return (matchAr || matchBn || matchEn || matchNum) ? idx : -1;
+      })
+      .filter((i) => i !== -1);
+  }, [ayahSearch, data]);
 
   useEffect(() => {
     saveLastRead(selectedSurah, 1);
@@ -149,6 +166,17 @@ export default function QuranPage() {
               title={t("আয়াত রেঞ্জ লুপ", "Ayah Range Loop", "تكرار نطاق الآيات")}
             >
               <ListMusic className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => { setShowAyahSearch(!showAyahSearch); if (showAyahSearch) setAyahSearch(""); }}
+              className={`p-2 rounded-lg transition-colors ${
+                showAyahSearch
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "text-primary-foreground/60 hover:text-primary-foreground"
+              }`}
+              title={t("আয়াত খুঁজুন", "Search Ayah", "بحث آية")}
+            >
+              {showAyahSearch ? <SearchX className="w-5 h-5" /> : <Search className="w-5 h-5" />}
             </button>
             <button
               onClick={() => setTajweedEnabled(!tajweedEnabled)}
@@ -245,6 +273,25 @@ export default function QuranPage() {
 
           {/* Tajweed legend */}
           {tajweedEnabled && <div className="mb-4"><TajweedLegend /></div>}
+
+          {/* Ayah Search Bar */}
+          {showAyahSearch && (
+            <div className="mb-4 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder={t("আয়াতে শব্দ খুঁজুন...", "Search in ayahs...", "ابحث في الآيات...")}
+                value={ayahSearch}
+                onChange={(e) => setAyahSearch(e.target.value)}
+                className="pl-9"
+                autoFocus
+              />
+              {ayahSearch && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                  {filteredIndices.length} {t("ফলাফল", "results", "نتائج")}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Loop Range Selector */}
           {showLoopRange && currentSurah && (
@@ -346,7 +393,8 @@ export default function QuranPage() {
             ) : data ? (
               <ScrollArea className="h-[calc(100vh-320px)]">
                 <div className="space-y-4">
-                  {data.arabic.ayahs.map((ayah, idx) => {
+                  {filteredIndices.map((idx) => {
+                    const ayah = data.arabic.ayahs[idx];
                     const inLoopRange = loopRange && ayah.numberInSurah >= loopRange.start && ayah.numberInSurah <= loopRange.end;
                     return (
                     <div key={ayah.number} className={`rounded-xl border bg-card p-4 ${inLoopRange ? "border-accent/50 ring-1 ring-accent/20" : "border-border"}`}>
