@@ -48,6 +48,32 @@ function getManzil(surahNumber: number, ayahNumber: number): number {
   return 7;
 }
 
+// Ruku counts per surah (1-114)
+const SURAH_RUKU_COUNT: Record<number, number> = {
+  1:1,2:40,3:20,4:24,5:16,6:20,7:24,8:10,9:16,10:11,11:10,12:12,13:6,14:7,15:6,16:16,17:12,18:12,19:6,20:8,
+  21:7,22:10,23:6,24:9,25:6,26:11,27:7,28:9,29:7,30:6,31:4,32:3,33:9,34:6,35:5,36:5,37:5,38:5,39:8,40:9,
+  41:6,42:5,43:7,44:3,45:4,46:4,47:4,48:4,49:2,50:3,51:3,52:2,53:3,54:3,55:3,56:3,57:4,58:3,59:3,60:2,
+  61:2,62:2,63:2,64:2,65:2,66:2,67:2,68:2,69:2,70:2,71:2,72:2,73:2,74:2,75:1,76:2,77:2,78:2,79:2,80:1,
+  81:1,82:1,83:1,84:1,85:1,86:1,87:1,88:1,89:1,90:1,91:1,92:1,93:1,94:1,95:1,96:1,97:1,98:1,99:1,100:1,
+  101:1,102:1,103:1,104:1,105:1,106:1,107:1,108:1,109:1,110:1,111:1,112:1,113:1,114:1,
+};
+
+// Strip bismillah from text - handles various diacritic forms
+function stripBismillah(text: string): string {
+  let result = text.replace(/بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ/, '').trim();
+  if (result !== text.trim() && result.length > 0) return result;
+  result = text.replace(/^بِ?سْ?مِ?\s*.{0,50}?لرَّ?حِ?يمِ?\s*/, '').trim();
+  if (result.length > 0 && result !== text.trim()) return result;
+  if (text.startsWith('بِسْ') || text.startsWith('بسم')) {
+    const idx = text.indexOf('لرحيم');
+    if (idx > 0 && idx < 60) {
+      result = text.substring(idx + 5).trim();
+      if (result.length > 0) return result;
+    }
+  }
+  return text;
+}
+
 interface QuranSectionProps {
   selectedSurah: number;
   setSelectedSurah: (n: number) => void;
