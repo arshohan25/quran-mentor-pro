@@ -238,24 +238,31 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                       <div className="px-3 py-3 md:px-5 md:py-4 min-h-[520px] flex items-start" dir="rtl">
                         <p className="font-arabic text-[20px] md:text-[24px] leading-[2.5] md:leading-[2.7] text-[#1a1008] dark:text-[#E8DCC8] text-justify w-full"
                            style={{ wordSpacing: '0.05em', letterSpacing: '0.01em' }}>
-                          {pages[currentPage]?.map((ayah) => (
-                            <span key={ayah.number}>
-                              {tajweedEnabled ? (
-                                <TajweedText
-                                  text={ayah.text}
-                                  enabled={true}
-                                  className="inline"
-                                />
-                              ) : (
-                                <span>{ayah.text}</span>
-                              )}
-                              {/* Ayah number marker — inline ornamental */}
-                              <span className="inline-flex items-center justify-center mx-0.5 text-[#2D5016] dark:text-[#7BAF4C] text-[13px] md:text-[15px] font-bold select-none align-middle"
-                                    style={{ fontFamily: 'serif' }}>
-                                ﴿{toArabicNum(ayah.numberInSurah)}﴾
+                          {pages[currentPage]?.map((ayah, idx) => {
+                            // Strip bismillah from first ayah to avoid duplicate
+                            let displayText = ayah.text;
+                            if (currentPage === 0 && idx === 0 && selectedSurah !== 9) {
+                              displayText = displayText.replace(/بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ/, '').trim();
+                            }
+                            if (!displayText && currentPage === 0 && idx === 0) return null;
+                            return (
+                              <span key={ayah.number}>
+                                {tajweedEnabled ? (
+                                  <TajweedText
+                                    text={displayText}
+                                    enabled={true}
+                                    className="inline"
+                                  />
+                                ) : (
+                                  <span>{displayText}</span>
+                                )}
+                                <span className="inline-flex items-center justify-center mx-0.5 text-[#2D5016] dark:text-[#7BAF4C] text-[13px] md:text-[15px] font-bold select-none align-middle"
+                                      style={{ fontFamily: 'serif' }}>
+                                  ﴿{toArabicNum(ayah.numberInSurah)}﴾
+                                </span>
                               </span>
-                            </span>
-                          ))}
+                            );
+                          })}
                         </p>
                       </div>
 
