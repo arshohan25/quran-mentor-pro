@@ -1,106 +1,37 @@
-# রিডিং ভিউ — PDF ডকুমেন্টের সাথে সঠিক ম্যাচ
-
-## বর্তমান সমস্যা (স্ক্রিনশট vs PDF তুলনা)
 
 
-| সমস্যা            | বর্তমান অ্যাপ                | PDF ডকুমেন্ট                     |
-| ----------------- | ---------------------------- | -------------------------------- |
-| বিসমিল্লাহ        | দুইবার দেখাচ্ছে              | একবার, কেন্দ্রে                  |
-| টেক্সট লাইন       | লাইনের মধ্যে কোনো বিভাজক নেই | প্রতিটি লাইনের নিচে সূক্ষ্ম রেখা |
-| কর্নার অর্নামেন্ট | ছোট `❧` Unicode              | বড় curved scrollwork কর্নার পিস |
-| ব্যাকগ্রাউন্ড     | ক্রিম (`#FFFDF7`) — ঠিক আছে  | সাদা/ক্রিম — ঠিক                 |
-| পেজ হেডার         | ঠিক আছে তবে ফন্ট ছোট         | বড় ও বোল্ড হেডার                |
-| সাইড মার্কার      | নেই                          | বাম পাশে `ع` (রুকু), জুয নম্বর   |
-| টেক্সট justify    | আংশিক                        | প্রতিটি লাইন পুরো প্রস্থ জুড়ে   |
-| প্রতি পেজে লােইন  | আংশিক                        | সুন্দরভাবে গোছানো ১৫ লাইন        |
+# রিডিং ভিউ — ক্রিটিকাল ফিক্স
 
+## পরীক্ষায় পাওয়া সমস্যাগুলো
 
-## পরিবর্তন পরিকল্পনা
+### ১. বিসমিল্লাহ এখনও ডুপ্লিকেট (সূরা ২ এ স্পষ্ট দেখা যাচ্ছে)
+API থেকে সূরা ২ এর প্রথম আয়াত আসছে: `بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ الٓمٓ`
+`stripBismillah()` ফাংশন কাজ করছে কিন্তু `الٓمٓ` (আলিফ লাম মীম) রিটার্ন করছে — তবুও স্ক্রিনে পুরো বিসমিল্লাহ দেখাচ্ছে। সমস্যা হতে পারে Tajweed component এর মধ্যে — `TajweedText` কে `displayText` পাস হচ্ছে কিন্তু Tajweed কম্পোনেন্ট হয়তো original text ব্যবহার করছে।
 
-### ফাইল: `src/components/quran/ReadingView.tsx`
+### ২. ফন্ট অনেক বড়, ১৫ লাইন ফিট হচ্ছে না
+বর্তমানে `text-[28px] md:text-[32px]` এবং `leading-[2.8]` — এতে প্রতি পেজে মাত্র ~৮ লাইন দেখাচ্ছে। PDF-এ ১৫ লাইন কম্প্যাক্টভাবে ফিট করা আছে।
 
-**১. বিসমিল্লাহ ডুপ্লিকেট চূড়ান্ত ফিক্স**
+### ৩. সূরা আল-ফাতিহায় (৭ আয়াত) পুরো সূরা এক পেজে হওয়া উচিত কিন্তু স্ক্রল করতে হচ্ছে
 
-- `stripBismillah` ফাংশন কাজ করছে না — API টেক্সটে সম্ভবত ভিন্ন encoding
-- নতুন পদ্ধতি: `numberInSurah === 1` এবং `currentPage === 0` হলে, টেক্সটের প্রথম ৫০ ক্যারেক্টারে `بسم` থাকলে সেই অংশ বাদ দেওয়া
-- আরো aggressive regex: `/بسم.{0,50}?(الرحيم|لرَّحِيمِ|لرحيم)/` — diacritics সহ/ছাড়া উভয়ই ধরবে
+## সমাধান — `src/components/quran/ReadingView.tsx`
 
-**২. প্রতিটি লাইনের মধ্যে সূক্ষ্ম horizontal rule**
+### ফিক্স ১: বিসমিল্লাহ স্ট্রিপিং ডিবাগ ও ফিক্স
+- `stripBismillah` এ আরেকটি strategy যোগ: `ٱلرَّحِيمِ` এর পরে space + বাকি text — এটাই return
+- গুরুত্বপূর্ণ: Tajweed enabled থাকলেও `displayText` (stripped version) পাস হচ্ছে কিনা নিশ্চিত করা
+- `TajweedText` কম্পোনেন্ট চেক করে দেখা — `text` prop ঠিকমতো ব্যবহার হচ্ছে কিনা
 
-- PDF-তে প্রতিটি টেক্সট লাইনের নিচে পাতলা রেখা আছে — এটা আসল মুসহাফের বৈশিষ্ট্য
-- CSS দিয়ে: `background-image: repeating-linear-gradient(...)` ব্যবহার করে line-height অনুযায়ী পটভূমিতে ruled lines তৈরি
-- এতে টেক্সট flowing থাকবে কিন্তু নিচে ruled lines দেখাবে (notebook paper এর মতো)
+### ফিক্স ২: ফন্ট সাইজ ও লাইন-হাইট কমানো — ১৫ লাইন ফিটের জন্য
+- `text-[28px] md:text-[32px]` → `text-[20px] md:text-[22px]`
+- `leading-[2.8] md:leading-[3]` → `leading-[2.2] md:leading-[2.4]`
+- `word-spacing: 0.15em` → `0.08em`
+- Ruled line gradient কে নতুন line-height অনুযায়ী adjust
+- `CHARS_PER_LINE` কে `30` থেকে `40` এ বাড়ানো (ছোট ফন্টে বেশি ক্যারেক্টার ফিট হবে)
 
-**৩. কর্নার অর্নামেন্ট আপগ্রেড**
-
-- বর্তমান ছোট `❧` বাদ দিয়ে CSS-based scrollwork কর্নার
-- প্রতিটি কর্নারে `width: 40px; height: 40px` box, `border` দিয়ে L-shape + `border-radius` দিয়ে কার্ল ইফেক্ট
-- অথবা আরো বড় Unicode ornament `❦` সাইজ `text-[48px]` করে
-
-**৪. সাইড মার্জিন রুকু মার্কার**
-
-- PDF-তে ডান পাশে `ع` চিহ্ন (রুকু সমাপ্তি) দেখা যায়
-- এটা এখন implement না করে পরবর্তীতে যোগ করা যাবে — প্রথমে মূল layout ঠিক করা জরুরি
-
-**৫. হেডার ফন্ট সাইজ বাড়ানো**
-
-- বর্তমান `text-[11px]` → `text-[13px]` হেডারে
-- পেজ নম্বর `text-[12px]` → `text-[14px]`
-
-**৫. প্রতি পেজে লাইন ঠিক রাখা**
-
-- প্রতি লাইনে সুন্দরভাবে গুছিয়ে ১৫ লাইন থাকবে ডকুমেন্ট অনুযায়ী, প্রয়োজনে প্রতিটা পেজ ডকুমেন্ট থেকে কপি করে বসাও
-
-### টেকনিক্যাল ডিটেইল
-
-**Ruled lines (CSS background approach):**
-
-```css
-/* line-height ~2.8em, font-size 28px → each line ≈ 78px */
-background-image: repeating-linear-gradient(
-  to bottom,
-  transparent 0px,
-  transparent 76px,
-  rgba(139,115,85,0.15) 76px,
-  rgba(139,115,85,0.15) 78px
-);
-```
-
-এটা `<p>` element-এ inline style হিসেবে যোগ করা হবে, যাতে প্রতিটি লাইনের ঠিক নিচে পাতলা রেখা দেখায়।
-
-**Bismillah aggressive strip:**
-
-```typescript
-function stripBismillah(text: string): string {
-  // Try multiple patterns for different diacritic forms
-  let result = text.replace(/بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ/, '').trim();
-  if (result !== text.trim() && result.length > 0) return result;
-  // Broader: any text starting with بسم up to الرحيم
-  result = text.replace(/^بِ?سْ?مِ?\s*.{0,50}?لرَّ?حِ?يمِ?\s*/, '').trim();
-  if (result.length > 0 && result !== text.trim()) return result;
-  // Last resort: find لرحيم and cut everything before it
-  if (text.startsWith('بِسْ') || text.startsWith('بسم')) {
-    const idx = text.indexOf('لرحيم');
-    if (idx > 0 && idx < 60) {
-      return text.substring(idx + 5).trim() || text;
-    }
-  }
-  return text;
-}
-```
-
-**Corner ornament CSS:**
-
-```html
-<!-- Each corner: absolute positioned decorative L-shape -->
-<span class="absolute -top-2 -right-2 w-10 h-10 border-t-[3px] border-r-[3px] 
-  border-[#8B7355] rounded-tr-xl" />
-```
-
-চার কোণায় ৪টি ভিন্ন দিকে rotated L-shape border — PDF-এর curved scrollwork-এর কাছাকাছি।
+### ফিক্স ৩: আয়াত নম্বর মার্কার সাইজ কমানো
+- `text-[15px] md:text-[17px]` → `text-[12px] md:text-[14px]` — টেক্সটের সাথে proportional
 
 ### ফাইল পরিবর্তন
+1. `src/components/quran/ReadingView.tsx` — ফন্ট সাইজ, লাইন-হাইট, বিসমিল্লাহ ফিক্স
+2. `src/components/quran/types.ts` — `CHARS_PER_LINE = 40`
+3. সম্ভবত `src/components/TajweedText.tsx` — চেক করতে হবে text prop ঠিকমতো render হচ্ছে কিনা
 
-- প্রতি লাইনে সুন্দরভাবে গুছিয়ে ১৫ লাইন থাকবে ডকুমেন্ট অনুযায়ী, প্রয়োজনে প্রতিটা পেজ ডকুমেন্ট থেকে কপি করে বসাও
-
-শুধু ১টি ফাইল: `src/components/quran/ReadingView.tsx`
