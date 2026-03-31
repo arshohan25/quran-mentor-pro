@@ -146,6 +146,41 @@ const Index = () => {
         {/* Daily Ayah */}
         <DailyAyah />
 
+        {/* Daily Dua Reminder */}
+        <div className="islamic-card p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {duaNotifEnabled ? <Bell className="w-4 h-4 text-accent" /> : <BellOff className="w-4 h-4 text-muted-foreground" />}
+              <h3 className="text-sm font-semibold text-foreground">
+                {t("আজকের দোয়া", "Today's Dua", "دعاء اليوم")}
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground">
+                {t("নোটিফিকেশন", "Notify", "تنبيه")}
+              </span>
+              <Switch
+                checked={duaNotifEnabled}
+                onCheckedChange={() => {
+                  if (duaPerm !== "granted") {
+                    requestDuaPerm();
+                  }
+                  toggleDuaNotif();
+                }}
+              />
+            </div>
+          </div>
+          {todaysDua && (
+            <div className="space-y-2">
+              <p className="font-arabic text-base leading-[2] text-foreground">{todaysDua.arabic}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {language === "bn" ? todaysDua.bn : todaysDua.en}
+              </p>
+              <p className="text-[10px] text-muted-foreground/60">📖 {todaysDua.reference}</p>
+            </div>
+          )}
+        </div>
+
         {/* More Features */}
         <div>
           <h3 className="text-sm font-semibold text-foreground mb-3">
