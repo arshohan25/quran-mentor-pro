@@ -403,7 +403,7 @@ export default function QuranPage() {
                   </button>
                 )}
               </div>
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2 md:gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
                   <label className="text-xs text-muted-foreground">{t("শুরু", "From", "من")}</label>
                   <select
