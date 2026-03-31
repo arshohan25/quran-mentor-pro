@@ -98,6 +98,13 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
   const surah = surahList.find(s => s.number === selectedSurah);
 
+  // Auto-save reading position
+  useEffect(() => {
+    const firstAyah = pages[currentPage]?.[0];
+    if (firstAyah) {
+      saveLastRead(selectedSurah, firstAyah.numberInSurah, currentPage, "reading");
+    }
+  }, [selectedSurah, currentPage, pages, saveLastRead]);
 
   const pages = useMemo(() => {
     if (!data) return [];
