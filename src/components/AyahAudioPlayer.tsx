@@ -47,7 +47,7 @@ export default function AyahAudioPlayer({ audioUrl, isActive, onPlay, onStop, au
     }
   }, [playbackRate]);
 
-  const setupAudio = useCallback((audio: Audio) => {
+  const setupAudio = useCallback((audio: HTMLAudioElement) => {
     audio.playbackRate = playbackRate;
     audioRef.current = audio;
     audio.oncanplaythrough = () => setLoading(false);
