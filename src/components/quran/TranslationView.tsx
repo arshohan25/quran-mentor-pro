@@ -16,7 +16,7 @@ import { LINES_PER_PAGE, type QuranSectionProps } from "./types";
 
 export default function TranslationView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
   const { t } = useLanguage();
-  const { toggleFavorite, isFavorite } = useBookmark();
+  const { toggleFavorite, isFavorite, saveLastRead } = useBookmark();
   const [page, setPage] = useState(0);
   const [arabicFontSize, setArabicFontSize] = useState(() => {
     try { return Number(localStorage.getItem("arabicFontSize")) || 20; } catch { return 20; }
