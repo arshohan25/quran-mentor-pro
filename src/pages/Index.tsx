@@ -1,4 +1,4 @@
-import { Book, Mic, Headphones, BookOpen, Clock, BookMarked, Brain } from "lucide-react";
+import { Book, Mic, Headphones, BookOpen, Clock, BookMarked, Brain, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
@@ -52,6 +52,13 @@ const Index = () => {
       desc: t("সব সূরার মুখস্থ অগ্রগতি একনজরে দেখুন", "Track memorization progress across all surahs", "تتبع تقدم الحفظ"),
       path: "/hifz",
       gradient: "from-primary to-secondary",
+    },
+    {
+      icon: Heart,
+      title: t("বুকমার্ক", "Bookmarks", "المحفوظات"),
+      desc: t("সেভ করা আয়াতগুলো পড়ুন", "Read your saved ayahs", "اقرأ آياتك المحفوظة"),
+      path: "/bookmarks",
+      gradient: "from-destructive/80 to-accent",
     },
   ];
 
