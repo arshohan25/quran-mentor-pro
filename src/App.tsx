@@ -15,6 +15,7 @@ import PrayerPage from "./pages/PrayerPage.tsx";
 import PrayerTimesPage from "./pages/PrayerTimesPage.tsx";
 import HifzDashboardPage from "./pages/HifzDashboardPage.tsx";
 import BookmarksPage from "./pages/BookmarksPage.tsx";
+import QuranPlannerPage from "./pages/QuranPlannerPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ function AnimatedRoutes() {
         <Route path="/prayer-times" element={<PageTransition><PrayerTimesPage /></PageTransition>} />
         <Route path="/hifz" element={<PageTransition><HifzDashboardPage /></PageTransition>} />
         <Route path="/bookmarks" element={<PageTransition><BookmarksPage /></PageTransition>} />
+        <Route path="/planner" element={<PageTransition><QuranPlannerPage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
