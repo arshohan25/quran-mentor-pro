@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, BookOpen, BookText, Headphones, Languages, GraduationCap, Star, ChevronLeft, ChevronRight, Palette, Search, Play, Pause, SkipForward, SkipBack } from "lucide-react";
+import { ArrowLeft, BookOpen, BookText, Headphones, Languages, GraduationCap, Star, ChevronLeft, ChevronRight, Palette, Search, Play, Pause, SkipForward, SkipBack, Eye, EyeOff } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations, useWordByWord, useSurahAudio } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
