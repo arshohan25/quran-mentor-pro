@@ -3,6 +3,9 @@ import { useState, useCallback } from "react";
 interface Bookmark {
   surah: number;
   ayah: number;
+  page?: number;
+  section?: string;
+  timestamp?: number;
 }
 
 interface AudioBookmark extends Bookmark {
