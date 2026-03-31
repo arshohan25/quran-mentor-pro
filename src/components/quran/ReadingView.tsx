@@ -113,13 +113,26 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     const result: typeof ayahs[] = [];
     let currentPageAyahs: typeof ayahs = [];
     let currentLineCount = 0;
+    const hasBismillah = selectedSurah !== 9;
+
+    // First page: surah header (1 line) + bismillah (1 line) = 2 lines reserved
+    // Last page: no limit (can be < 15 lines)
+    const firstPageLines = hasBismillah ? LINES_PER_PAGE - 2 : LINES_PER_PAGE - 1;
+    let maxLinesForCurrentPage = firstPageLines;
 
     for (const ayah of ayahs) {
-      const ayahLines = Math.max(1, Math.ceil(ayah.text.length / CHARS_PER_LINE));
-      if (currentLineCount + ayahLines > LINES_PER_PAGE && currentPageAyahs.length > 0) {
+      let textForCounting = ayah.text;
+      // Strip bismillah from first ayah for line counting
+      if (result.length === 0 && currentPageAyahs.length === 0 && hasBismillah) {
+        textForCounting = stripBismillah(textForCounting);
+        if (!textForCounting) textForCounting = ayah.text; // fallback
+      }
+      const ayahLines = Math.max(1, Math.ceil(textForCounting.length / CHARS_PER_LINE));
+      if (currentLineCount + ayahLines > maxLinesForCurrentPage && currentPageAyahs.length > 0) {
         result.push(currentPageAyahs);
         currentPageAyahs = [ayah];
         currentLineCount = ayahLines;
+        maxLinesForCurrentPage = LINES_PER_PAGE; // subsequent pages get full 15 lines
       } else {
         currentPageAyahs.push(ayah);
         currentLineCount += ayahLines;
@@ -127,7 +140,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     }
     if (currentPageAyahs.length) result.push(currentPageAyahs);
     return result;
-  }, [data]);
+  }, [data, selectedSurah]);
 
   const totalPages = pages.length;
   const canGoPrev = currentPage > 0 || selectedSurah > 1;
