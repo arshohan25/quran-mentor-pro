@@ -222,10 +222,13 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                       <>
                         {/* Rich Surah title header — PDF style */}
                         <div className="py-3 text-center border-b-2 border-[#8B7355]/25 dark:border-[#C4A96A]/25 bg-gradient-to-b from-[#F5EFE0]/60 to-transparent dark:from-[#2a1f0e]/40">
-                          <div className="flex items-center justify-center gap-4 font-arabic text-[12px] md:text-[14px] text-[#5C4A2A] dark:text-[#C4A96A]">
+                          <div className="flex items-center justify-center gap-3 md:gap-5 font-arabic text-[12px] md:text-[14px] text-[#5C4A2A] dark:text-[#C4A96A]">
                             <span>آياتها {toArabicNum(surah?.numberOfAyahs || 0)}</span>
                             <span className="text-[16px] md:text-[18px] font-bold">سُورَةُ {surah?.name}</span>
                             <span>{surah?.revelationType === "Meccan" ? "مَكِّيَّة" : "مَدَنِيَّة"}</span>
+                          </div>
+                          <div className="font-arabic text-[11px] md:text-[13px] text-[#8B7355] dark:text-[#9B8365] mt-1">
+                            ركوعاتها {toArabicNum(SURAH_RUKU_COUNT[selectedSurah] || 1)}
                           </div>
                         </div>
                         {/* Bismillah — premium centered style */}
