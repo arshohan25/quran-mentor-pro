@@ -31,7 +31,7 @@ const CATEGORIES = [
 
 export default function QuranPage() {
   const { t, language } = useLanguage();
-  const { saveLastAudio } = useBookmark();
+  const { saveLastAudio, bookmarks, toggleFavorite, isFavorite } = useBookmark();
   const [searchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState<ActiveSection>(() => {
     const s = searchParams.get("surah");
