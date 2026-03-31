@@ -5,7 +5,11 @@ import { useBookmark } from "@/hooks/useBookmark";
 import { Card } from "@/components/ui/card";
 import { type QuranSectionProps } from "./types";
 
-export default function BookmarksView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps & { onNavigateToReading: (surah: number) => void }) {
+interface BookmarksViewProps extends QuranSectionProps {
+  onNavigateToReading: (surah: number) => void;
+}
+
+export default function BookmarksView({ selectedSurah, setSelectedSurah, onBack, onNavigateToReading }: BookmarksViewProps) {
   const { t, language } = useLanguage();
   const { bookmarks, toggleFavorite } = useBookmark();
   const favorites = bookmarks.favorites || [];
