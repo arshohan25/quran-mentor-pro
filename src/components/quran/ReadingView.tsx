@@ -225,7 +225,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                           <div className="flex items-center justify-center gap-4 font-arabic text-[12px] md:text-[14px] text-[#5C4A2A] dark:text-[#C4A96A]">
                             <span>آياتها {toArabicNum(surah?.numberOfAyahs || 0)}</span>
                             <span className="text-[16px] md:text-[18px] font-bold">سُورَةُ {surah?.name}</span>
-                            <span>{surah?.revealType === "Meccan" ? "مَكِّيَّة" : "مَدَنِيَّة"}</span>
+                            <span>{surah?.revelationType === "Meccan" ? "مَكِّيَّة" : "مَدَنِيَّة"}</span>
                           </div>
                         </div>
                         {/* Bismillah — premium centered style */}
