@@ -43,7 +43,26 @@ export default function QuranPage() {
     try { return localStorage.getItem("tajweedEnabled") !== "false"; } catch { return true; }
   });
 
-  const { data, isLoading } = useSurahWithTranslations(activeSection === "reading" ? selectedSurah : 0);
+  const { data, isLoading } = useSurahWithTranslations(
+    activeSection === "reading" || activeSection === "translation" ? selectedSurah : 0
+  );
+
+  // Translation pages
+  const translationPages = useMemo(() => {
+    if (!data) return [];
+    const ayahs = data.arabic.ayahs;
+    const result: number[][] = [];
+    for (let i = 0; i < ayahs.length; i += LINES_PER_PAGE) {
+      result.push(ayahs.slice(i, i + LINES_PER_PAGE).map((_, idx) => i + idx));
+    }
+    return result;
+  }, [data]);
+
+  const [translationPage, setTranslationPage] = useState(0);
+
+  useEffect(() => {
+    setTranslationPage(0);
+  }, [selectedSurah]);
 
   useEffect(() => {
     localStorage.setItem("tajweedEnabled", String(tajweedEnabled));
