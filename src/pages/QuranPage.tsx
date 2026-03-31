@@ -58,6 +58,7 @@ export default function QuranPage() {
 
   // Hifz state
   const [hifzPage, setHifzPage] = useState(0);
+  const [showHifzDashboard, setShowHifzDashboard] = useState(false);
   const [hiddenAyahs, setHiddenAyahs] = useState<Set<number>>(new Set());
   const [hifzMode, setHifzMode] = useState<"manual" | "all-hidden">("manual");
 
