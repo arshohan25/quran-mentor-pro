@@ -153,6 +153,17 @@ export default function QuranPage() {
               <ListMusic className="w-5 h-5" />
             </button>
             <button
+              onClick={() => { setShowAyahSearch(!showAyahSearch); if (showAyahSearch) setAyahSearch(""); }}
+              className={`p-2 rounded-lg transition-colors ${
+                showAyahSearch
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "text-primary-foreground/60 hover:text-primary-foreground"
+              }`}
+              title={t("আয়াত খুঁজুন", "Search Ayah", "بحث آية")}
+            >
+              {showAyahSearch ? <SearchX className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+            </button>
+            <button
               onClick={() => setTajweedEnabled(!tajweedEnabled)}
               className={`p-2 rounded-lg transition-colors ${
                 tajweedEnabled
