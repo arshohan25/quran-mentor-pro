@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import TajweedText, { TajweedLegend } from "@/components/TajweedText";
 import SurahSelector from "./SurahSelector";
 import SurahNav from "./SurahNav";
-import { LINES_PER_PAGE, type QuranSectionProps } from "./types";
+import { LINES_PER_PAGE, CHARS_PER_LINE, type QuranSectionProps } from "./types";
 
 // Convert number to Arabic numerals
 function toArabicNum(n: number): string {
@@ -50,9 +50,21 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     if (!data) return [];
     const ayahs = data.arabic.ayahs;
     const result: typeof ayahs[] = [];
-    for (let i = 0; i < ayahs.length; i += LINES_PER_PAGE) {
-      result.push(ayahs.slice(i, i + LINES_PER_PAGE));
+    let currentPageAyahs: typeof ayahs = [];
+    let currentLineCount = 0;
+
+    for (const ayah of ayahs) {
+      const ayahLines = Math.max(1, Math.ceil(ayah.text.length / CHARS_PER_LINE));
+      if (currentLineCount + ayahLines > LINES_PER_PAGE && currentPageAyahs.length > 0) {
+        result.push(currentPageAyahs);
+        currentPageAyahs = [ayah];
+        currentLineCount = ayahLines;
+      } else {
+        currentPageAyahs.push(ayah);
+        currentLineCount += ayahLines;
+      }
     }
+    if (currentPageAyahs.length) result.push(currentPageAyahs);
     return result;
   }, [data]);
 
