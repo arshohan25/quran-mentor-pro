@@ -1168,6 +1168,8 @@ export default function QuranPage() {
               <ChevronRight className="w-3 h-3" />
             </button>
           </div>
+          </>
+          )}
         </div>
       </div>
     );
