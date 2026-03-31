@@ -254,7 +254,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                     {/* Bismillah — 1 line, centered, large */}
                     {currentPage === 0 && selectedSurah !== 9 && (
                       <div className="border-b border-[#8B7355]/40 dark:border-[#C4A96A]/30 py-2.5 text-center">
-                        <p className="font-arabic text-[26px] md:text-[30px] font-bold text-[#2D5016] dark:text-[#7BAF4C] leading-relaxed">
+                        <p className="font-arabic text-[20px] sm:text-[26px] md:text-[30px] font-bold text-[#2D5016] dark:text-[#7BAF4C] leading-relaxed">
                           بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                         </p>
                       </div>
