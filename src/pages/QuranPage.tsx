@@ -53,6 +53,8 @@ export default function QuranPage() {
   const [playingAyah, setPlayingAyah] = useState<number | null>(null);
   const [autoPlay, setAutoPlay] = useState(false);
   const [repeatAyah, setRepeatAyah] = useState<number | null>(null);
+  const [loopRange, setLoopRange] = useState<{ start: number; end: number } | null>(null);
+  const [showLoopRange, setShowLoopRange] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(() => {
     try { return Number(localStorage.getItem("playbackRate")) || 1; } catch { return 1; }
   });
