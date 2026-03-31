@@ -1,4 +1,4 @@
-import { Book, Mic, Headphones, BookOpen, Clock, BookMarked, Brain, Heart, Calendar, ChevronRight, Compass, Hash, BookHeart, CalendarDays } from "lucide-react";
+import { Book, Mic, Headphones, BookOpen, Clock, BookMarked, Brain, Heart, Calendar, ChevronRight, Compass, Hash, BookHeart, CalendarDays, Bell, BellOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
@@ -6,6 +6,8 @@ import { surahList } from "@/data/surahList";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import DailyAyah from "@/components/DailyAyah";
 import ReadingProgress from "@/components/ReadingProgress";
+import { useDailyDuaNotification } from "@/hooks/useDailyDuaNotification";
+import { Switch } from "@/components/ui/switch";
 
 const Index = () => {
   const { t, language } = useLanguage();
