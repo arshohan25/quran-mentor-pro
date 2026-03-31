@@ -659,6 +659,133 @@ export default function QuranPage() {
     );
   }
 
+  // Audio Recitation View
+  if (activeSection === "audio") {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="bg-primary text-primary-foreground py-3">
+          <div className="container">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button onClick={() => { setActiveSection(null); if (audioRef.current) audioRef.current.pause(); setIsPlaying(false); }} className="hover:opacity-80">
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <h1 className="text-base md:text-lg font-bold">{t("অডিও তেলাওয়াত", "Audio Recitation", "التلاوة الصوتية")}</h1>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="container py-4 max-w-2xl mx-auto">
+          {/* Selectors */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            <Select value={String(selectedSurah)} onValueChange={(v) => { setSelectedSurah(Number(v)); setCurrentAyah(0); setIsPlaying(false); if (audioRef.current) audioRef.current.pause(); }}>
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-80">
+                {surahList.map((s) => (
+                  <SelectItem key={s.number} value={String(s.number)} className="text-xs">
+                    {s.number}. {language === "bn" ? s.bengaliName : s.englishName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedQari} onValueChange={(v) => { setSelectedQari(v); setIsPlaying(false); if (audioRef.current) audioRef.current.pause(); }}>
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {qariList.map((q) => (
+                  <SelectItem key={q.id} value={q.id} className="text-xs">
+                    {language === "bn" ? q.nameBn : q.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Player controls */}
+          <div className="bg-primary/5 rounded-xl p-5 mb-4 text-center">
+            {currentSurah && (
+              <div className="mb-3">
+                <h2 className="font-arabic text-2xl text-primary">{currentSurah.name}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {t("আয়াত", "Ayah", "آية")} {currentAyah + 1} / {currentSurah.numberOfAyahs}
+                </p>
+              </div>
+            )}
+            <div className="flex items-center justify-center gap-4">
+              <Button variant="outline" size="icon" disabled={currentAyah === 0} onClick={() => { const prev = currentAyah - 1; setCurrentAyah(prev); if (isPlaying) playAyah(prev); }}>
+                <SkipBack className="w-4 h-4" />
+              </Button>
+              <Button size="lg" className="w-14 h-14 rounded-full" onClick={togglePlay} disabled={loadingAudio}>
+                {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
+              </Button>
+              <Button variant="outline" size="icon" disabled={currentAyah >= (data?.arabic.ayahs.length || 1) - 1} onClick={() => { const next = currentAyah + 1; setCurrentAyah(next); if (isPlaying) playAyah(next); }}>
+                <SkipForward className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Ayah list */}
+          {isLoading ? (
+            <div className="space-y-3">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
+          ) : data ? (
+            <ScrollArea className="h-[calc(100vh-380px)]">
+              <div className="space-y-2">
+                {data.arabic.ayahs.map((ayah, idx) => (
+                  <button
+                    key={ayah.number}
+                    onClick={() => playAyah(idx)}
+                    className={`w-full text-left rounded-lg border p-3 transition-all ${
+                      currentAyah === idx
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-border bg-card hover:bg-muted"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-1 ${
+                        currentAyah === idx ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                      }`}>
+                        {ayah.numberInSurah}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-arabic text-base md:text-lg leading-relaxed text-right text-foreground" dir="rtl">{ayah.text}</p>
+                        <p className="text-xs text-muted-foreground mt-1 truncate">{data.bengali?.ayahs[idx]?.text}</p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          ) : null}
+
+          {/* Surah nav */}
+          <div className="flex items-center justify-between mt-4 mb-4 gap-2">
+            <button
+              onClick={() => { if (selectedSurah > 1) { setSelectedSurah(selectedSurah - 1); setCurrentAyah(0); setIsPlaying(false); if (audioRef.current) audioRef.current.pause(); } }}
+              disabled={selectedSurah <= 1}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
+            >
+              <ChevronLeft className="w-3 h-3" />
+              {selectedSurah > 1 && (language === "bn" ? surahList[selectedSurah - 2]?.bengaliName : surahList[selectedSurah - 2]?.englishName)}
+            </button>
+            <span className="text-xs text-muted-foreground">{selectedSurah} / 114</span>
+            <button
+              onClick={() => { if (selectedSurah < 114) { setSelectedSurah(selectedSurah + 1); setCurrentAyah(0); setIsPlaying(false); if (audioRef.current) audioRef.current.pause(); } }}
+              disabled={selectedSurah >= 114}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
+            >
+              {selectedSurah < 114 && (language === "bn" ? surahList[selectedSurah]?.bengaliName : surahList[selectedSurah]?.englishName)}
+              <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Placeholder for other sections
   return (
     <div className="min-h-screen bg-background">
