@@ -388,7 +388,7 @@ export default function QuranPage() {
 
           {/* Loop Range Selector */}
           {showLoopRange && currentSurah && (
-            <div className="mb-4 rounded-xl border border-accent/30 bg-accent/5 p-4">
+            <div className="mb-4 rounded-xl border border-accent/30 bg-accent/5 p-3 md:p-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                   <ListMusic className="w-4 h-4 text-accent" />
