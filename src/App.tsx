@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import PageTransition from "@/components/PageTransition";
+import BottomNav from "@/components/BottomNav";
 import Index from "./pages/Index.tsx";
 import QuranPage from "./pages/QuranPage.tsx";
 import PracticePage from "./pages/PracticePage.tsx";
@@ -57,7 +58,10 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AnimatedRoutes />
+            <div className="pb-14">
+              <AnimatedRoutes />
+            </div>
+            <BottomNav />
           </BrowserRouter>
         </TooltipProvider>
       </LanguageProvider>
