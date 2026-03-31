@@ -1,50 +1,23 @@
 
 
-# ১৫ লাইন প্রতি পৃষ্ঠা — আয়াত নয়, লাইন ভিত্তিক পেজিনেশন
+# বিসমিল্লাহ ডুপ্লিকেট ফিক্স ও স্টাইল উন্নতি
 
 ## সমস্যা
 
-বর্তমানে `LINES_PER_PAGE = 15` মানে **১৫টি আয়াত** প্রতি পৃষ্ঠায় রাখা হচ্ছে। কিন্তু আসল মুসহাফে প্রতি পৃষ্ঠায় **১৫টি লাইন** থাকে — একটি আয়াত ২-৩ লাইন নিতে পারে, আবার একটি ছোট আয়াত এক লাইনেরও কম হতে পারে। তাই আয়াত সংখ্যা দিয়ে পেজিনেশন করলে মুসহাফ লুক আসে না।
+1. **বিসমিল্লাহ দুইবার দেখাচ্ছে**: লাইন 216-231 এ হার্ডকোডেড বিসমিল্লাহ আছে, আবার API থেকে আসা প্রথম আয়াতেও বিসমিল্লাহ টেক্সট থাকে — তাই দুইবার রেন্ডার হচ্ছে।
+2. **বিসমিল্লাহ স্টাইল**: ফন্ট ও alignment আরো প্রিমিয়াম হওয়া দরকার।
 
-## সমাধান
+## সমাধান — `src/components/quran/ReadingView.tsx`
 
-প্রতিটি আয়াতের আনুমানিক লাইন সংখ্যা হিসাব করে (character count ÷ chars-per-line) পেজ ভাগ করা হবে যাতে প্রতি পৃষ্ঠায় ~১৫ লাইনের কাছাকাছি টেক্সট থাকে।
+### ১. ডুপ্লিকেট বিসমিল্লাহ রিমুভ
+- flowing text রেন্ডারের সময় (line 237), প্রথম পৃষ্ঠায় (`currentPage === 0`) এবং সূরা ৯ ছাড়া অন্য সূরায়, প্রথম আয়াতের টেক্সট থেকে বিসমিল্লাহ অংশ (`بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ`) strip করা হবে
+- যদি strip করার পর টেক্সট খালি হয়ে যায়, তাহলে সেই আয়াত skip করা হবে না — শুধু বিসমিল্লাহ অংশটুকু বাদ যাবে
 
-## পরিবর্তন
+### ২. বিসমিল্লাহ স্টাইল উন্নতি
+- `font-arabic` ক্লাস রাখা, সাইজ `text-[24px] md:text-[26px]`
+- `text-center` দিয়ে মাঝখানে align
+- গ্রিন কালার (`text-[#2D5016]`) বজায়, সুন্দর `py-4` spacing
+- ornamental divider line উপরে-নিচে
 
-### `src/components/quran/ReadingView.tsx`
-
-**পেজিনেশন লজিক পরিবর্তন** — `pages` useMemo-তে:
-
-```
-// বর্তমান (ভুল): প্রতি ১৫ আয়াত = ১ পৃষ্ঠা
-for (let i = 0; i < ayahs.length; i += LINES_PER_PAGE) {
-  result.push(ayahs.slice(i, i + LINES_PER_PAGE));
-}
-
-// নতুন (সঠিক): আয়াতের টেক্সট দৈর্ঘ্য অনুযায়ী ১৫ লাইন = ১ পৃষ্ঠা
-const CHARS_PER_LINE = 45; // আরবি ক্যারেক্টার প্রতি লাইনে (মোবাইল ভিউপোর্টে)
-let currentPageAyahs = [];
-let currentLineCount = 0;
-
-for (const ayah of ayahs) {
-  const ayahLines = Math.max(1, Math.ceil(ayah.text.length / CHARS_PER_LINE));
-  if (currentLineCount + ayahLines > 15 && currentPageAyahs.length > 0) {
-    result.push(currentPageAyahs);
-    currentPageAyahs = [ayah];
-    currentLineCount = ayahLines;
-  } else {
-    currentPageAyahs.push(ayah);
-    currentLineCount += ayahLines;
-  }
-}
-if (currentPageAyahs.length) result.push(currentPageAyahs);
-```
-
-এতে প্রতি পৃষ্ঠায় টেক্সটের পরিমাণ প্রায় সমান থাকবে এবং মুসহাফের মতো ১৫ লাইনের পৃষ্ঠা দেখাবে।
-
-### `src/components/quran/types.ts`
-- `LINES_PER_PAGE` এর পাশাপাশি `CHARS_PER_LINE = 45` কনস্ট্যান্ট export করা
-
-অন্য কোনো ফাইলে পরিবর্তন লাগবে না।
+কোনো অন্য ফাইলে পরিবর্তন লাগবে না।
 
