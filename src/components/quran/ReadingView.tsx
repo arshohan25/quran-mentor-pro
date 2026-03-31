@@ -221,11 +221,15 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                               سُورَةُ {surah?.name}
                             </p>
                           </div>
-                          {/* Bismillah */}
-                          <div className="py-3 text-center border-b border-[#8B7355]/10 dark:border-[#C4A96A]/10">
-                            <p className="font-arabic text-[22px] md:text-[24px] text-[#2D5016] dark:text-[#7BAF4C] leading-relaxed">
-                              بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-                            </p>
+                          {/* Bismillah — premium centered style */}
+                          <div className="py-4 text-center">
+                            <div className="inline-block">
+                              <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-[#8B7355]/40 to-transparent dark:via-[#C4A96A]/40 mb-3" />
+                              <p className="font-arabic text-[24px] md:text-[26px] text-[#2D5016] dark:text-[#7BAF4C] leading-relaxed tracking-wide">
+                                بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                              </p>
+                              <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-[#8B7355]/40 to-transparent dark:via-[#C4A96A]/40 mt-3" />
+                            </div>
                           </div>
                         </>
                       )}
