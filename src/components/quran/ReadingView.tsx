@@ -58,31 +58,23 @@ const SURAH_RUKU_COUNT: Record<number, number> = {
   101:1,102:1,103:1,104:1,105:1,106:1,107:1,108:1,109:1,110:1,111:1,112:1,113:1,114:1,
 };
 
-// Strip bismillah from text - aggressive multi-strategy approach
+// Strip bismillah from text - find الرحيم and take everything after it
 function stripBismillah(text: string): string {
-  const original = text.trim();
-  // Strategy 1: exact match
-  let result = original.replace(/بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ/, '').trim();
-  if (result.length > 0 && result !== original) return result;
-  // Strategy 2: broad regex - any text starting with بسم up to الرحيم variants
-  result = original.replace(/^بِ?سْ?مِ?\s*.{0,50}?(الرَّحِيمِ|ٱلرَّحِيمِ|الرحيم)\s*/, '').trim();
-  if (result.length > 0 && result !== original) return result;
-  // Strategy 3: find الرحيم within first 60 chars and cut everything before+including it
+  const t = text.trim();
   const markers = ['ٱلرَّحِيمِ', 'الرَّحِيمِ', 'الرحيم', 'لرَّحِيمِ', 'لرحيم'];
   for (const marker of markers) {
-    const idx = original.indexOf(marker);
-    if (idx >= 0 && idx < 70) {
-      const after = original.substring(idx + marker.length).trim();
-      if (after.length > 0) return after;
-      return ''; // entire text was bismillah
+    const idx = t.indexOf(marker);
+    if (idx >= 0 && idx < 80) {
+      const after = t.substring(idx + marker.length).trim();
+      return after.length > 0 ? after : '';
     }
   }
-  // Strategy 4: if starts with بسم or بِسْ, strip first 50 chars as bismillah
-  if (original.startsWith('بِسْ') || original.startsWith('بسم') || original.startsWith('بِسۡ')) {
-    const stripped = original.substring(Math.min(50, original.length)).trim();
+  // Fallback: if starts with بسم, strip up to 50 chars
+  if (t.startsWith('بِسْ') || t.startsWith('بسم') || t.startsWith('بِسۡ')) {
+    const stripped = t.substring(Math.min(50, t.length)).trim();
     if (stripped.length > 0) return stripped;
   }
-  return original;
+  return t;
 }
 
 interface QuranSectionProps {
