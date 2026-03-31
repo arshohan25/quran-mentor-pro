@@ -811,6 +811,175 @@ export default function QuranPage() {
     );
   }
 
+  // Hifz View
+  if (activeSection === "hifz") {
+    const totalHifzPages = hifzPages.length;
+    const clampedHifzPage = Math.min(hifzPage, Math.max(0, totalHifzPages - 1));
+    const currentHifzAyahs = hifzPages[clampedHifzPage] || [];
+    const allCurrentHidden = currentHifzAyahs.length > 0 && currentHifzAyahs.every(a => hiddenAyahs.has(a.number));
+
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="bg-primary text-primary-foreground py-3">
+          <div className="container">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button onClick={() => setActiveSection(null)} className="hover:opacity-80">
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <h1 className="text-base md:text-lg font-bold">{t("হিফয প্র্যাকটিস", "Hifz Practice", "تمرين الحفظ")}</h1>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    if (allCurrentHidden) {
+                      setHiddenAyahs(prev => {
+                        const next = new Set(prev);
+                        currentHifzAyahs.forEach(a => next.delete(a.number));
+                        return next;
+                      });
+                    } else {
+                      setHiddenAyahs(prev => {
+                        const next = new Set(prev);
+                        currentHifzAyahs.forEach(a => next.add(a.number));
+                        return next;
+                      });
+                    }
+                  }}
+                  className="p-1.5 rounded-lg bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 transition-colors"
+                  title={allCurrentHidden ? t("সব দেখান", "Show All", "إظهار الكل") : t("সব লুকান", "Hide All", "إخفاء الكل")}
+                >
+                  {allCurrentHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+                <Select value={String(selectedSurah)} onValueChange={(v) => setSelectedSurah(Number(v))}>
+                  <SelectTrigger className="w-auto min-w-[100px] md:min-w-[140px] h-7 md:h-8 text-xs bg-primary-foreground/10 border-none text-primary-foreground">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-80">
+                    {surahList.map((s) => (
+                      <SelectItem key={s.number} value={String(s.number)} className="text-xs">
+                        {s.number}. {language === "bn" ? s.bengaliName : s.englishName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="container py-4 max-w-2xl mx-auto">
+          {/* Surah info */}
+          {currentSurah && clampedHifzPage === 0 && (
+            <div className="bg-primary/5 rounded-xl p-4 mb-4 text-center space-y-1">
+              <h2 className="font-arabic text-2xl text-primary">{currentSurah.name}</h2>
+              <p className="text-foreground font-semibold text-sm">
+                {language === "bn" ? currentSurah.bengaliName : currentSurah.englishName}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t("আয়াতে ট্যাপ করে লুকান/দেখান", "Tap an ayah to hide/reveal", "اضغط على الآية للإخفاء/الإظهار")}
+              </p>
+            </div>
+          )}
+
+          {/* Hifz content */}
+          {isLoading ? (
+            <div className="space-y-3">
+              {[...Array(LINES_PER_PAGE)].map((_, i) => (
+                <Skeleton key={i} className="h-8 rounded" />
+              ))}
+            </div>
+          ) : currentHifzAyahs.length > 0 ? (
+            <div className="rounded-xl border border-border bg-card p-4 md:p-6">
+              <div className="space-y-1" dir="rtl">
+                {currentHifzAyahs.map((ayah) => {
+                  const isHidden = hiddenAyahs.has(ayah.number);
+                  return (
+                    <button
+                      key={ayah.number}
+                      onClick={() => toggleHideAyah(ayah.number)}
+                      className={`w-full flex items-baseline gap-2 py-2 px-1 border-b border-border/30 last:border-b-0 rounded transition-all text-right ${
+                        isHidden ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50"
+                      }`}
+                    >
+                      <span className="text-[10px] text-muted-foreground font-bold min-w-[20px] text-center shrink-0 font-sans" dir="ltr">
+                        {ayah.numberInSurah}
+                      </span>
+                      <span className={`font-arabic text-lg md:text-xl lg:text-2xl leading-[2.2] flex-1 transition-all ${
+                        isHidden ? "blur-md select-none text-muted-foreground" : "text-foreground"
+                      }`}>
+                        {ayah.text}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Stats */}
+          <div className="mt-3 text-center">
+            <span className="text-xs text-muted-foreground">
+              {t(
+                `${hiddenAyahs.size} টি আয়াত লুকানো`,
+                `${hiddenAyahs.size} ayahs hidden`,
+                `${hiddenAyahs.size} آيات مخفية`
+              )}
+            </span>
+          </div>
+
+          {/* Page navigation */}
+          <div className="flex items-center justify-between mt-4 mb-2 gap-2">
+            <button
+              onClick={() => clampedHifzPage > 0 ? setHifzPage(clampedHifzPage - 1) : selectedSurah > 1 && (setSelectedSurah(selectedSurah - 1), setHifzPage(999))}
+              disabled={clampedHifzPage === 0 && selectedSurah <= 1}
+              className="flex items-center gap-1 px-3 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              {t("আগের", "Previous", "السابقة")}
+            </button>
+            <span className="text-xs text-muted-foreground">
+              {t(
+                `পৃষ্ঠা ${clampedHifzPage + 1} / ${totalHifzPages || 1}`,
+                `Page ${clampedHifzPage + 1} / ${totalHifzPages || 1}`,
+                `صفحة ${clampedHifzPage + 1} / ${totalHifzPages || 1}`
+              )}
+            </span>
+            <button
+              onClick={() => clampedHifzPage < totalHifzPages - 1 ? setHifzPage(clampedHifzPage + 1) : selectedSurah < 114 && (setSelectedSurah(selectedSurah + 1), setHifzPage(0))}
+              disabled={clampedHifzPage >= totalHifzPages - 1 && selectedSurah >= 114}
+              className="flex items-center gap-1 px-3 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+            >
+              {t("পরের", "Next", "التالية")}
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Surah nav */}
+          <div className="flex items-center justify-between mt-2 mb-4 gap-2">
+            <button
+              onClick={() => { if (selectedSurah > 1) setSelectedSurah(selectedSurah - 1); }}
+              disabled={selectedSurah <= 1}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
+            >
+              <ChevronLeft className="w-3 h-3" />
+              {selectedSurah > 1 && (language === "bn" ? surahList[selectedSurah - 2]?.bengaliName : surahList[selectedSurah - 2]?.englishName)}
+            </button>
+            <span className="text-xs text-muted-foreground">{selectedSurah} / 114</span>
+            <button
+              onClick={() => { if (selectedSurah < 114) setSelectedSurah(selectedSurah + 1); }}
+              disabled={selectedSurah >= 114}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
+            >
+              {selectedSurah < 114 && (language === "bn" ? surahList[selectedSurah]?.bengaliName : surahList[selectedSurah]?.englishName)}
+              <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Placeholder for other sections
   return (
     <div className="min-h-screen bg-background">
