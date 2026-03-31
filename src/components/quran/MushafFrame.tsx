@@ -118,10 +118,10 @@ export function SurahBanner({ children }: { children: React.ReactNode }) {
 }
 
 // Main Mushaf frame wrapper
-export default function MushafFrame({ children }: { children: React.ReactNode }) {
+export default function MushafFrame({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className="relative bg-[#FFFDF7] dark:bg-[#1e1708] rounded-sm min-h-[70vh] shadow-[0_2px_16px_rgba(92,74,42,0.12)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-      
+    <div className={`relative bg-[#FFFDF7] dark:bg-[#1e1708] rounded-sm shadow-[0_2px_16px_rgba(92,74,42,0.12)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.5)] flex flex-col ${className}`}>
+
       {/* === Triple border system === */}
       {/* Outer border */}
       <div className="absolute inset-0 border-2 border-[#8B7355]/35 dark:border-[#C4A96A]/35 rounded-sm pointer-events-none" />
