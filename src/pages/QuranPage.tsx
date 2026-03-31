@@ -31,6 +31,7 @@ const CATEGORIES = [
 
 export default function QuranPage() {
   const { t, language } = useLanguage();
+  const { saveLastAudio } = useBookmark();
   const [searchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState<ActiveSection>(() => {
     const s = searchParams.get("surah");
@@ -44,6 +45,12 @@ export default function QuranPage() {
   const [tajweedEnabled, setTajweedEnabled] = useState(() => {
     try { return localStorage.getItem("tajweedEnabled") !== "false"; } catch { return true; }
   });
+
+  // Audio state
+  const [selectedQari, setSelectedQari] = useState(qariList[0].id);
+  const [currentAyah, setCurrentAyah] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const { data, isLoading } = useSurahWithTranslations(
     activeSection === "reading" || activeSection === "translation" ? selectedSurah : 0
