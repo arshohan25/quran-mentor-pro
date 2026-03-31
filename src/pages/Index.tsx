@@ -53,6 +53,13 @@ const Index = () => {
       path: "/hifz",
       gradient: "from-primary to-secondary",
     },
+    {
+      icon: Heart,
+      title: t("বুকমার্ক", "Bookmarks", "المحفوظات"),
+      desc: t("সেভ করা আয়াতগুলো পড়ুন", "Read your saved ayahs", "اقرأ آياتك المحفوظة"),
+      path: "/bookmarks",
+      gradient: "from-destructive/80 to-accent",
+    },
   ];
 
   const lastReadSurah = bookmarks.lastRead
