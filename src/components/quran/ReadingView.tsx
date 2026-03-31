@@ -10,7 +10,6 @@ import SurahSelector from "./SurahSelector";
 import SurahNav from "./SurahNav";
 import ReadingSettings from "./ReadingSettings";
 import { useBookmark } from "@/hooks/useBookmark";
-import { LINES_PER_PAGE, CHARS_PER_LINE } from "./types";
 
 function toArabicNum(n: number): string {
   const arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
@@ -29,21 +28,6 @@ function getJuzName(juzNum: number): string {
   const juz = juzList.find(j => j.number === juzNum);
   return juz?.name || `الجزء ${toArabicNum(juzNum)}`;
 }
-
-function getManzil(surahNumber: number, ayahNumber: number): number {
-  const juz = getJuzNumber(surahNumber, ayahNumber);
-  if (juz <= 4) return 1; if (juz <= 8) return 2; if (juz <= 13) return 3;
-  if (juz <= 17) return 4; if (juz <= 21) return 5; if (juz <= 26) return 6; return 7;
-}
-
-const SURAH_RUKU_COUNT: Record<number, number> = {
-  1:1,2:40,3:20,4:24,5:16,6:20,7:24,8:10,9:16,10:11,11:10,12:12,13:6,14:7,15:6,16:16,17:12,18:12,19:6,20:8,
-  21:7,22:10,23:6,24:9,25:6,26:11,27:7,28:9,29:7,30:6,31:4,32:3,33:9,34:6,35:5,36:5,37:5,38:5,39:8,40:9,
-  41:6,42:5,43:7,44:3,45:4,46:4,47:4,48:4,49:2,50:3,51:3,52:2,53:3,54:3,55:3,56:3,57:4,58:3,59:3,60:2,
-  61:2,62:2,63:2,64:2,65:2,66:2,67:2,68:2,69:2,70:2,71:2,72:2,73:2,74:2,75:1,76:2,77:2,78:2,79:2,80:1,
-  81:1,82:1,83:1,84:1,85:1,86:1,87:1,88:1,89:1,90:1,91:1,92:1,93:1,94:1,95:1,96:1,97:1,98:1,99:1,100:1,
-  101:1,102:1,103:1,104:1,105:1,106:1,107:1,108:1,109:1,110:1,111:1,112:1,113:1,114:1,
-};
 
 function stripBismillah(text: string): string {
   const t = text.trim();
@@ -71,7 +55,8 @@ interface QuranSectionProps {
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
   const { saveLastRead } = useBookmark();
   const { t } = useLanguage();
-  const [currentPage, setCurrentPage] = useState(0);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [goToLastPage, setGoToLastPage] = useState(false);
   const [tajweedEnabled, setTajweedEnabled] = useState(() => {
     try { return localStorage.getItem("tajweedEnabled") !== "false"; } catch { return true; }
   });
@@ -98,60 +83,65 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
   const surah = surahList.find(s => s.number === selectedSurah);
 
+  // Group ayahs by their real Mushaf page number from the API
   const pages = useMemo(() => {
     if (!data) return [];
     const ayahs = data.arabic.ayahs;
-    const result: typeof ayahs[] = [];
-    let currentPageAyahs: typeof ayahs = [];
-    let currentLineCount = 0;
-    const hasBismillah = selectedSurah !== 9;
-    const firstPageLines = hasBismillah ? LINES_PER_PAGE - 4 : LINES_PER_PAGE - 3;
-    let maxLinesForCurrentPage = firstPageLines;
-
+    const pageMap = new Map<number, typeof ayahs>();
     for (const ayah of ayahs) {
-      let textForCounting = ayah.text;
-      if (result.length === 0 && currentPageAyahs.length === 0 && hasBismillah) {
-        textForCounting = stripBismillah(textForCounting);
-        if (!textForCounting) textForCounting = ayah.text;
-      }
-      const ayahLines = Math.max(1, Math.ceil(textForCounting.length / CHARS_PER_LINE));
-      if (currentLineCount + ayahLines > maxLinesForCurrentPage && currentPageAyahs.length > 0) {
-        result.push(currentPageAyahs);
-        currentPageAyahs = [ayah];
-        currentLineCount = ayahLines;
-        maxLinesForCurrentPage = LINES_PER_PAGE;
-      } else {
-        currentPageAyahs.push(ayah);
-        currentLineCount += ayahLines;
-      }
+      const pg = ayah.page;
+      if (!pageMap.has(pg)) pageMap.set(pg, []);
+      pageMap.get(pg)!.push(ayah);
     }
-    if (currentPageAyahs.length) result.push(currentPageAyahs);
-    return result;
-  }, [data, selectedSurah]);
+    // Sort by page number and return as array of { pageNum, ayahs }
+    return Array.from(pageMap.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([pageNum, ayas]) => ({ pageNum, ayahs: ayas }));
+  }, [data]);
+
+  const totalPages = pages.length;
+
+  // Clamp pageIndex whenever pages change
+  useEffect(() => {
+    if (totalPages === 0) return;
+    if (goToLastPage) {
+      setPageIndex(totalPages - 1);
+      setGoToLastPage(false);
+    } else {
+      setPageIndex(prev => Math.min(prev, totalPages - 1));
+    }
+  }, [totalPages, goToLastPage]);
 
   // Auto-save reading position
   useEffect(() => {
-    const firstAyah = pages[currentPage]?.[0];
-    if (firstAyah) {
-      saveLastRead(selectedSurah, firstAyah.numberInSurah, currentPage, "reading");
+    const currentPageData = pages[pageIndex];
+    if (currentPageData && currentPageData.ayahs[0]) {
+      saveLastRead(selectedSurah, currentPageData.ayahs[0].numberInSurah, currentPageData.pageNum, "reading");
     }
-  }, [selectedSurah, currentPage, pages, saveLastRead]);
+  }, [selectedSurah, pageIndex, pages, saveLastRead]);
 
-  const totalPages = pages.length;
-  const canGoPrev = currentPage > 0 || selectedSurah > 1;
-  const canGoNext = currentPage < totalPages - 1 || selectedSurah < 114;
+  const canGoPrev = pageIndex > 0 || selectedSurah > 1;
+  const canGoNext = pageIndex < totalPages - 1 || selectedSurah < 114;
 
   const goToPrev = useCallback(() => {
-    if (currentPage > 0) setCurrentPage(currentPage - 1);
-    else if (selectedSurah > 1) { setSelectedSurah(selectedSurah - 1); setCurrentPage(999); }
-  }, [currentPage, selectedSurah, setSelectedSurah]);
+    if (pageIndex > 0) {
+      setPageIndex(pageIndex - 1);
+    } else if (selectedSurah > 1) {
+      setGoToLastPage(true);
+      setSelectedSurah(selectedSurah - 1);
+    }
+  }, [pageIndex, selectedSurah, setSelectedSurah]);
 
   const goToNext = useCallback(() => {
-    if (currentPage < totalPages - 1) setCurrentPage(currentPage + 1);
-    else if (selectedSurah < 114) { setSelectedSurah(selectedSurah + 1); setCurrentPage(0); }
-  }, [currentPage, totalPages, selectedSurah, setSelectedSurah]);
+    if (pageIndex < totalPages - 1) {
+      setPageIndex(pageIndex + 1);
+    } else if (selectedSurah < 114) {
+      setSelectedSurah(selectedSurah + 1);
+      setPageIndex(0);
+    }
+  }, [pageIndex, totalPages, selectedSurah, setSelectedSurah]);
 
-  const handleSurahChange = (n: number) => { setSelectedSurah(n); setCurrentPage(0); };
+  const handleSurahChange = (n: number) => { setSelectedSurah(n); setPageIndex(0); };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isAnimating) return;
@@ -178,9 +168,11 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     touchStartX.current = null; touchStartY.current = null;
   };
 
-  const currentJuz = pages[currentPage]?.[0] ? getJuzNumber(selectedSurah, pages[currentPage][0].numberInSurah) : 1;
-  const currentManzil = pages[currentPage]?.[0] ? getManzil(selectedSurah, pages[currentPage][0].numberInSurah) : 1;
-  const realPage = pages[currentPage]?.[0]?.page;
+  const currentPageData = pages[pageIndex];
+  const realPageNum = currentPageData?.pageNum;
+  const firstAyah = currentPageData?.ayahs[0];
+  const currentJuz = firstAyah ? getJuzNumber(selectedSurah, firstAyah.numberInSurah) : 1;
+  const isFirstPageOfSurah = currentPageData?.ayahs.some(a => a.numberInSurah === 1);
 
   return (
     <div className="min-h-screen bg-[#F5EFE0] dark:bg-[#1a1510] flex flex-col">
@@ -191,7 +183,9 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
             <button onClick={onBack} className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></button>
             <div>
               <SurahSelector value={selectedSurah} onChange={handleSurahChange} />
-              <p className="text-[10px] opacity-70 pl-1">{t("পৃষ্ঠা", "Page", "صفحة")} {realPage ? realPage : currentPage + 1}</p>
+              <p className="text-[10px] opacity-70 pl-1">
+                {t("পৃষ্ঠা", "Page", "صفحة")} {realPageNum || pageIndex + 1}
+              </p>
             </div>
           </div>
           <ReadingSettings
@@ -208,9 +202,9 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
 
         {isLoading ? (
           <div className="space-y-3 p-4">
-            {[...Array(LINES_PER_PAGE)].map((_, i) => <Skeleton key={i} className="h-8 rounded" />)}
+            {[...Array(12)].map((_, i) => <Skeleton key={i} className="h-8 rounded" />)}
           </div>
-        ) : pages.length > 0 ? (
+        ) : currentPageData ? (
           <div
             className="relative select-none"
             onTouchStart={handleTouchStart}
@@ -223,66 +217,72 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
             >
               {/* Mushaf page frame */}
               <div className="relative bg-[#FFFDF7] dark:bg-[#1e1708] rounded border-2 border-[#8B7355]/40 dark:border-[#C4A96A]/40 shadow-[0_4px_20px_rgba(92,74,42,0.15)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] min-h-[70vh]">
-                {/* Top info bar inside frame */}
+                {/* Top info bar */}
                 <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#8B7355]/20 dark:border-[#C4A96A]/20 text-[11px]" dir="rtl">
                   <span className="font-arabic text-[#5C4A2A] dark:text-[#C4A96A] font-semibold">{getJuzName(currentJuz)}</span>
-                  <span className="text-[#8B7355] dark:text-[#9B8365] tabular-nums">{realPage ? toArabicNum(realPage) : toArabicNum(currentPage + 1)}</span>
+                  <span className="text-[#8B7355] dark:text-[#9B8365] tabular-nums">{realPageNum ? toArabicNum(realPageNum) : toArabicNum(pageIndex + 1)}</span>
                   <span className="font-arabic text-[#5C4A2A] dark:text-[#C4A96A] font-semibold">{surah?.name}</span>
                 </div>
 
-
-                    {/* Surah header banner */}
-                    {currentPage === 0 && (
-                      <div className="mx-2 mt-2 mb-1 border-2 border-[#4A90A4]/50 dark:border-[#C4A96A]/40 rounded-lg bg-gradient-to-r from-[#E8F4F8]/80 via-[#D4EBF2]/60 to-[#E8F4F8]/80 dark:from-[#1a2a30]/60 dark:via-[#1e1708]/40 dark:to-[#1a2a30]/60 py-2.5 px-4 text-center relative overflow-hidden">
-                        <div className="absolute inset-0 opacity-[0.08]">
-                          <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-[#4A90A4] rounded-tl-lg" />
-                          <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-[#4A90A4] rounded-tr-lg" />
-                          <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-[#4A90A4] rounded-bl-lg" />
-                          <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-[#4A90A4] rounded-br-lg" />
-                        </div>
-                        <p className="font-arabic text-[18px] md:text-[22px] font-bold text-[#2D5016] dark:text-[#C4A96A] relative z-10">
-                          سُورَةُ {surah?.name}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Bismillah */}
-                    {currentPage === 0 && selectedSurah !== 9 && (
-                      <div className="py-2 text-center">
-                        <p className="font-arabic font-bold text-[#1a1008] dark:text-[#E8DCC8]"
-                           style={{ fontSize: `${Math.max(arabicFontSize - 2, 18)}px` }}>
-                          بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Flowing paragraph — all ayahs as one continuous block */}
-                    <div className="px-4 md:px-6 py-2" dir="rtl">
-                      <p className="font-arabic font-bold text-[#1a1008] dark:text-[#E8DCC8] text-justify leading-[2.2] sm:leading-[2.4] md:leading-[2.6]"
-                         style={{ fontSize: `${arabicFontSize}px`, wordSpacing: '0.12em', letterSpacing: '0.01em' }}>
-                        {pages[currentPage]?.map((ayah, idx) => {
-                          let displayText = ayah.text;
-                          if (currentPage === 0 && idx === 0 && selectedSurah !== 9) {
-                            displayText = stripBismillah(displayText);
-                          }
-                          if (!displayText && currentPage === 0 && idx === 0) return null;
-                          return (
-                            <span key={ayah.number}>
-                              {tajweedEnabled ? (
-                                <TajweedText text={displayText} enabled={true} className="inline" />
-                              ) : (
-                                <span>{displayText}</span>
-                              )}
-                              <span className="inline-flex items-center justify-center mx-0.5 text-[#2D5016] dark:text-[#7BAF4C] font-bold select-none align-middle"
-                                    style={{ fontSize: `${Math.max(11, arabicFontSize - 7)}px`, fontFamily: 'serif' }}>
-                                ﴿{toArabicNum(ayah.numberInSurah)}﴾
-                              </span>
-                              {' '}
-                            </span>
-                          );
-                        })}
-                      </p>
+                {/* Surah header banner — shown when this page contains ayah 1 */}
+                {isFirstPageOfSurah && (
+                  <div className="mx-2 mt-2 mb-1 border-2 border-[#4A90A4]/50 dark:border-[#C4A96A]/40 rounded-lg bg-gradient-to-r from-[#E8F4F8]/80 via-[#D4EBF2]/60 to-[#E8F4F8]/80 dark:from-[#1a2a30]/60 dark:via-[#1e1708]/40 dark:to-[#1a2a30]/60 py-2.5 px-4 text-center relative overflow-hidden">
+                    <div className="absolute inset-0 opacity-[0.08]">
+                      <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-[#4A90A4] rounded-tl-lg" />
+                      <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-[#4A90A4] rounded-tr-lg" />
+                      <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-[#4A90A4] rounded-bl-lg" />
+                      <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-[#4A90A4] rounded-br-lg" />
                     </div>
+                    <p className="font-arabic text-[18px] md:text-[22px] font-bold text-[#2D5016] dark:text-[#C4A96A] relative z-10">
+                      سُورَةُ {surah?.name}
+                    </p>
+                  </div>
+                )}
+
+                {/* Bismillah */}
+                {isFirstPageOfSurah && selectedSurah !== 9 && (
+                  <div className="py-2 text-center">
+                    <p className="font-arabic font-bold text-[#1a1008] dark:text-[#E8DCC8]"
+                       style={{ fontSize: `${Math.max(arabicFontSize - 2, 18)}px` }}>
+                      بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                    </p>
+                  </div>
+                )}
+
+                {/* Flowing paragraph */}
+                <div className="px-4 md:px-6 py-2" dir="rtl">
+                  <p className="font-arabic font-bold text-[#1a1008] dark:text-[#E8DCC8] text-justify leading-[2.2] sm:leading-[2.4] md:leading-[2.6]"
+                     style={{ fontSize: `${arabicFontSize}px`, wordSpacing: '0.12em', letterSpacing: '0.01em' }}>
+                    {currentPageData.ayahs.map((ayah, idx) => {
+                      let displayText = ayah.text;
+                      if (isFirstPageOfSurah && ayah.numberInSurah === 1 && selectedSurah !== 9) {
+                        displayText = stripBismillah(displayText);
+                      }
+                      if (!displayText && ayah.numberInSurah === 1) return null;
+                      return (
+                        <span key={ayah.number}>
+                          {tajweedEnabled ? (
+                            <TajweedText text={displayText} enabled={true} className="inline" />
+                          ) : (
+                            <span>{displayText}</span>
+                          )}
+                          <span className="inline-flex items-center justify-center mx-0.5 text-[#2D5016] dark:text-[#7BAF4C] font-bold select-none align-middle"
+                                style={{ fontSize: `${Math.max(11, arabicFontSize - 7)}px`, fontFamily: 'serif' }}>
+                            ﴿{toArabicNum(ayah.numberInSurah)}﴾
+                          </span>
+                          {' '}
+                        </span>
+                      );
+                    })}
+                  </p>
+                </div>
+
+                {/* Bottom page number */}
+                <div className="text-center py-2 border-t border-[#8B7355]/20 dark:border-[#C4A96A]/20">
+                  <span className="text-[11px] text-[#8B7355] dark:text-[#9B8365] tabular-nums">
+                    {realPageNum && toArabicNum(realPageNum)}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -294,6 +294,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
           </div>
         ) : null}
 
+        {/* Page navigation */}
         <div className="flex items-center justify-between mt-3 gap-2">
           <button onClick={goToPrev} disabled={!canGoPrev}
             className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[#2D5016]/10 dark:bg-[#7BAF4C]/10 text-[#2D5016] dark:text-[#7BAF4C] hover:bg-[#2D5016]/20 transition-colors disabled:opacity-30 text-xs font-medium">
@@ -301,18 +302,18 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
           </button>
           <div className="flex items-center gap-1">
             {totalPages > 0 && Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-              const pageIdx = totalPages <= 7 ? i :
-                currentPage <= 3 ? i :
-                currentPage >= totalPages - 4 ? totalPages - 7 + i :
-                currentPage - 3 + i;
+              const idx = totalPages <= 7 ? i :
+                pageIndex <= 3 ? i :
+                pageIndex >= totalPages - 4 ? totalPages - 7 + i :
+                pageIndex - 3 + i;
               return (
-                <button key={pageIdx} onClick={() => setCurrentPage(pageIdx)}
+                <button key={idx} onClick={() => setPageIndex(idx)}
                   className={`w-6 h-6 rounded-full text-[10px] font-bold transition-all ${
-                    pageIdx === currentPage
+                    idx === pageIndex
                       ? "bg-[#2D5016] dark:bg-[#7BAF4C] text-white dark:text-[#1a1510] shadow-md scale-110"
                       : "bg-[#E8DCC8] dark:bg-[#2a1f0e] text-[#5C4A2A] dark:text-[#9B8365] hover:bg-[#DDD0B8]"
                   }`}>
-                  {toArabicNum(pageIdx + 1)}
+                  {toArabicNum(idx + 1)}
                 </button>
               );
             })}
