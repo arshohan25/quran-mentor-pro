@@ -38,6 +38,7 @@ export default function QuranPage() {
   });
   const [search, setSearch] = useState("");
   const [showList, setShowList] = useState(!searchParams.get("surah"));
+  const [browseMode, setBrowseMode] = useState<"surah" | "juz">("surah");
   const [tajweedEnabled, setTajweedEnabled] = useState(() => {
     try { return localStorage.getItem("tajweedEnabled") !== "false"; } catch { return true; }
   });
