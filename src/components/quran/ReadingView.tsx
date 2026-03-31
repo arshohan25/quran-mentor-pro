@@ -227,13 +227,13 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
             >
               {/* === OUTER HEADER (above frame) === */}
               <div className="flex items-center justify-between px-2 pb-1.5" dir="rtl">
-                <span className="font-arabic text-[11px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
+                <span className="font-arabic text-[13px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
                   {getJuzName(currentJuz)}
                 </span>
-                <span className="text-[12px] text-[#8B7355] dark:text-[#9B8365] font-bold tabular-nums">
+                <span className="text-[14px] text-[#8B7355] dark:text-[#9B8365] font-bold tabular-nums">
                   {toArabicNum(currentPage + 1)}
                 </span>
-                <span className="font-arabic text-[11px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
+                <span className="font-arabic text-[13px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
                   {surah?.name} {toArabicNum(selectedSurah)}
                 </span>
               </div>
