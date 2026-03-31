@@ -121,7 +121,7 @@ const Index = () => {
               <div className={`inline-flex p-2.5 sm:p-3 rounded-lg bg-gradient-to-br ${section.gradient} text-primary-foreground mb-3 sm:mb-4 group-hover:scale-110 transition-transform`}>
                 <section.icon className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
-              <h2 className="text-xl font-semibold text-card-foreground mb-2">
+              <h2 className="text-lg sm:text-xl font-semibold text-card-foreground mb-1.5 sm:mb-2">
                 {section.title}
               </h2>
               <p className="text-muted-foreground text-sm">
