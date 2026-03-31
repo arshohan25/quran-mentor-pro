@@ -86,7 +86,7 @@ export default function TranslationView({ selectedSurah, setSelectedSurah, onBac
                       <AyahActions
                         arabicText={arabicAyah.text}
                         translation={bengaliAyah?.text || englishAyah?.text}
-                        surahName={data.arabic.englishName}
+                        surahName={data.arabic.edition?.englishName || ""}
                         surahNumber={selectedSurah}
                         ayahNumber={arabicAyah.numberInSurah}
                       />
