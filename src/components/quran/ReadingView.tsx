@@ -206,7 +206,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const readProgress = lastAyahOnPage ? Math.round((lastAyahOnPage.numberInSurah / surahTotalAyahs) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-[#F5EFE0] dark:bg-[#1a1510] flex flex-col">
+    <div className="h-screen bg-[#F5EFE0] dark:bg-[#1a1510] flex flex-col overflow-hidden">
       {/* Header bar */}
       <header className="bg-[#2D5016] dark:bg-[#1a3009] text-white py-2">
         <div className="container flex items-center justify-between">
