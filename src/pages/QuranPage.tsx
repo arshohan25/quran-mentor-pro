@@ -4,6 +4,7 @@ import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid, BookOpen, Repeat, He
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations, useWordByWord, useSurahAudio } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { juzList } from "@/data/juzData";
 import { useBookmark } from "@/hooks/useBookmark";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -37,6 +38,7 @@ export default function QuranPage() {
   });
   const [search, setSearch] = useState("");
   const [showList, setShowList] = useState(!searchParams.get("surah"));
+  const [browseMode, setBrowseMode] = useState<"surah" | "juz">("surah");
   const [tajweedEnabled, setTajweedEnabled] = useState(() => {
     try { return localStorage.getItem("tajweedEnabled") !== "false"; } catch { return true; }
   });
@@ -207,46 +209,107 @@ export default function QuranPage() {
       </header>
 
       <div className="container py-4 flex flex-col md:flex-row gap-4">
-        {/* Surah list sidebar */}
+        {/* Surah/Juz list sidebar */}
         <div className={`${showList ? "block" : "hidden md:block"} md:w-80 shrink-0`}>
-          <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder={t("সূরা খুঁজুন...", "Search Surah...", "ابحث عن سورة...")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
+          <div className="flex mb-3 rounded-lg border border-border overflow-hidden">
+            <button
+              onClick={() => setBrowseMode("surah")}
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                browseMode === "surah" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t("সূরা", "Surah", "سورة")}
+            </button>
+            <button
+              onClick={() => setBrowseMode("juz")}
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                browseMode === "juz" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t("পারা/জুয", "Juz/Para", "جزء")}
+            </button>
           </div>
-          <ScrollArea className="h-[calc(100vh-200px)] rounded-lg border border-border">
-            {filtered.map((surah) => (
-              <button
-                key={surah.number}
-                onClick={() => {
-                  setSelectedSurah(surah.number);
-                  setShowList(false);
-                }}
-                className={`w-full text-left px-4 py-3 border-b border-border flex items-center gap-3 hover:bg-muted transition-colors ${
-                  selectedSurah === surah.number ? "bg-primary/10" : ""
-                }`}
-              >
-                <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">
-                  {surah.number}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-sm text-foreground truncate">
-                      {language === "bn" ? surah.bengaliName : surah.englishName}
+
+          {browseMode === "surah" ? (
+            <>
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder={t("সূরা খুঁজুন...", "Search Surah...", "ابحث عن سورة...")}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <ScrollArea className="h-[calc(100vh-250px)] rounded-lg border border-border">
+                {filtered.map((surah) => (
+                  <button
+                    key={surah.number}
+                    onClick={() => {
+                      setSelectedSurah(surah.number);
+                      setShowList(false);
+                    }}
+                    className={`w-full text-left px-4 py-3 border-b border-border flex items-center gap-3 hover:bg-muted transition-colors ${
+                      selectedSurah === surah.number ? "bg-primary/10" : ""
+                    }`}
+                  >
+                    <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">
+                      {surah.number}
                     </span>
-                    <span className="font-arabic text-base text-primary">{surah.name}</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {surah.numberOfAyahs} {t("আয়াত", "Ayahs", "آيات")}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </ScrollArea>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-sm text-foreground truncate">
+                          {language === "bn" ? surah.bengaliName : surah.englishName}
+                        </span>
+                        <span className="font-arabic text-base text-primary">{surah.name}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {surah.numberOfAyahs} {t("আয়াত", "Ayahs", "آيات")}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </ScrollArea>
+            </>
+          ) : (
+            <ScrollArea className="h-[calc(100vh-200px)] rounded-lg border border-border">
+              {juzList.map((juz) => {
+                const startSurahInfo = surahList.find(s => s.number === juz.startSurah);
+                const endSurahInfo = surahList.find(s => s.number === juz.endSurah);
+                const isActive = juz.startSurah <= selectedSurah && selectedSurah <= juz.endSurah;
+                return (
+                  <button
+                    key={juz.number}
+                    onClick={() => {
+                      setSelectedSurah(juz.startSurah);
+                      setShowList(false);
+                    }}
+                    className={`w-full text-left px-4 py-3 border-b border-border hover:bg-muted transition-colors ${
+                      isActive ? "bg-primary/10" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold shrink-0">
+                        {juz.number}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-sm text-foreground">
+                            {t(`পারা ${juz.number}`, `Juz ${juz.number}`, `الجزء ${juz.number}`)}
+                          </span>
+                          <span className="font-arabic text-sm text-primary">{juz.name}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {language === "bn" ? startSurahInfo?.bengaliName : startSurahInfo?.englishName}
+                          {juz.startSurah !== juz.endSurah && ` → ${language === "bn" ? endSurahInfo?.bengaliName : endSurahInfo?.englishName}`}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </ScrollArea>
+          )}
         </div>
 
         {/* Ayah display */}
