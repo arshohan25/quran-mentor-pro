@@ -484,7 +484,7 @@ export default function QuranPage() {
                 ))}
               </div>
             ) : data ? (
-              <ScrollArea className="h-[calc(100vh-320px)]">
+              <ScrollArea className="h-[calc(100vh-280px)] md:h-[calc(100vh-320px)]">
                 <div className="space-y-4">
                   {filteredIndices.map((idx) => {
                     const ayah = data.arabic.ayahs[idx];
