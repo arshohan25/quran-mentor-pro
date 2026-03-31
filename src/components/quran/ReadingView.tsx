@@ -284,7 +284,13 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                     {/* === FLOWING AYAH TEXT === */}
                     <div className="px-4 py-4 md:px-6 md:py-5 flex items-start" dir="rtl">
                       <p className="font-arabic text-[28px] md:text-[32px] font-bold leading-[2.8] md:leading-[3] text-[#1a1008] dark:text-[#E8DCC8] text-justify w-full"
-                         style={{ wordSpacing: '0.15em', letterSpacing: '0.02em', textAlignLast: 'justify' }}>
+                         style={{
+                           wordSpacing: '0.15em',
+                           letterSpacing: '0.02em',
+                           textAlignLast: 'justify',
+                           backgroundImage: 'repeating-linear-gradient(to bottom, transparent 0px, transparent calc(2.8em - 2px), rgba(139,115,85,0.12) calc(2.8em - 2px), rgba(139,115,85,0.12) 2.8em)',
+                           backgroundSize: '100% 2.8em',
+                         }}>
                         {pages[currentPage]?.map((ayah, idx) => {
                           // Strip bismillah from first ayah to avoid duplicate
                           let displayText = ayah.text;
