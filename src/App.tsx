@@ -16,6 +16,10 @@ import PrayerTimesPage from "./pages/PrayerTimesPage.tsx";
 import HifzDashboardPage from "./pages/HifzDashboardPage.tsx";
 import BookmarksPage from "./pages/BookmarksPage.tsx";
 import QuranPlannerPage from "./pages/QuranPlannerPage.tsx";
+import QiblaPage from "./pages/QiblaPage.tsx";
+import TasbihPage from "./pages/TasbihPage.tsx";
+import DuaPage from "./pages/DuaPage.tsx";
+import HijriCalendarPage from "./pages/HijriCalendarPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
