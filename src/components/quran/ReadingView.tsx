@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import TajweedText, { TajweedLegend } from "@/components/TajweedText";
 import SurahSelector from "./SurahSelector";
 import SurahNav from "./SurahNav";
-import { LINES_PER_PAGE, CHARS_PER_LINE, type QuranSectionProps } from "./types";
+import { LINES_PER_PAGE, CHARS_PER_LINE } from "./types";
 
 // Convert number to Arabic numerals
 function toArabicNum(n: number): string {
@@ -28,6 +28,30 @@ function getJuzNumber(surahNumber: number, ayahNumber: number): number {
     }
   }
   return 1;
+}
+
+// Get juz name
+function getJuzName(juzNum: number): string {
+  const juz = juzList.find(j => j.number === juzNum);
+  return juz?.name || `الجزء ${toArabicNum(juzNum)}`;
+}
+
+// Get manzil number (Quran divided into 7 manzils)
+function getManzil(surahNumber: number, ayahNumber: number): number {
+  const juz = getJuzNumber(surahNumber, ayahNumber);
+  if (juz <= 4) return 1;
+  if (juz <= 8) return 2;
+  if (juz <= 13) return 3;
+  if (juz <= 17) return 4;
+  if (juz <= 21) return 5;
+  if (juz <= 26) return 6;
+  return 7;
+}
+
+interface QuranSectionProps {
+  selectedSurah: number;
+  setSelectedSurah: (n: number) => void;
+  onBack: () => void;
 }
 
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
@@ -115,22 +139,26 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     ? getJuzNumber(selectedSurah, pages[currentPage][0].numberInSurah)
     : 1;
 
+  const currentManzil = pages[currentPage]?.[0]
+    ? getManzil(selectedSurah, pages[currentPage][0].numberInSurah)
+    : 1;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30">
-      {/* Compact header */}
-      <header className="bg-primary text-primary-foreground py-2.5 shadow-lg">
+    <div className="min-h-screen bg-[#F5EFE0] dark:bg-[#1a1510]">
+      {/* Compact top toolbar */}
+      <header className="bg-[#2D5016] dark:bg-[#1a3009] text-white py-2 shadow-lg sticky top-0 z-20">
         <div className="container">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <button onClick={onBack} className="hover:opacity-80 transition-opacity">
+              <button onClick={onBack} className="hover:opacity-80 transition-opacity p-1">
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <h1 className="text-sm font-bold">{t("কুরআন তেলাওয়াত", "Quran Reading", "تلاوة القرآن")}</h1>
+              <h1 className="text-xs font-semibold opacity-90">{t("কুরআন তেলাওয়াত", "Quran Reading", "تلاوة القرآن")}</h1>
             </div>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => { setTajweedEnabled(!tajweedEnabled); localStorage.setItem("tajweedEnabled", String(!tajweedEnabled)); }}
-                className={`p-1.5 rounded-lg transition-colors ${tajweedEnabled ? "bg-primary-foreground/20" : "text-primary-foreground/60 hover:text-primary-foreground"}`}
+                className={`p-1.5 rounded-lg transition-colors ${tajweedEnabled ? "bg-white/20" : "text-white/60 hover:text-white"}`}
                 title={t("তাজবীদ কালার", "Tajweed Colors", "ألوان التجويد")}
               >
                 <Palette className="w-4 h-4" />
@@ -141,7 +169,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
         </div>
       </header>
 
-      <div className="container py-3 max-w-2xl mx-auto px-2">
+      <div className="container py-3 max-w-xl mx-auto px-2">
         {tajweedEnabled && <div className="mb-3"><TajweedLegend /></div>}
 
         {isLoading ? (
@@ -160,87 +188,104 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
               className="transition-transform duration-200 ease-out"
               style={{ transform: `translateX(${swipeOffset}px)`, opacity: isAnimating ? 0.6 : 1 }}
             >
-              {/* Outer ornamental frame */}
-              <div className="rounded-lg border-[3px] border-[hsl(var(--primary)/0.4)] bg-[#FDF6EC] dark:bg-[#1a1206] shadow-2xl overflow-hidden">
-                {/* Inner frame */}
-                <div className="m-[6px] border-2 border-[hsl(var(--primary)/0.25)] rounded">
-                  {/* Top ornamental line */}
-                  <div className="h-[3px] bg-gradient-to-r from-transparent via-[hsl(var(--primary)/0.5)] to-transparent" />
+              {/* === OUTER HEADER (above frame) === */}
+              <div className="flex items-center justify-between px-2 pb-1.5" dir="rtl">
+                <span className="font-arabic text-[11px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
+                  {getJuzName(currentJuz)}
+                </span>
+                <span className="text-[12px] text-[#8B7355] dark:text-[#9B8365] font-bold tabular-nums">
+                  {toArabicNum(currentPage + 1)}
+                </span>
+                <span className="font-arabic text-[11px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
+                  {surah?.name} {toArabicNum(selectedSurah)}
+                </span>
+              </div>
 
-                  {/* Page header inside frame */}
-                  <div className="flex items-center justify-between px-4 py-1.5 border-b border-[hsl(var(--primary)/0.15)]">
-                    <span className="font-arabic text-xs text-[hsl(var(--primary)/0.7)]">
-                      ٱلْجُزْءُ {toArabicNum(currentJuz)}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground font-semibold">
-                      — {toArabicNum(currentPage + 1)} —
-                    </span>
-                    <span className="font-arabic text-xs text-[hsl(var(--primary)/0.7)] font-bold">
-                      {surah?.name}
-                    </span>
-                  </div>
+              {/* === ORNAMENTAL FRAME === */}
+              <div className="relative">
+                {/* Outer decorative border */}
+                <div className="rounded-sm border-[3px] border-[#8B7355]/50 dark:border-[#C4A96A]/40 bg-[#FFFDF7] dark:bg-[#1e1708] shadow-[0_4px_24px_rgba(92,74,42,0.15)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+                  {/* Inner decorative border */}
+                  <div className="m-[4px] border-[2px] border-[#8B7355]/30 dark:border-[#C4A96A]/25 rounded-sm">
+                    {/* Corner ornaments (CSS pseudo) */}
+                    <div className="relative">
+                      {/* Top ornamental bar */}
+                      <div className="h-[2px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/50 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/50 dark:to-[#C4A96A]/10" />
 
-                  {/* Bismillah on first page */}
-                  {currentPage === 0 && selectedSurah !== 9 && (
-                    <div className="py-3 text-center border-b border-[hsl(var(--primary)/0.1)] bg-gradient-to-r from-transparent via-[hsl(var(--primary)/0.03)] to-transparent">
-                      <p className="font-arabic text-xl md:text-2xl text-[hsl(var(--primary)/0.8)] leading-relaxed">
-                        بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-                      </p>
+                      {/* Bismillah for first page of surah */}
+                      {currentPage === 0 && selectedSurah !== 9 && (
+                        <>
+                          {/* Surah title header */}
+                          <div className="py-2.5 text-center border-b border-[#8B7355]/15 dark:border-[#C4A96A]/15 bg-gradient-to-b from-[#F5EFE0]/50 to-transparent dark:from-[#2a1f0e]/30">
+                            <p className="font-arabic text-[13px] text-[#5C4A2A] dark:text-[#C4A96A]">
+                              سُورَةُ {surah?.name}
+                            </p>
+                          </div>
+                          {/* Bismillah */}
+                          <div className="py-3 text-center border-b border-[#8B7355]/10 dark:border-[#C4A96A]/10">
+                            <p className="font-arabic text-[22px] md:text-[24px] text-[#2D5016] dark:text-[#7BAF4C] leading-relaxed">
+                              بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                            </p>
+                          </div>
+                        </>
+                      )}
+
+                      {/* === FLOWING AYAH TEXT === */}
+                      <div className="px-3 py-3 md:px-5 md:py-4 min-h-[520px] flex items-start" dir="rtl">
+                        <p className="font-arabic text-[20px] md:text-[24px] leading-[2.5] md:leading-[2.7] text-[#1a1008] dark:text-[#E8DCC8] text-justify w-full"
+                           style={{ wordSpacing: '0.05em', letterSpacing: '0.01em' }}>
+                          {pages[currentPage]?.map((ayah) => (
+                            <span key={ayah.number}>
+                              {tajweedEnabled ? (
+                                <TajweedText
+                                  text={ayah.text}
+                                  enabled={true}
+                                  className="inline"
+                                />
+                              ) : (
+                                <span>{ayah.text}</span>
+                              )}
+                              {/* Ayah number marker — inline ornamental */}
+                              <span className="inline-flex items-center justify-center mx-0.5 text-[#2D5016] dark:text-[#7BAF4C] text-[13px] md:text-[15px] font-bold select-none align-middle"
+                                    style={{ fontFamily: 'serif' }}>
+                                ﴿{toArabicNum(ayah.numberInSurah)}﴾
+                              </span>
+                            </span>
+                          ))}
+                        </p>
+                      </div>
+
+                      {/* Bottom ornamental bar */}
+                      <div className="h-[2px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/50 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/50 dark:to-[#C4A96A]/10" />
                     </div>
-                  )}
-
-                  {/* Flowing Ayah text area */}
-                  <div className="px-4 py-4 md:px-6 md:py-5 min-h-[460px]" dir="rtl">
-                    <p className="font-arabic text-[22px] md:text-[26px] leading-[2.6] md:leading-[2.8] text-foreground text-justify">
-                      {pages[currentPage]?.map((ayah) => (
-                        <span key={ayah.number}>
-                          {tajweedEnabled ? (
-                            <TajweedText
-                              text={ayah.text}
-                              enabled={true}
-                              className="inline"
-                            />
-                          ) : (
-                            <span>{ayah.text}</span>
-                          )}
-                          {/* Inline ayah number marker */}
-                          <span className="inline-flex items-center justify-center mx-1 text-[hsl(var(--primary))] text-[14px] md:text-[16px] font-bold select-none align-middle">
-                            ﴿{toArabicNum(ayah.numberInSurah)}﴾
-                          </span>
-                        </span>
-                      ))}
-                    </p>
                   </div>
-
-                  {/* Page footer inside frame */}
-                  <div className="flex items-center justify-center px-4 py-1.5 border-t border-[hsl(var(--primary)/0.15)]">
-                    <span className="text-[10px] text-muted-foreground">
-                      {surah?.bengaliName} • {surah?.englishName}
-                    </span>
-                  </div>
-
-                  {/* Bottom ornamental line */}
-                  <div className="h-[3px] bg-gradient-to-r from-transparent via-[hsl(var(--primary)/0.5)] to-transparent" />
                 </div>
+              </div>
+
+              {/* === FOOTER (below frame) === */}
+              <div className="text-center pt-1.5">
+                <span className="font-arabic text-[11px] text-[#8B7355] dark:text-[#9B8365]">
+                  مَنْزِل {toArabicNum(currentManzil)}
+                </span>
               </div>
             </div>
 
             {/* Swipe hint overlay */}
             {Math.abs(swipeOffset) > 30 && !isAnimating && (
-              <div className={`absolute top-1/2 -translate-y-1/2 ${swipeOffset > 0 ? "left-2" : "right-2"} bg-primary/80 text-primary-foreground rounded-full p-2 shadow-lg`}>
+              <div className={`absolute top-1/2 -translate-y-1/2 ${swipeOffset > 0 ? "left-1" : "right-1"} bg-[#2D5016]/80 text-white rounded-full p-2 shadow-lg`}>
                 {swipeOffset > 0 ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
               </div>
             )}
           </div>
         ) : null}
 
-        {/* Navigation */}
+        {/* Navigation buttons */}
         <div className="flex items-center justify-between mt-3 gap-2">
           <button onClick={goToPrev} disabled={!canGoPrev}
-            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 text-xs font-medium">
+            className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[#2D5016]/10 dark:bg-[#7BAF4C]/10 text-[#2D5016] dark:text-[#7BAF4C] hover:bg-[#2D5016]/20 transition-colors disabled:opacity-30 text-xs font-medium">
             <ChevronLeft className="w-4 h-4" />{t("আগের", "Prev", "السابق")}
           </button>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             {totalPages > 0 && Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
               const pageIdx = totalPages <= 7 ? i :
                 currentPage <= 3 ? i :
@@ -250,16 +295,16 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                 <button key={pageIdx} onClick={() => setCurrentPage(pageIdx)}
                   className={`w-6 h-6 rounded-full text-[10px] font-bold transition-all ${
                     pageIdx === currentPage
-                      ? "bg-primary text-primary-foreground shadow-md scale-110"
-                      : "bg-muted text-muted-foreground hover:bg-primary/10"
+                      ? "bg-[#2D5016] dark:bg-[#7BAF4C] text-white dark:text-[#1a1510] shadow-md scale-110"
+                      : "bg-[#E8DCC8] dark:bg-[#2a1f0e] text-[#5C4A2A] dark:text-[#9B8365] hover:bg-[#DDD0B8]"
                   }`}>
-                  {pageIdx + 1}
+                  {toArabicNum(pageIdx + 1)}
                 </button>
               );
             })}
           </div>
           <button onClick={goToNext} disabled={!canGoNext}
-            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 text-xs font-medium">
+            className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[#2D5016]/10 dark:bg-[#7BAF4C]/10 text-[#2D5016] dark:text-[#7BAF4C] hover:bg-[#2D5016]/20 transition-colors disabled:opacity-30 text-xs font-medium">
             {t("পরের", "Next", "التالي")}<ChevronRight className="w-4 h-4" />
           </button>
         </div>
