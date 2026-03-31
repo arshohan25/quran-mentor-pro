@@ -258,26 +258,26 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                     {/* Top ornamental bar */}
                     <div className="h-[3px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/60 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/60 dark:to-[#C4A96A]/10" />
 
-                    {/* Surah header band — counted as 1 line */}
+                    {/* Surah header band — 3-line layout matching PDF */}
                     {currentPage === 0 && (
-                      <div className="border-b-2 border-[#8B7355]/30 dark:border-[#C4A96A]/30 bg-gradient-to-r from-[#F5EFE0]/80 via-[#E8DCC8]/60 to-[#F5EFE0]/80 dark:from-[#2a1f0e]/60 dark:via-[#1e1708]/40 dark:to-[#2a1f0e]/60 py-2 px-3" dir="rtl">
-                        <div className="flex items-center justify-between font-arabic text-[12px] md:text-[14px] text-[#5C4A2A] dark:text-[#C4A96A]">
-                          <span>آياتها {toArabicNum(surah?.numberOfAyahs || 0)}</span>
-                          <span className="text-[15px] md:text-[17px] font-bold flex items-center gap-2">
+                      <div className="border-b-2 border-[#8B7355]/40 dark:border-[#C4A96A]/30 bg-gradient-to-r from-[#F5EFE0]/80 via-[#E8DCC8]/60 to-[#F5EFE0]/80 dark:from-[#2a1f0e]/60 dark:via-[#1e1708]/40 dark:to-[#2a1f0e]/60 py-2 px-3" dir="rtl">
+                        <div className="text-center font-arabic text-[#5C4A2A] dark:text-[#C4A96A] space-y-0.5">
+                          <div className="text-[13px] md:text-[15px]">آياتها {toArabicNum(surah?.numberOfAyahs || 0)}</div>
+                          <div className="text-[17px] md:text-[20px] font-bold flex items-center justify-center gap-2">
                             <span className="text-[10px] font-normal opacity-70">❁</span>
-                            سُورَةُ {surah?.name}
-                            {surah?.revelationType === "Meccan" ? " مَكِّيَّة" : " مَدَنِيَّة"}
+                            ({toArabicNum(selectedSurah)}) سُورَةُ {surah?.name}
+                            {surah?.revealType === "Meccan" ? " مَكِّيَّة" : " مَدَنِيَّة"}
                             <span className="text-[10px] font-normal opacity-70">❁</span>
-                          </span>
-                          <span>ركوعها {toArabicNum(SURAH_RUKU_COUNT[selectedSurah] || 1)}</span>
+                          </div>
+                          <div className="text-[13px] md:text-[15px]">ركوعاتها {toArabicNum(SURAH_RUKU_COUNT[selectedSurah] || 1)}</div>
                         </div>
                       </div>
                     )}
 
-                    {/* Bismillah — counted as 1 line */}
+                    {/* Bismillah — 1 line, centered, large */}
                     {currentPage === 0 && selectedSurah !== 9 && (
-                      <div className="border-b border-[#8B7355]/15 dark:border-[#C4A96A]/15 py-2 text-center">
-                        <p className="font-arabic text-[20px] md:text-[22px] font-bold text-[#2D5016] dark:text-[#7BAF4C] leading-relaxed">
+                      <div className="border-b border-[#8B7355]/40 dark:border-[#C4A96A]/30 py-2.5 text-center">
+                        <p className="font-arabic text-[26px] md:text-[30px] font-bold text-[#2D5016] dark:text-[#7BAF4C] leading-relaxed">
                           بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                         </p>
                       </div>
