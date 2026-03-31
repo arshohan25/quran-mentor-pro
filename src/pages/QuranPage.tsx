@@ -568,7 +568,7 @@ export default function QuranPage() {
               <ScrollArea className="h-[calc(100vh-280px)] md:h-[calc(100vh-320px)]">
                 <div className="space-y-4">
                   {wordData.map((verse) => (
-                    <div key={verse.verse_key} className="rounded-xl border border-border bg-card p-4">
+                    <div key={verse.verse_key} className="rounded-xl border border-border bg-card p-3 md:p-4">
                       <div className="flex items-start gap-3 mb-3">
                         <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
                           {verse.verse_number}
