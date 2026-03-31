@@ -98,14 +98,6 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
   const surah = surahList.find(s => s.number === selectedSurah);
 
-  // Auto-save reading position
-  useEffect(() => {
-    const firstAyah = pages[currentPage]?.[0];
-    if (firstAyah) {
-      saveLastRead(selectedSurah, firstAyah.numberInSurah, currentPage, "reading");
-    }
-  }, [selectedSurah, currentPage, pages, saveLastRead]);
-
   const pages = useMemo(() => {
     if (!data) return [];
     const ayahs = data.arabic.ayahs;
@@ -136,6 +128,14 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     if (currentPageAyahs.length) result.push(currentPageAyahs);
     return result;
   }, [data, selectedSurah]);
+
+  // Auto-save reading position
+  useEffect(() => {
+    const firstAyah = pages[currentPage]?.[0];
+    if (firstAyah) {
+      saveLastRead(selectedSurah, firstAyah.numberInSurah, currentPage, "reading");
+    }
+  }, [selectedSurah, currentPage, pages, saveLastRead]);
 
   const totalPages = pages.length;
   const canGoPrev = currentPage > 0 || selectedSurah > 1;
