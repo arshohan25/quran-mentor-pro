@@ -140,6 +140,18 @@ export default function QuranPage() {
               <Repeat className="w-5 h-5" />
             </button>
             <button
+              onClick={() => setShowLoopRange(!showLoopRange)}
+              className={`p-2 rounded-lg transition-colors ${
+                loopRange
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "text-primary-foreground/60 hover:text-primary-foreground"
+              }`}
+              title={t("আয়াত রেঞ্জ লুপ", "Ayah Range Loop", "تكرار نطاق الآيات")}
+            >
+              <ListMusic className="w-5 h-5" />
+            </button>
+            </button>
+            <button
               onClick={() => setTajweedEnabled(!tajweedEnabled)}
               className={`p-2 rounded-lg transition-colors ${
                 tajweedEnabled
