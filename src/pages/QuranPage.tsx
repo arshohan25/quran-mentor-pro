@@ -20,7 +20,7 @@ const LINES_PER_PAGE = 15;
 
 const CATEGORIES = [
   { id: "reading" as const, icon: BookOpen, labelBn: "কুরআন তেলাওয়াত", labelEn: "Quran Reading", labelAr: "تلاوة القرآن", active: true },
-  { id: "translation" as const, icon: BookText, labelBn: "তরজমা ও তাফসির", labelEn: "Translation & Tafsir", labelAr: "الترجمة والتفسير", active: false },
+  { id: "translation" as const, icon: BookText, labelBn: "তরজমা ও তাফসির", labelEn: "Translation & Tafsir", labelAr: "الترجمة والتفسير", active: true },
   { id: "audio" as const, icon: Headphones, labelBn: "অডিও তেলাওয়াত", labelEn: "Audio Recitation", labelAr: "التلاوة الصوتية", active: false },
   { id: "wordmeaning" as const, icon: Languages, labelBn: "শব্দার্থ", labelEn: "Word Meaning", labelAr: "معاني الكلمات", active: false },
   { id: "hifz" as const, icon: GraduationCap, labelBn: "হিফয", labelEn: "Hifz", labelAr: "الحفظ", active: false },
@@ -43,7 +43,26 @@ export default function QuranPage() {
     try { return localStorage.getItem("tajweedEnabled") !== "false"; } catch { return true; }
   });
 
-  const { data, isLoading } = useSurahWithTranslations(activeSection === "reading" ? selectedSurah : 0);
+  const { data, isLoading } = useSurahWithTranslations(
+    activeSection === "reading" || activeSection === "translation" ? selectedSurah : 0
+  );
+
+  // Translation pages
+  const translationPages = useMemo(() => {
+    if (!data) return [];
+    const ayahs = data.arabic.ayahs;
+    const result: number[][] = [];
+    for (let i = 0; i < ayahs.length; i += LINES_PER_PAGE) {
+      result.push(ayahs.slice(i, i + LINES_PER_PAGE).map((_, idx) => i + idx));
+    }
+    return result;
+  }, [data]);
+
+  const [translationPage, setTranslationPage] = useState(0);
+
+  useEffect(() => {
+    setTranslationPage(0);
+  }, [selectedSurah]);
 
   useEffect(() => {
     localStorage.setItem("tajweedEnabled", String(tajweedEnabled));
@@ -283,6 +302,154 @@ export default function QuranPage() {
             <span className="text-xs text-muted-foreground">{selectedSurah} / 114</span>
             <button
               onClick={() => { if (selectedSurah < 114) { setSelectedSurah(selectedSurah + 1); } }}
+              disabled={selectedSurah >= 114}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
+            >
+              {selectedSurah < 114 && (language === "bn" ? surahList[selectedSurah]?.bengaliName : surahList[selectedSurah]?.englishName)}
+              <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Translation & Tafsir View
+  if (activeSection === "translation") {
+    const totalTransPages = translationPages.length;
+    const currentIndices = translationPages[translationPage] || [];
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="bg-primary text-primary-foreground py-3">
+          <div className="container">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button onClick={() => setActiveSection(null)} className="hover:opacity-80">
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <h1 className="text-base md:text-lg font-bold">{t("তরজমা ও তাফসির", "Translation & Tafsir", "الترجمة والتفسير")}</h1>
+              </div>
+              <Select value={String(selectedSurah)} onValueChange={(v) => setSelectedSurah(Number(v))}>
+                <SelectTrigger className="w-auto min-w-[100px] md:min-w-[140px] h-7 md:h-8 text-xs bg-primary-foreground/10 border-none text-primary-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-80">
+                  {surahList.map((s) => (
+                    <SelectItem key={s.number} value={String(s.number)} className="text-xs">
+                      {s.number}. {language === "bn" ? s.bengaliName : s.englishName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </header>
+
+        <div className="container py-4 max-w-2xl mx-auto">
+          {/* Surah info */}
+          {currentSurah && translationPage === 0 && (
+            <div className="bg-primary/5 rounded-xl p-4 mb-4 text-center space-y-1">
+              <h2 className="font-arabic text-2xl text-primary">{currentSurah.name}</h2>
+              <p className="text-foreground font-semibold text-sm">
+                {language === "bn" ? currentSurah.bengaliName : currentSurah.englishName}
+              </p>
+              <div className="flex items-center justify-center gap-2 text-xs">
+                <span className={`px-2.5 py-1 rounded-full font-medium ${
+                  currentSurah.revelationType === "Meccan" ? "bg-accent/15 text-accent" : "bg-primary/15 text-primary"
+                }`}>
+                  {currentSurah.revelationType === "Meccan" ? t("মক্কী", "Meccan", "مكية") : t("মাদানী", "Medinan", "مدنية")}
+                </span>
+                <span className="text-muted-foreground">{currentSurah.numberOfAyahs} {t("আয়াত", "Ayahs", "آيات")}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Ayah cards */}
+          {isLoading ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-24 rounded-xl" />
+              ))}
+            </div>
+          ) : data ? (
+            <div className="space-y-3">
+              {currentIndices.map((idx) => {
+                const arabicAyah = data.arabic.ayahs[idx];
+                const bengaliAyah = data.bengali?.ayahs[idx];
+                const englishAyah = data.english?.ayahs[idx];
+                if (!arabicAyah) return null;
+                return (
+                  <Card key={arabicAyah.number} className="p-4 space-y-3">
+                    {/* Ayah number badge */}
+                    <div className="flex items-center gap-2">
+                      <span className="bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full">
+                        {arabicAyah.numberInSurah}
+                      </span>
+                    </div>
+                    {/* Arabic text */}
+                    <p className="font-arabic text-lg md:text-xl leading-[2.2] text-foreground" dir="rtl">
+                      {arabicAyah.text}
+                    </p>
+                    {/* Bengali translation */}
+                    {bengaliAyah && (
+                      <p className="text-sm leading-relaxed text-muted-foreground border-t border-border/40 pt-2">
+                        <span className="text-xs font-semibold text-primary/70 block mb-1">{t("বাংলা", "Bengali", "بنغالي")}</span>
+                        {bengaliAyah.text}
+                      </p>
+                    )}
+                    {/* English translation */}
+                    {englishAyah && (
+                      <p className="text-sm leading-relaxed text-muted-foreground border-t border-border/40 pt-2">
+                        <span className="text-xs font-semibold text-primary/70 block mb-1">{t("ইংরেজি", "English", "إنجليزي")}</span>
+                        {englishAyah.text}
+                      </p>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
+          ) : null}
+
+          {/* Page navigation */}
+          <div className="flex items-center justify-between mt-4 mb-2 gap-2">
+            <button
+              onClick={() => translationPage > 0 ? setTranslationPage(translationPage - 1) : selectedSurah > 1 && (setSelectedSurah(selectedSurah - 1), setTranslationPage(999))}
+              disabled={translationPage === 0 && selectedSurah <= 1}
+              className="flex items-center gap-1 px-3 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              {t("আগের", "Previous", "السابقة")}
+            </button>
+            <span className="text-xs text-muted-foreground">
+              {t(
+                `পৃষ্ঠা ${translationPage + 1} / ${totalTransPages || 1}`,
+                `Page ${translationPage + 1} / ${totalTransPages || 1}`,
+                `صفحة ${translationPage + 1} / ${totalTransPages || 1}`
+              )}
+            </span>
+            <button
+              onClick={() => translationPage < totalTransPages - 1 ? setTranslationPage(translationPage + 1) : selectedSurah < 114 && (setSelectedSurah(selectedSurah + 1), setTranslationPage(0))}
+              disabled={translationPage >= totalTransPages - 1 && selectedSurah >= 114}
+              className="flex items-center gap-1 px-3 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+            >
+              {t("পরের", "Next", "التالية")}
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Surah nav */}
+          <div className="flex items-center justify-between mt-2 mb-4 gap-2">
+            <button
+              onClick={() => { if (selectedSurah > 1) setSelectedSurah(selectedSurah - 1); }}
+              disabled={selectedSurah <= 1}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
+            >
+              <ChevronLeft className="w-3 h-3" />
+              {selectedSurah > 1 && (language === "bn" ? surahList[selectedSurah - 2]?.bengaliName : surahList[selectedSurah - 2]?.englishName)}
+            </button>
+            <span className="text-xs text-muted-foreground">{selectedSurah} / 114</span>
+            <button
+              onClick={() => { if (selectedSurah < 114) setSelectedSurah(selectedSurah + 1); }}
               disabled={selectedSurah >= 114}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
             >
