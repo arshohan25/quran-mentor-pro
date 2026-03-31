@@ -58,7 +58,10 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AnimatedRoutes />
+            <div className="pb-14">
+              <AnimatedRoutes />
+            </div>
+            <BottomNav />
           </BrowserRouter>
         </TooltipProvider>
       </LanguageProvider>
