@@ -537,7 +537,7 @@ export default function QuranPage() {
                         <TajweedText
                           text={ayah.text}
                           enabled={tajweedEnabled}
-                          className="font-arabic text-2xl leading-loose text-foreground flex-1 text-right"
+                          className="font-arabic text-xl md:text-2xl leading-loose text-foreground flex-1 text-right"
                         />
                       </div>
                       <div className="border-t border-border pt-3 space-y-2 pl-11">
