@@ -322,8 +322,8 @@ export default function QuranPage() {
           </button>
 
           {currentSurah && (
-            <div className="bg-primary/5 rounded-xl p-4 mb-4 text-center">
-              <h2 className="font-arabic text-3xl text-primary mb-1">{currentSurah.name}</h2>
+            <div className="bg-primary/5 rounded-xl p-5 mb-4 text-center space-y-3">
+              <h2 className="font-arabic text-3xl text-primary">{currentSurah.name}</h2>
               <p className="text-foreground font-semibold">
                 {language === "bn" ? currentSurah.bengaliName : currentSurah.englishName}
               </p>
@@ -331,6 +331,31 @@ export default function QuranPage() {
                 {currentSurah.englishNameTranslation} • {currentSurah.numberOfAyahs}{" "}
                 {t("আয়াত", "Ayahs", "آيات")}
               </p>
+              <div className="flex items-center justify-center gap-3 text-xs">
+                <span className={`px-2.5 py-1 rounded-full font-medium ${
+                  currentSurah.revelationType === "Meccan"
+                    ? "bg-accent/15 text-accent"
+                    : "bg-primary/15 text-primary"
+                }`}>
+                  {currentSurah.revelationType === "Meccan"
+                    ? t("মক্কী", "Meccan", "مكية")
+                    : t("মাদানী", "Medinan", "مدنية")}
+                </span>
+                <span className="text-muted-foreground">
+                  {t(`নাযিলের ক্রম: ${currentSurah.number}`, `Revelation order: ${currentSurah.number}`, `ترتيب النزول: ${currentSurah.number}`)}
+                </span>
+              </div>
+              {/* Bismillah banner - not shown for Surah At-Tawba (9) */}
+              {currentSurah.number !== 9 && (
+                <div className="pt-2">
+                  <p className="font-arabic text-2xl text-primary/80 leading-relaxed">
+                    بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("পরম করুণাময় অসীম দয়ালু আল্লাহর নামে", "In the name of Allah, the Most Gracious, the Most Merciful", "بسم الله الرحمن الرحيم")}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
