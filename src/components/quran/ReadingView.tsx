@@ -283,10 +283,10 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
             onTouchEnd={handleTouchEnd}
           >
             <div
-              className="transition-transform duration-200 ease-out"
+              className="transition-transform duration-200 ease-out flex-1 flex flex-col"
               style={{ transform: `translateX(${swipeOffset}px)`, opacity: isAnimating ? 0.6 : 1 }}
             >
-              <MushafFrame>
+              <MushafFrame className="flex-1">
                 {/* Top info bar */}
                 <div className="flex items-center justify-between px-4 py-1.5 text-[11px]" dir="rtl">
                   <span className="font-arabic text-[#5C4A2A] dark:text-[#C4A96A] font-semibold">{getJuzName(currentJuz)}</span>
@@ -307,12 +307,12 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
 
                 {/* Bismillah */}
                 {isFirstPageOfSurah && selectedSurah !== 9 && (
-                  <div className="py-2 text-center">
+                  <div className="py-1 text-center">
                     <p className="font-arabic font-bold text-[#1a1008] dark:text-[#E8DCC8]"
                        style={{ fontSize: `${Math.max(arabicFontSize - 2, 18)}px` }}>
                       بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                     </p>
-                    <div className="flex items-center justify-center gap-2 mt-1 px-8">
+                    <div className="flex items-center justify-center gap-2 mt-0.5 px-8">
                       <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#8B7355]/25 to-transparent dark:via-[#C4A96A]/20" />
                       <svg viewBox="0 0 12 12" className="w-2 h-2 text-[#8B7355]/30 dark:text-[#C4A96A]/25" fill="currentColor">
                         <rect x="3" y="3" width="6" height="6" transform="rotate(45, 6, 6)" />
@@ -322,8 +322,8 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                   </div>
                 )}
 
-                {/* Flowing paragraph */}
-                <div className="px-5 md:px-7 py-2" dir="rtl">
+                {/* Flowing paragraph — fills remaining space, clips overflow */}
+                <div className="px-5 md:px-7 py-1 flex-1 overflow-hidden" dir="rtl">
                   <p className="font-arabic font-bold text-[#1a1008] dark:text-[#E8DCC8] text-justify leading-[2.2] sm:leading-[2.4] md:leading-[2.6]"
                      style={{ fontSize: `${arabicFontSize}px`, wordSpacing: '0.12em', letterSpacing: '0.01em' }}>
                     {currentPageData.ayahs.map((ayah, idx) => {
@@ -353,7 +353,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                 {/* Bottom page number with ornament */}
                 <div className="mt-auto">
                   <div className="mx-3 border-t border-[#8B7355]/15 dark:border-[#C4A96A]/15" />
-                  <div className="text-center py-2 flex items-center justify-center gap-2">
+                  <div className="text-center py-1 flex items-center justify-center gap-2">
                     <div className="h-px w-8 bg-gradient-to-r from-transparent to-[#8B7355]/20 dark:to-[#C4A96A]/15" />
                     <span className="text-[11px] text-[#8B7355] dark:text-[#9B8365] tabular-nums font-medium">
                       {realPageNum && toArabicNum(realPageNum)}
@@ -371,38 +371,6 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
             )}
           </div>
         ) : null}
-
-        {/* Page navigation */}
-        <div className="flex items-center justify-between mt-3 gap-2">
-          <button onClick={goToPrev} disabled={!canGoPrev}
-            className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[#2D5016]/10 dark:bg-[#7BAF4C]/10 text-[#2D5016] dark:text-[#7BAF4C] hover:bg-[#2D5016]/20 transition-colors disabled:opacity-30 text-xs font-medium">
-            <ChevronLeft className="w-4 h-4" />{t("আগের", "Prev", "السابق")}
-          </button>
-          <div className="flex items-center gap-1">
-            {totalPages > 0 && Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-              const idx = totalPages <= 7 ? i :
-                pageIndex <= 3 ? i :
-                pageIndex >= totalPages - 4 ? totalPages - 7 + i :
-                pageIndex - 3 + i;
-              return (
-                <button key={idx} onClick={() => setPageIndex(idx)}
-                  className={`w-6 h-6 rounded-full text-[10px] font-bold transition-all ${
-                    idx === pageIndex
-                      ? "bg-[#2D5016] dark:bg-[#7BAF4C] text-white dark:text-[#1a1510] shadow-md scale-110"
-                      : "bg-[#E8DCC8] dark:bg-[#2a1f0e] text-[#5C4A2A] dark:text-[#9B8365] hover:bg-[#DDD0B8]"
-                  }`}>
-                  {toArabicNum(idx + 1)}
-                </button>
-              );
-            })}
-          </div>
-          <button onClick={goToNext} disabled={!canGoNext}
-            className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[#2D5016]/10 dark:bg-[#7BAF4C]/10 text-[#2D5016] dark:text-[#7BAF4C] hover:bg-[#2D5016]/20 transition-colors disabled:opacity-30 text-xs font-medium">
-            {t("পরের", "Next", "التالي")}<ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        <SurahNav selectedSurah={selectedSurah} setSelectedSurah={handleSurahChange} />
       </div>
     </div>
   );
