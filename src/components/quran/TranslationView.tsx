@@ -9,12 +9,23 @@ import SurahSelector from "./SurahSelector";
 import SurahHeader from "./SurahHeader";
 import SurahNav from "./SurahNav";
 import PageNav from "./PageNav";
+import SurahInfoCard from "./SurahInfoCard";
+import ReadingSettings from "./ReadingSettings";
+import AyahActions from "./AyahActions";
 import { LINES_PER_PAGE, type QuranSectionProps } from "./types";
 
 export default function TranslationView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
   const { t } = useLanguage();
   const { toggleFavorite, isFavorite } = useBookmark();
   const [page, setPage] = useState(0);
+  const [arabicFontSize, setArabicFontSize] = useState(() => {
+    try { return Number(localStorage.getItem("arabicFontSize")) || 20; } catch { return 20; }
+  });
+
+  const handleFontSizeChange = (n: number) => {
+    setArabicFontSize(n);
+    try { localStorage.setItem("arabicFontSize", String(n)); } catch {}
+  };
 
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
 
@@ -42,13 +53,21 @@ export default function TranslationView({ selectedSurah, setSelectedSurah, onBac
               <button onClick={onBack} className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></button>
               <h1 className="text-base md:text-lg font-bold">{t("তরজমা ও তাফসির", "Translation & Tafsir", "الترجمة والتفسير")}</h1>
             </div>
-            <SurahSelector value={selectedSurah} onChange={setSelectedSurah} />
+            <div className="flex items-center gap-2">
+              <ReadingSettings fontSize={arabicFontSize} setFontSize={handleFontSizeChange} />
+              <SurahSelector value={selectedSurah} onChange={setSelectedSurah} />
+            </div>
           </div>
         </div>
       </header>
 
       <div className="container py-4 max-w-2xl mx-auto">
-        {page === 0 && <SurahHeader surahNumber={selectedSurah} showBismillah={false} />}
+        {page === 0 && (
+          <>
+            <SurahInfoCard surahNumber={selectedSurah} />
+            <SurahHeader surahNumber={selectedSurah} showBismillah={false} />
+          </>
+        )}
 
         {isLoading ? (
           <div className="space-y-3">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
@@ -63,11 +82,20 @@ export default function TranslationView({ selectedSurah, setSelectedSurah, onBac
                 <Card key={arabicAyah.number} className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full">{arabicAyah.numberInSurah}</span>
-                    <button onClick={() => toggleFavorite(selectedSurah, arabicAyah.numberInSurah, arabicAyah.text)} className="p-1 rounded-full hover:bg-accent/10 transition-colors">
-                      <Star className={`w-4 h-4 ${isFavorite(selectedSurah, arabicAyah.numberInSurah) ? "fill-accent text-accent" : "text-muted-foreground"}`} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <AyahActions
+                        arabicText={arabicAyah.text}
+                        translation={bengaliAyah?.text || englishAyah?.text}
+                        surahName={data.arabic.edition?.englishName || ""}
+                        surahNumber={selectedSurah}
+                        ayahNumber={arabicAyah.numberInSurah}
+                      />
+                      <button onClick={() => toggleFavorite(selectedSurah, arabicAyah.numberInSurah, arabicAyah.text)} className="p-1 rounded-full hover:bg-accent/10 transition-colors">
+                        <Star className={`w-4 h-4 ${isFavorite(selectedSurah, arabicAyah.numberInSurah) ? "fill-accent text-accent" : "text-muted-foreground"}`} />
+                      </button>
+                    </div>
                   </div>
-                  <p className="font-arabic text-lg md:text-xl leading-[2.2] text-foreground" dir="rtl">{arabicAyah.text}</p>
+                  <p className="font-arabic leading-[2.2] text-foreground" dir="rtl" style={{ fontSize: `${arabicFontSize}px` }}>{arabicAyah.text}</p>
                   {bengaliAyah && (
                     <p className="text-sm leading-relaxed text-muted-foreground border-t border-border/40 pt-2">
                       <span className="text-xs font-semibold text-primary/70 block mb-1">{t("বাংলা", "Bengali", "بنغالي")}</span>

@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from "react";
-import { ArrowLeft, Palette, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { juzList } from "@/data/juzData";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
@@ -8,47 +8,33 @@ import { Skeleton } from "@/components/ui/skeleton";
 import TajweedText, { TajweedLegend } from "@/components/TajweedText";
 import SurahSelector from "./SurahSelector";
 import SurahNav from "./SurahNav";
+import ReadingSettings from "./ReadingSettings";
 import { LINES_PER_PAGE, CHARS_PER_LINE } from "./types";
 
-// Convert number to Arabic numerals
 function toArabicNum(n: number): string {
   const arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
   return String(n).replace(/\d/g, (d) => arabicDigits[parseInt(d)]);
 }
 
-// Find juz number for an ayah
 function getJuzNumber(surahNumber: number, ayahNumber: number): number {
   for (let i = juzList.length - 1; i >= 0; i--) {
     const j = juzList[i];
-    if (
-      surahNumber > j.startSurah ||
-      (surahNumber === j.startSurah && ayahNumber >= j.startAyah)
-    ) {
-      return j.number;
-    }
+    if (surahNumber > j.startSurah || (surahNumber === j.startSurah && ayahNumber >= j.startAyah)) return j.number;
   }
   return 1;
 }
 
-// Get juz name
 function getJuzName(juzNum: number): string {
   const juz = juzList.find(j => j.number === juzNum);
   return juz?.name || `الجزء ${toArabicNum(juzNum)}`;
 }
 
-// Get manzil number (Quran divided into 7 manzils)
 function getManzil(surahNumber: number, ayahNumber: number): number {
   const juz = getJuzNumber(surahNumber, ayahNumber);
-  if (juz <= 4) return 1;
-  if (juz <= 8) return 2;
-  if (juz <= 13) return 3;
-  if (juz <= 17) return 4;
-  if (juz <= 21) return 5;
-  if (juz <= 26) return 6;
-  return 7;
+  if (juz <= 4) return 1; if (juz <= 8) return 2; if (juz <= 13) return 3;
+  if (juz <= 17) return 4; if (juz <= 21) return 5; if (juz <= 26) return 6; return 7;
 }
 
-// Ruku counts per surah (1-114)
 const SURAH_RUKU_COUNT: Record<number, number> = {
   1:1,2:40,3:20,4:24,5:16,6:20,7:24,8:10,9:16,10:11,11:10,12:12,13:6,14:7,15:6,16:16,17:12,18:12,19:6,20:8,
   21:7,22:10,23:6,24:9,25:6,26:11,27:7,28:9,29:7,30:6,31:4,32:3,33:9,34:6,35:5,36:5,37:5,38:5,39:8,40:9,
@@ -58,7 +44,6 @@ const SURAH_RUKU_COUNT: Record<number, number> = {
   101:1,102:1,103:1,104:1,105:1,106:1,107:1,108:1,109:1,110:1,111:1,112:1,113:1,114:1,
 };
 
-// Strip bismillah from text - find الرحيم and take everything after it
 function stripBismillah(text: string): string {
   const t = text.trim();
   const markers = ['ٱلرَّحِيمِ', 'الرَّحِيمِ', 'الرحيم', 'لرَّحِيمِ', 'لرحيم'];
@@ -69,7 +54,6 @@ function stripBismillah(text: string): string {
       return after.length > 0 ? after : '';
     }
   }
-  // Fallback: if starts with بسم, strip up to 50 chars
   if (t.startsWith('بِسْ') || t.startsWith('بسم') || t.startsWith('بِسۡ')) {
     const stripped = t.substring(Math.min(50, t.length)).trim();
     if (stripped.length > 0) return stripped;
@@ -89,8 +73,21 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const [tajweedEnabled, setTajweedEnabled] = useState(() => {
     try { return localStorage.getItem("tajweedEnabled") !== "false"; } catch { return true; }
   });
+  const [arabicFontSize, setArabicFontSize] = useState(() => {
+    try { return Number(localStorage.getItem("arabicFontSize")) || 20; } catch { return 20; }
+  });
 
-  // Swipe state
+  const handleFontSizeChange = (n: number) => {
+    setArabicFontSize(n);
+    try { localStorage.setItem("arabicFontSize", String(n)); } catch {}
+  };
+
+  const handleTajweedToggle = () => {
+    const next = !tajweedEnabled;
+    setTajweedEnabled(next);
+    try { localStorage.setItem("tajweedEnabled", String(next)); } catch {}
+  };
+
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
@@ -105,25 +102,22 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     const result: typeof ayahs[] = [];
     let currentPageAyahs: typeof ayahs = [];
     let currentLineCount = 0;
-    // First page: surah header (3 lines) + bismillah (1 line) = 4 lines reserved → 8 lines for ayahs
-    // Subsequent pages: full 15 lines
     const hasBismillah = selectedSurah !== 9;
-    const firstPageLines = hasBismillah ? LINES_PER_PAGE - 4 : LINES_PER_PAGE - 3; // header always 3 lines
+    const firstPageLines = hasBismillah ? LINES_PER_PAGE - 4 : LINES_PER_PAGE - 3;
     let maxLinesForCurrentPage = firstPageLines;
 
     for (const ayah of ayahs) {
       let textForCounting = ayah.text;
-      // Strip bismillah from first ayah for line counting
       if (result.length === 0 && currentPageAyahs.length === 0 && hasBismillah) {
         textForCounting = stripBismillah(textForCounting);
-        if (!textForCounting) textForCounting = ayah.text; // fallback
+        if (!textForCounting) textForCounting = ayah.text;
       }
       const ayahLines = Math.max(1, Math.ceil(textForCounting.length / CHARS_PER_LINE));
       if (currentLineCount + ayahLines > maxLinesForCurrentPage && currentPageAyahs.length > 0) {
         result.push(currentPageAyahs);
         currentPageAyahs = [ayah];
         currentLineCount = ayahLines;
-        maxLinesForCurrentPage = LINES_PER_PAGE; // subsequent pages get full 15 lines
+        maxLinesForCurrentPage = LINES_PER_PAGE;
       } else {
         currentPageAyahs.push(ayah);
         currentLineCount += ayahLines;
@@ -149,7 +143,6 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
 
   const handleSurahChange = (n: number) => { setSelectedSurah(n); setCurrentPage(0); };
 
-  // Touch handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isAnimating) return;
     touchStartX.current = e.touches[0].clientX;
@@ -175,17 +168,27 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     touchStartX.current = null; touchStartY.current = null;
   };
 
-  // Get juz number from first ayah of current page
-  const currentJuz = pages[currentPage]?.[0]
-    ? getJuzNumber(selectedSurah, pages[currentPage][0].numberInSurah)
-    : 1;
-
-  const currentManzil = pages[currentPage]?.[0]
-    ? getManzil(selectedSurah, pages[currentPage][0].numberInSurah)
-    : 1;
+  const currentJuz = pages[currentPage]?.[0] ? getJuzNumber(selectedSurah, pages[currentPage][0].numberInSurah) : 1;
+  const currentManzil = pages[currentPage]?.[0] ? getManzil(selectedSurah, pages[currentPage][0].numberInSurah) : 1;
+  const realPage = pages[currentPage]?.[0]?.page;
 
   return (
     <div className="min-h-screen bg-[#F5EFE0] dark:bg-[#1a1510]">
+      {/* Header bar */}
+      <header className="bg-[#2D5016] dark:bg-[#1a3009] text-white py-2">
+        <div className="container flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button onClick={onBack} className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></button>
+            <SurahSelector value={selectedSurah} onChange={handleSurahChange} />
+          </div>
+          <ReadingSettings
+            fontSize={arabicFontSize}
+            setFontSize={handleFontSizeChange}
+            tajweedEnabled={tajweedEnabled}
+            onTajweedToggle={handleTajweedToggle}
+          />
+        </div>
+      </header>
 
       <div className="container py-3 max-w-xl mx-auto px-2">
         {tajweedEnabled && <div className="mb-3"><TajweedLegend /></div>}
@@ -201,41 +204,34 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            {/* Mushaf Page */}
             <div
               className="transition-transform duration-200 ease-out"
               style={{ transform: `translateX(${swipeOffset}px)`, opacity: isAnimating ? 0.6 : 1 }}
             >
-              {/* === OUTER HEADER (above frame) === */}
+              {/* Outer header */}
               <div className="flex items-center justify-between px-2 pb-1.5" dir="rtl">
                 <span className="font-arabic text-[13px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
                   {getJuzName(currentJuz)}
                 </span>
                 <span className="text-[14px] text-[#8B7355] dark:text-[#9B8365] font-bold tabular-nums">
-                  {toArabicNum(currentPage + 1)}
+                  {realPage ? toArabicNum(realPage) : toArabicNum(currentPage + 1)}
                 </span>
                 <span className="font-arabic text-[13px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
                   {surah?.name} {toArabicNum(selectedSurah)}
                 </span>
               </div>
 
-              {/* === ORNAMENTAL FRAME === */}
+              {/* Ornamental frame */}
               <div className="relative">
-                {/* Outer decorative border */}
                 <div className="rounded-sm border-[4px] border-[#8B7355]/60 dark:border-[#C4A96A]/50 bg-[#FFFDF7] dark:bg-[#1e1708] shadow-[0_6px_30px_rgba(92,74,42,0.2)] dark:shadow-[0_6px_30px_rgba(0,0,0,0.5)]">
-                  {/* Inner decorative border */}
                   <div className="m-[5px] border-[3px] border-[#8B7355]/40 dark:border-[#C4A96A]/35 rounded-sm relative">
-                    
-                    {/* Corner Ornaments — larger L-shape scrollwork */}
                     <span className="absolute -top-[3px] -right-[3px] w-12 h-12 border-t-[3px] border-r-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-tr-3xl z-10" />
                     <span className="absolute -top-[3px] -left-[3px] w-12 h-12 border-t-[3px] border-l-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-tl-3xl z-10" />
                     <span className="absolute -bottom-[3px] -right-[3px] w-12 h-12 border-b-[3px] border-r-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-br-3xl z-10" />
                     <span className="absolute -bottom-[3px] -left-[3px] w-12 h-12 border-b-[3px] border-l-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-bl-3xl z-10" />
 
-                    {/* Top ornamental bar */}
                     <div className="h-[3px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/60 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/60 dark:to-[#C4A96A]/10" />
 
-                    {/* Surah header band — 3-line layout matching PDF */}
                     {currentPage === 0 && (
                       <div className="border-b-2 border-[#8B7355]/40 dark:border-[#C4A96A]/30 bg-gradient-to-r from-[#F5EFE0]/80 via-[#E8DCC8]/60 to-[#F5EFE0]/80 dark:from-[#2a1f0e]/60 dark:via-[#1e1708]/40 dark:to-[#2a1f0e]/60 py-2 px-3" dir="rtl">
                         <div className="text-center font-arabic text-[#5C4A2A] dark:text-[#C4A96A] space-y-0.5">
@@ -251,16 +247,15 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                       </div>
                     )}
 
-                    {/* Bismillah — 1 line, centered, large */}
                     {currentPage === 0 && selectedSurah !== 9 && (
                       <div className="border-b border-[#8B7355]/40 dark:border-[#C4A96A]/30 py-2.5 text-center">
-                        <p className="font-arabic text-[20px] sm:text-[26px] md:text-[30px] font-bold text-[#2D5016] dark:text-[#7BAF4C] leading-relaxed">
+                        <p className="font-arabic font-bold text-[#2D5016] dark:text-[#7BAF4C] leading-relaxed"
+                           style={{ fontSize: `${Math.max(arabicFontSize, 20)}px` }}>
                           بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                         </p>
                       </div>
                     )}
 
-                    {/* === LINE-BASED AYAH ROWS === */}
                     <div className="px-3 md:px-5" dir="rtl">
                       {pages[currentPage]?.map((ayah, idx) => {
                         let displayText = ayah.text;
@@ -269,18 +264,16 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                         }
                         if (!displayText && currentPage === 0 && idx === 0) return null;
                         return (
-                          <div key={ayah.number}
-                            className="border-b border-[#8B7355]/40 dark:border-[#C4A96A]/30 flex items-center min-h-[2.8em]"
-                          >
-                            <p className="font-arabic text-[20px] sm:text-[26px] md:text-[30px] font-bold leading-[2.4] sm:leading-[2.6] md:leading-[2.8] text-[#1a1008] dark:text-[#E8DCC8] text-justify w-full py-[2px]"
-                               style={{ wordSpacing: '0.08em', letterSpacing: '0.01em', textAlignLast: 'center' }}>
+                          <div key={ayah.number} className="border-b border-[#8B7355]/40 dark:border-[#C4A96A]/30 flex items-center min-h-[2.8em]">
+                            <p className="font-arabic font-bold leading-[2.4] sm:leading-[2.6] md:leading-[2.8] text-[#1a1008] dark:text-[#E8DCC8] text-justify w-full py-[2px]"
+                               style={{ fontSize: `${arabicFontSize}px`, wordSpacing: '0.08em', letterSpacing: '0.01em', textAlignLast: 'center' }}>
                               {tajweedEnabled ? (
                                 <TajweedText text={displayText} enabled={true} className="inline" />
                               ) : (
                                 <span>{displayText}</span>
                               )}
-                              <span className="inline-flex items-center justify-center mx-1 text-[#2D5016] dark:text-[#7BAF4C] text-[11px] sm:text-[14px] md:text-[17px] font-bold select-none align-middle"
-                                    style={{ fontFamily: 'serif' }}>
+                              <span className="inline-flex items-center justify-center mx-1 text-[#2D5016] dark:text-[#7BAF4C] font-bold select-none align-middle"
+                                    style={{ fontSize: `${Math.max(11, arabicFontSize - 9)}px`, fontFamily: 'serif' }}>
                                 ﴿{toArabicNum(ayah.numberInSurah)}﴾
                               </span>
                             </p>
@@ -289,13 +282,11 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                       })}
                     </div>
 
-                    {/* Bottom ornamental bar */}
                     <div className="h-[3px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/60 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/60 dark:to-[#C4A96A]/10" />
                   </div>
                 </div>
               </div>
 
-              {/* === FOOTER (below frame) === */}
               <div className="text-center pt-1.5">
                 <span className="font-arabic text-[11px] text-[#8B7355] dark:text-[#9B8365]">
                   مَنْزِل {toArabicNum(currentManzil)}
@@ -303,7 +294,6 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
               </div>
             </div>
 
-            {/* Swipe hint overlay */}
             {Math.abs(swipeOffset) > 30 && !isAnimating && (
               <div className={`absolute top-1/2 -translate-y-1/2 ${swipeOffset > 0 ? "left-1" : "right-1"} bg-[#2D5016]/80 text-white rounded-full p-2 shadow-lg`}>
                 {swipeOffset > 0 ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
@@ -312,7 +302,6 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
           </div>
         ) : null}
 
-        {/* Navigation buttons */}
         <div className="flex items-center justify-between mt-3 gap-2">
           <button onClick={goToPrev} disabled={!canGoPrev}
             className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[#2D5016]/10 dark:bg-[#7BAF4C]/10 text-[#2D5016] dark:text-[#7BAF4C] hover:bg-[#2D5016]/20 transition-colors disabled:opacity-30 text-xs font-medium">
