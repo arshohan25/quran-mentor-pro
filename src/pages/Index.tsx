@@ -20,6 +20,30 @@ const Index = () => {
 
   const sections = [
     {
+      icon: Compass,
+      title: t("কিবলা ফাইন্ডার", "Qibla Finder", "مكتشف القبلة"),
+      desc: t("কিবলার দিক জানুন", "Find Qibla direction", "اعرف اتجاه القبلة"),
+      path: "/qibla",
+    },
+    {
+      icon: Hash,
+      title: t("তাসবিহ", "Tasbih Counter", "عداد التسبيح"),
+      desc: t("ডিজিটাল তাসবিহ গণনা", "Digital dhikr counter", "عداد الذكر الرقمي"),
+      path: "/tasbih",
+    },
+    {
+      icon: BookHeart,
+      title: t("দোয়া ও যিকর", "Duas & Azkar", "الأدعية والأذكار"),
+      desc: t("দৈনন্দিন দোয়া সংগ্রহ", "Daily dua collection", "مجموعة الأدعية"),
+      path: "/dua",
+    },
+    {
+      icon: CalendarDays,
+      title: t("হিজরি ক্যালেন্ডার", "Hijri Calendar", "التقويم الهجري"),
+      desc: t("ইসলামিক তারিখ ও দিন", "Islamic dates & events", "التواريخ الإسلامية"),
+      path: "/hijri",
+    },
+    {
       icon: BookOpen,
       title: t("নামাজ শিক্ষা", "Prayer Guide", "دليل الصلاة"),
       desc: t("চার মাযহাব অনুযায়ী নামাজ", "Prayer rules by 4 Madhabs", "أحكام الصلاة"),

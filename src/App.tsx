@@ -39,6 +39,10 @@ function AnimatedRoutes() {
         <Route path="/hifz" element={<PageTransition><HifzDashboardPage /></PageTransition>} />
         <Route path="/bookmarks" element={<PageTransition><BookmarksPage /></PageTransition>} />
         <Route path="/planner" element={<PageTransition><QuranPlannerPage /></PageTransition>} />
+        <Route path="/qibla" element={<PageTransition><QiblaPage /></PageTransition>} />
+        <Route path="/tasbih" element={<PageTransition><TasbihPage /></PageTransition>} />
+        <Route path="/dua" element={<PageTransition><DuaPage /></PageTransition>} />
+        <Route path="/hijri" element={<PageTransition><HijriCalendarPage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
