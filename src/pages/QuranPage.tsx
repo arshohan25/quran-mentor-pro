@@ -878,44 +878,138 @@ export default function QuranPage() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => {
-                    if (allCurrentHidden) {
-                      setHiddenAyahs(prev => {
-                        const next = new Set(prev);
-                        currentHifzAyahs.forEach(a => next.delete(a.number));
-                        return next;
-                      });
-                    } else {
-                      setHiddenAyahs(prev => {
-                        const next = new Set(prev);
-                        currentHifzAyahs.forEach(a => next.add(a.number));
-                        return next;
-                      });
-                    }
-                  }}
-                  className="p-1.5 rounded-lg bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 transition-colors"
-                  title={allCurrentHidden ? t("সব দেখান", "Show All", "إظهار الكل") : t("সব লুকান", "Hide All", "إخفاء الكل")}
+                  onClick={() => setShowHifzDashboard(!showHifzDashboard)}
+                  className={`p-1.5 rounded-lg transition-colors ${showHifzDashboard ? "bg-primary-foreground/20 text-primary-foreground" : "text-primary-foreground/60 hover:text-primary-foreground"}`}
+                  title={t("ড্যাশবোর্ড", "Dashboard", "لوحة التحكم")}
                 >
-                  {allCurrentHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  <BarChart3 className="w-4 h-4" />
                 </button>
-                <Select value={String(selectedSurah)} onValueChange={(v) => setSelectedSurah(Number(v))}>
-                  <SelectTrigger className="w-auto min-w-[100px] md:min-w-[140px] h-7 md:h-8 text-xs bg-primary-foreground/10 border-none text-primary-foreground">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-80">
-                    {surahList.map((s) => (
-                      <SelectItem key={s.number} value={String(s.number)} className="text-xs">
-                        {s.number}. {language === "bn" ? s.bengaliName : s.englishName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {!showHifzDashboard && (
+                  <>
+                    <button
+                      onClick={() => {
+                        if (allCurrentHidden) {
+                          setHiddenAyahs(prev => {
+                            const next = new Set(prev);
+                            currentHifzAyahs.forEach(a => next.delete(a.number));
+                            return next;
+                          });
+                        } else {
+                          setHiddenAyahs(prev => {
+                            const next = new Set(prev);
+                            currentHifzAyahs.forEach(a => next.add(a.number));
+                            return next;
+                          });
+                        }
+                      }}
+                      className="p-1.5 rounded-lg bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 transition-colors"
+                      title={allCurrentHidden ? t("সব দেখান", "Show All", "إظهار الكل") : t("সব লুকান", "Hide All", "إخفاء الكل")}
+                    >
+                      {allCurrentHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </button>
+                    <Select value={String(selectedSurah)} onValueChange={(v) => setSelectedSurah(Number(v))}>
+                      <SelectTrigger className="w-auto min-w-[100px] md:min-w-[140px] h-7 md:h-8 text-xs bg-primary-foreground/10 border-none text-primary-foreground">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-80">
+                        {surahList.map((s) => (
+                          <SelectItem key={s.number} value={String(s.number)} className="text-xs">
+                            {s.number}. {language === "bn" ? s.bengaliName : s.englishName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </>
+                )}
               </div>
             </div>
           </div>
         </header>
 
         <div className="container py-4 max-w-2xl mx-auto">
+          {/* Dashboard View */}
+          {showHifzDashboard ? (() => {
+            const totalMemorized = Object.values(hifzProgress).reduce((sum, arr) => sum + arr.length, 0);
+            const totalAyahsAll = surahList.reduce((sum, s) => sum + s.numberOfAyahs, 0);
+            const overallPct = totalAyahsAll > 0 ? Math.round((totalMemorized / totalAyahsAll) * 100) : 0;
+            const surahsWithProgress = surahList.filter(s => (hifzProgress[s.number] || []).length > 0);
+            const completedSurahs = surahList.filter(s => (hifzProgress[s.number] || []).length >= s.numberOfAyahs);
+
+            return (
+              <div className="space-y-4">
+                {/* Overall stats */}
+                <Card className="p-4 space-y-3">
+                  <h3 className="text-sm font-semibold text-foreground">{t("সামগ্রিক প্রগ্রেস", "Overall Progress", "التقدم العام")}</h3>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="bg-primary/5 rounded-lg p-2">
+                      <p className="text-lg font-bold text-primary">{totalMemorized}</p>
+                      <p className="text-[10px] text-muted-foreground">{t("আয়াত মুখস্থ", "Ayahs memorized", "آيات محفوظة")}</p>
+                    </div>
+                    <div className="bg-primary/5 rounded-lg p-2">
+                      <p className="text-lg font-bold text-primary">{completedSurahs.length}</p>
+                      <p className="text-[10px] text-muted-foreground">{t("সূরা সম্পূর্ণ", "Surahs complete", "سور مكتملة")}</p>
+                    </div>
+                    <div className="bg-primary/5 rounded-lg p-2">
+                      <p className="text-lg font-bold text-primary">{overallPct}%</p>
+                      <p className="text-[10px] text-muted-foreground">{t("সম্পূর্ণ", "Complete", "مكتمل")}</p>
+                    </div>
+                  </div>
+                  <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${overallPct}%` }} />
+                  </div>
+                </Card>
+
+                {/* Surah-wise progress */}
+                <h3 className="text-sm font-semibold text-foreground">{t("সূরা অনুযায়ী প্রগ্রেস", "Progress by Surah", "التقدم حسب السورة")}</h3>
+                {surahsWithProgress.length === 0 ? (
+                  <div className="text-center py-8">
+                    <GraduationCap className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
+                    <p className="text-sm text-muted-foreground">{t("এখনও কোন সূরা শুরু হয়নি", "No surahs started yet", "لم تبدأ أي سورة بعد")}</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">{t("হিফয ভিউতে আয়াত মুখস্থ চিহ্নিত করুন", "Mark ayahs as memorized in Hifz view", "حدد الآيات كمحفوظة في عرض الحفظ")}</p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[calc(100vh-340px)]">
+                    <div className="space-y-2">
+                      {surahList.map(s => {
+                        const memorized = (hifzProgress[s.number] || []).length;
+                        if (memorized === 0) return null;
+                        const pct = Math.round((memorized / s.numberOfAyahs) * 100);
+                        const isComplete = memorized >= s.numberOfAyahs;
+                        return (
+                          <button
+                            key={s.number}
+                            onClick={() => { setSelectedSurah(s.number); setShowHifzDashboard(false); }}
+                            className="w-full flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-muted transition-colors text-left"
+                          >
+                            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                              isComplete ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
+                            }`}>
+                              {isComplete ? "✓" : s.number}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm font-medium text-foreground truncate">
+                                  {language === "bn" ? s.bengaliName : s.englishName}
+                                </span>
+                                <span className="text-xs text-muted-foreground shrink-0 ml-2">{memorized}/{s.numberOfAyahs}</span>
+                              </div>
+                              <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${isComplete ? "bg-primary" : "bg-primary/60"}`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                )}
+              </div>
+            );
+          })() : (
+          <>
           {/* Surah info + progress */}
           {currentSurah && (
             <div className="bg-primary/5 rounded-xl p-4 mb-4 text-center space-y-2">
