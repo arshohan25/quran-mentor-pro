@@ -163,7 +163,7 @@ export default function MushafFrame({ children, className = "" }: { children: Re
       </div>
 
       {/* Content with padding for borders */}
-      <div className="relative z-10">
+      <div className="relative z-10 flex-1 flex flex-col">
         {children}
       </div>
     </div>
