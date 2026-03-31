@@ -9,6 +9,7 @@ import TajweedText, { TajweedLegend } from "@/components/TajweedText";
 import SurahSelector from "./SurahSelector";
 import SurahNav from "./SurahNav";
 import ReadingSettings from "./ReadingSettings";
+import MushafFrame, { SurahBanner } from "./MushafFrame";
 import { useBookmark } from "@/hooks/useBookmark";
 
 function toArabicNum(n: number): string {
@@ -215,28 +216,23 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
               className="transition-transform duration-200 ease-out"
               style={{ transform: `translateX(${swipeOffset}px)`, opacity: isAnimating ? 0.6 : 1 }}
             >
-              {/* Mushaf page frame */}
-              <div className="relative bg-[#FFFDF7] dark:bg-[#1e1708] rounded border-2 border-[#8B7355]/40 dark:border-[#C4A96A]/40 shadow-[0_4px_20px_rgba(92,74,42,0.15)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] min-h-[70vh]">
+              <MushafFrame>
                 {/* Top info bar */}
-                <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#8B7355]/20 dark:border-[#C4A96A]/20 text-[11px]" dir="rtl">
+                <div className="flex items-center justify-between px-4 py-1.5 text-[11px]" dir="rtl">
                   <span className="font-arabic text-[#5C4A2A] dark:text-[#C4A96A] font-semibold">{getJuzName(currentJuz)}</span>
                   <span className="text-[#8B7355] dark:text-[#9B8365] tabular-nums">{realPageNum ? toArabicNum(realPageNum) : toArabicNum(pageIndex + 1)}</span>
                   <span className="font-arabic text-[#5C4A2A] dark:text-[#C4A96A] font-semibold">{surah?.name}</span>
                 </div>
 
-                {/* Surah header banner — shown when this page contains ayah 1 */}
+                <div className="mx-3 border-b border-[#8B7355]/15 dark:border-[#C4A96A]/15" />
+
+                {/* Surah header banner */}
                 {isFirstPageOfSurah && (
-                  <div className="mx-2 mt-2 mb-1 border-2 border-[#4A90A4]/50 dark:border-[#C4A96A]/40 rounded-lg bg-gradient-to-r from-[#E8F4F8]/80 via-[#D4EBF2]/60 to-[#E8F4F8]/80 dark:from-[#1a2a30]/60 dark:via-[#1e1708]/40 dark:to-[#1a2a30]/60 py-2.5 px-4 text-center relative overflow-hidden">
-                    <div className="absolute inset-0 opacity-[0.08]">
-                      <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-[#4A90A4] rounded-tl-lg" />
-                      <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-[#4A90A4] rounded-tr-lg" />
-                      <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-[#4A90A4] rounded-bl-lg" />
-                      <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-[#4A90A4] rounded-br-lg" />
-                    </div>
-                    <p className="font-arabic text-[18px] md:text-[22px] font-bold text-[#2D5016] dark:text-[#C4A96A] relative z-10">
+                  <SurahBanner>
+                    <p className="font-arabic text-[18px] md:text-[22px] font-bold text-[#2D5016] dark:text-[#C4A96A]">
                       سُورَةُ {surah?.name}
                     </p>
-                  </div>
+                  </SurahBanner>
                 )}
 
                 {/* Bismillah */}
@@ -246,11 +242,18 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                        style={{ fontSize: `${Math.max(arabicFontSize - 2, 18)}px` }}>
                       بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                     </p>
+                    <div className="flex items-center justify-center gap-2 mt-1 px-8">
+                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#8B7355]/25 to-transparent dark:via-[#C4A96A]/20" />
+                      <svg viewBox="0 0 12 12" className="w-2 h-2 text-[#8B7355]/30 dark:text-[#C4A96A]/25" fill="currentColor">
+                        <rect x="3" y="3" width="6" height="6" transform="rotate(45, 6, 6)" />
+                      </svg>
+                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#8B7355]/25 to-transparent dark:via-[#C4A96A]/20" />
+                    </div>
                   </div>
                 )}
 
                 {/* Flowing paragraph */}
-                <div className="px-4 md:px-6 py-2" dir="rtl">
+                <div className="px-5 md:px-7 py-2" dir="rtl">
                   <p className="font-arabic font-bold text-[#1a1008] dark:text-[#E8DCC8] text-justify leading-[2.2] sm:leading-[2.4] md:leading-[2.6]"
                      style={{ fontSize: `${arabicFontSize}px`, wordSpacing: '0.12em', letterSpacing: '0.01em' }}>
                     {currentPageData.ayahs.map((ayah, idx) => {
@@ -277,13 +280,18 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                   </p>
                 </div>
 
-                {/* Bottom page number */}
-                <div className="text-center py-2 border-t border-[#8B7355]/20 dark:border-[#C4A96A]/20">
-                  <span className="text-[11px] text-[#8B7355] dark:text-[#9B8365] tabular-nums">
-                    {realPageNum && toArabicNum(realPageNum)}
-                  </span>
+                {/* Bottom page number with ornament */}
+                <div className="mt-auto">
+                  <div className="mx-3 border-t border-[#8B7355]/15 dark:border-[#C4A96A]/15" />
+                  <div className="text-center py-2 flex items-center justify-center gap-2">
+                    <div className="h-px w-8 bg-gradient-to-r from-transparent to-[#8B7355]/20 dark:to-[#C4A96A]/15" />
+                    <span className="text-[11px] text-[#8B7355] dark:text-[#9B8365] tabular-nums font-medium">
+                      {realPageNum && toArabicNum(realPageNum)}
+                    </span>
+                    <div className="h-px w-8 bg-gradient-to-l from-transparent to-[#8B7355]/20 dark:to-[#C4A96A]/15" />
+                  </div>
                 </div>
-              </div>
+              </MushafFrame>
             </div>
 
             {Math.abs(swipeOffset) > 30 && !isAnimating && (
