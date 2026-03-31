@@ -183,19 +183,23 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const realPage = pages[currentPage]?.[0]?.page;
 
   return (
-    <div className="min-h-screen bg-[#F5EFE0] dark:bg-[#1a1510]">
+    <div className="min-h-screen bg-[#F5EFE0] dark:bg-[#1a1510] flex flex-col">
       {/* Header bar */}
       <header className="bg-[#2D5016] dark:bg-[#1a3009] text-white py-2">
         <div className="container flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button onClick={onBack} className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></button>
-            <SurahSelector value={selectedSurah} onChange={handleSurahChange} />
+            <div>
+              <SurahSelector value={selectedSurah} onChange={handleSurahChange} />
+              <p className="text-[10px] opacity-70 pl-1">{t("পৃষ্ঠা", "Page", "صفحة")} {realPage ? realPage : currentPage + 1}</p>
+            </div>
           </div>
           <ReadingSettings
             fontSize={arabicFontSize}
             setFontSize={handleFontSizeChange}
             tajweedEnabled={tajweedEnabled}
             onTajweedToggle={handleTajweedToggle}
+          />
           />
         </div>
       </header>
