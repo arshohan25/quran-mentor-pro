@@ -262,6 +262,19 @@ export default function QuranPage() {
                             }}
                             autoPlay={autoPlay && playingAyah === ayah.numberInSurah}
                           />
+                          <button
+                            onClick={() => toggleFavorite(selectedSurah, ayah.numberInSurah, ayah.text)}
+                            className="p-1 rounded-full transition-colors hover:bg-primary/10"
+                            title={t("বুকমার্ক", "Bookmark", "إشارة مرجعية")}
+                          >
+                            <Heart
+                              className={`w-4 h-4 transition-colors ${
+                                isFavorite(selectedSurah, ayah.numberInSurah)
+                                  ? "fill-destructive text-destructive"
+                                  : "text-muted-foreground hover:text-destructive"
+                              }`}
+                            />
+                          </button>
                         </div>
                         <TajweedText
                           text={ayah.text}
