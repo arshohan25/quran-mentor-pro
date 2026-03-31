@@ -52,6 +52,9 @@ export default function QuranPage() {
   const { data: audioData } = useSurahAudio(selectedSurah, selectedQari);
   const [playingAyah, setPlayingAyah] = useState<number | null>(null);
   const [autoPlay, setAutoPlay] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(() => {
+    try { return Number(localStorage.getItem("playbackRate")) || 1; } catch { return 1; }
+  });
   const wordLang = language === "bn" ? "bn" : language === "ar" ? "ar" : "en";
   const { data: wordData, isLoading: wordLoading } = useWordByWord(selectedSurah, wordLang);
 
@@ -109,6 +112,19 @@ export default function QuranPage() {
                 <BookOpen className="w-4 h-4" />
               </ToggleGroupItem>
             </ToggleGroup>
+            <button
+              onClick={() => {
+                const rates = [0.5, 0.75, 1, 1.25, 1.5];
+                const idx = rates.indexOf(playbackRate);
+                const next = rates[(idx + 1) % rates.length];
+                setPlaybackRate(next);
+                localStorage.setItem("playbackRate", String(next));
+              }}
+              className="px-2 py-1 rounded-lg text-xs font-bold transition-colors bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 min-w-[40px]"
+              title={t("গতি", "Speed", "السرعة")}
+            >
+              {playbackRate}x
+            </button>
             <button
               onClick={() => setAutoPlay(!autoPlay)}
               className={`p-2 rounded-lg transition-colors ${
@@ -261,6 +277,7 @@ export default function QuranPage() {
                               }
                             }}
                             autoPlay={autoPlay && playingAyah === ayah.numberInSurah}
+                            playbackRate={playbackRate}
                           />
                           <button
                             onClick={() => toggleFavorite(selectedSurah, ayah.numberInSurah, ayah.text)}

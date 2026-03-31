@@ -7,17 +7,25 @@ interface AyahAudioPlayerProps {
   onPlay: () => void;
   onStop: () => void;
   autoPlay?: boolean;
+  playbackRate?: number;
 }
 
-export default function AyahAudioPlayer({ audioUrl, isActive, onPlay, onStop, autoPlay }: AyahAudioPlayerProps) {
+export default function AyahAudioPlayer({ audioUrl, isActive, onPlay, onStop, autoPlay, playbackRate = 1 }: AyahAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Auto-start playback when isActive becomes true and autoPlay is set
+  // Update playback rate when it changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate]);
+
   useEffect(() => {
     if (isActive && autoPlay && audioUrl && !audioRef.current) {
       setLoading(true);
       const audio = new Audio(audioUrl);
+      audio.playbackRate = playbackRate;
       audioRef.current = audio;
       audio.oncanplaythrough = () => setLoading(false);
       audio.onended = () => { audioRef.current = null; onStop(); };
@@ -28,7 +36,7 @@ export default function AyahAudioPlayer({ audioUrl, isActive, onPlay, onStop, au
       audioRef.current.pause();
       audioRef.current = null;
     }
-  }, [isActive, autoPlay, audioUrl, onPlay, onStop]);
+  }, [isActive, autoPlay, audioUrl, onPlay, onStop, playbackRate]);
 
   const handleClick = () => {
     if (!audioUrl) return;
@@ -39,6 +47,7 @@ export default function AyahAudioPlayer({ audioUrl, isActive, onPlay, onStop, au
     }
     setLoading(true);
     const audio = new Audio(audioUrl);
+    audio.playbackRate = playbackRate;
     audioRef.current = audio;
     audio.oncanplaythrough = () => setLoading(false);
     audio.onended = () => { audioRef.current = null; onStop(); };
