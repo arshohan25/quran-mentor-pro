@@ -58,20 +58,31 @@ const SURAH_RUKU_COUNT: Record<number, number> = {
   101:1,102:1,103:1,104:1,105:1,106:1,107:1,108:1,109:1,110:1,111:1,112:1,113:1,114:1,
 };
 
-// Strip bismillah from text - handles various diacritic forms
+// Strip bismillah from text - aggressive multi-strategy approach
 function stripBismillah(text: string): string {
-  let result = text.replace(/بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ/, '').trim();
-  if (result !== text.trim() && result.length > 0) return result;
-  result = text.replace(/^بِ?سْ?مِ?\s*.{0,50}?لرَّ?حِ?يمِ?\s*/, '').trim();
-  if (result.length > 0 && result !== text.trim()) return result;
-  if (text.startsWith('بِسْ') || text.startsWith('بسم')) {
-    const idx = text.indexOf('لرحيم');
-    if (idx > 0 && idx < 60) {
-      result = text.substring(idx + 5).trim();
-      if (result.length > 0) return result;
+  const original = text.trim();
+  // Strategy 1: exact match
+  let result = original.replace(/بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ/, '').trim();
+  if (result.length > 0 && result !== original) return result;
+  // Strategy 2: broad regex - any text starting with بسم up to الرحيم variants
+  result = original.replace(/^بِ?سْ?مِ?\s*.{0,50}?(الرَّحِيمِ|ٱلرَّحِيمِ|الرحيم)\s*/, '').trim();
+  if (result.length > 0 && result !== original) return result;
+  // Strategy 3: find الرحيم within first 60 chars and cut everything before+including it
+  const markers = ['ٱلرَّحِيمِ', 'الرَّحِيمِ', 'الرحيم', 'لرَّحِيمِ', 'لرحيم'];
+  for (const marker of markers) {
+    const idx = original.indexOf(marker);
+    if (idx >= 0 && idx < 70) {
+      const after = original.substring(idx + marker.length).trim();
+      if (after.length > 0) return after;
+      return ''; // entire text was bismillah
     }
   }
-  return text;
+  // Strategy 4: if starts with بسم or بِسْ, strip first 50 chars as bismillah
+  if (original.startsWith('بِسْ') || original.startsWith('بسم') || original.startsWith('بِسۡ')) {
+    const stripped = original.substring(Math.min(50, original.length)).trim();
+    if (stripped.length > 0) return stripped;
+  }
+  return original;
 }
 
 interface QuranSectionProps {
