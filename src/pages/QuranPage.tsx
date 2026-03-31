@@ -69,6 +69,7 @@ export default function QuranPage() {
 
   useEffect(() => {
     setTranslationPage(0);
+    setWordPage(0);
   }, [selectedSurah]);
 
   useEffect(() => {
