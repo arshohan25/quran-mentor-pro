@@ -410,7 +410,8 @@ export default function QuranPage() {
                         </p>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </ScrollArea>
             ) : null
