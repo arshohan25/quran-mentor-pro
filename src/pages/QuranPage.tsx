@@ -597,29 +597,29 @@ export default function QuranPage() {
           )}
 
           {/* Previous/Next Surah Navigation */}
-          <div className="flex items-center justify-between mt-6 mb-2">
+          <div className="flex items-center justify-between mt-4 md:mt-6 mb-2 gap-2">
             <button
               onClick={() => { if (selectedSurah > 1) { setSelectedSurah(selectedSurah - 1); setPlayingAyah(null); setAyahSearch(""); } }}
               disabled={selectedSurah <= 1}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-2 md:py-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed min-w-0"
             >
-              <ChevronLeft className="w-4 h-4" />
-              <span className="text-sm font-medium">
+              <ChevronLeft className="w-4 h-4 shrink-0" />
+              <span className="text-xs md:text-sm font-medium truncate">
                 {selectedSurah > 1 ? (language === "bn" ? surahList[selectedSurah - 2]?.bengaliName : surahList[selectedSurah - 2]?.englishName) : t("আগের", "Previous", "السابقة")}
               </span>
             </button>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground shrink-0">
               {selectedSurah} / 114
             </span>
             <button
               onClick={() => { if (selectedSurah < 114) { setSelectedSurah(selectedSurah + 1); setPlayingAyah(null); setAyahSearch(""); } }}
               disabled={selectedSurah >= 114}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-2 md:py-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed min-w-0"
             >
-              <span className="text-sm font-medium">
+              <span className="text-xs md:text-sm font-medium truncate">
                 {selectedSurah < 114 ? (language === "bn" ? surahList[selectedSurah]?.bengaliName : surahList[selectedSurah]?.englishName) : t("পরের", "Next", "التالية")}
               </span>
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4 shrink-0" />
             </button>
           </div>
         </div>
