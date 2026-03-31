@@ -59,6 +59,9 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const { t } = useLanguage();
   const [pageIndex, setPageIndex] = useState(0);
   const [goToLastPage, setGoToLastPage] = useState(false);
+  const [targetMushafPage, setTargetMushafPage] = useState<number | null>(null);
+  const [showPageJump, setShowPageJump] = useState(false);
+  const [pageJumpInput, setPageJumpInput] = useState("");
   const [tajweedEnabled, setTajweedEnabled] = useState(() => {
     try { return localStorage.getItem("tajweedEnabled") !== "false"; } catch { return true; }
   });
