@@ -579,7 +579,7 @@ export default function QuranPage() {
                               key={word.id}
                               className="flex flex-col items-center px-1.5 md:px-2 py-1 md:py-1.5 rounded-lg bg-muted/50 hover:bg-primary/10 transition-colors min-w-[50px] md:min-w-[60px]"
                             >
-                              <span className="font-arabic text-xl text-foreground leading-relaxed">
+                              <span className="font-arabic text-lg md:text-xl text-foreground leading-relaxed">
                                 {word.text_uthmani}
                               </span>
                               <span className="text-[10px] text-muted-foreground mt-1 leading-tight text-center" dir="ltr">
