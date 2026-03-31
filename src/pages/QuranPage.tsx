@@ -58,6 +58,8 @@ export default function QuranPage() {
   const [playbackRate, setPlaybackRate] = useState(() => {
     try { return Number(localStorage.getItem("playbackRate")) || 1; } catch { return 1; }
   });
+  const [ayahSearch, setAyahSearch] = useState("");
+  const [showAyahSearch, setShowAyahSearch] = useState(false);
   const wordLang = language === "bn" ? "bn" : language === "ar" ? "ar" : "en";
   const { data: wordData, isLoading: wordLoading } = useWordByWord(selectedSurah, wordLang);
 
