@@ -204,75 +204,71 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
               {/* === ORNAMENTAL FRAME === */}
               <div className="relative">
                 {/* Outer decorative border */}
-                <div className="rounded-sm border-[4px] border-[#8B7355]/60 dark:border-[#C4A96A]/50 bg-[#FFFDF7] dark:bg-[#1e1708] shadow-[0_6px_30px_rgba(92,74,42,0.2)] dark:shadow-[0_6px_30px_rgba(0,0,0,0.5)]">
+                <div className="rounded-sm border-[3px] border-[#8B7355]/50 dark:border-[#C4A96A]/40 bg-[#FFFDF7] dark:bg-[#1e1708] shadow-[0_4px_24px_rgba(92,74,42,0.15)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
                   {/* Inner decorative border */}
-                  <div className="m-[5px] border-[2.5px] border-[#8B7355]/40 dark:border-[#C4A96A]/35 rounded-sm relative">
-                    
-                    {/* Corner ornaments */}
-                    <span className="absolute -top-2 -left-2 text-[#8B7355]/70 dark:text-[#C4A96A]/60 text-[18px] leading-none select-none z-10">❁</span>
-                    <span className="absolute -top-2 -right-2 text-[#8B7355]/70 dark:text-[#C4A96A]/60 text-[18px] leading-none select-none z-10">❁</span>
-                    <span className="absolute -bottom-2 -left-2 text-[#8B7355]/70 dark:text-[#C4A96A]/60 text-[18px] leading-none select-none z-10">❁</span>
-                    <span className="absolute -bottom-2 -right-2 text-[#8B7355]/70 dark:text-[#C4A96A]/60 text-[18px] leading-none select-none z-10">❁</span>
+                  <div className="m-[4px] border-[2px] border-[#8B7355]/30 dark:border-[#C4A96A]/25 rounded-sm">
+                    {/* Corner ornaments (CSS pseudo) */}
+                    <div className="relative">
+                      {/* Top ornamental bar */}
+                      <div className="h-[2px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/50 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/50 dark:to-[#C4A96A]/10" />
 
-                    {/* Top ornamental bar */}
-                    <div className="h-[2.5px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/60 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/60 dark:to-[#C4A96A]/10" />
-
-                    {/* Bismillah for first page of surah */}
-                    {currentPage === 0 && selectedSurah !== 9 && (
-                      <>
-                        {/* Surah title header */}
-                        <div className="py-3 text-center border-b-2 border-[#8B7355]/20 dark:border-[#C4A96A]/20 bg-gradient-to-b from-[#F5EFE0]/60 to-transparent dark:from-[#2a1f0e]/40">
-                          <p className="font-arabic text-[15px] md:text-[17px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
-                            سُورَةُ {surah?.name}
-                          </p>
-                        </div>
-                        {/* Bismillah — premium centered style */}
-                        <div className="py-5 text-center">
-                          <div className="inline-block">
-                            <div className="h-[1.5px] w-full bg-gradient-to-r from-transparent via-[#8B7355]/50 to-transparent dark:via-[#C4A96A]/50 mb-3" />
-                            <p className="font-arabic text-[24px] md:text-[28px] text-[#2D5016] dark:text-[#7BAF4C] leading-relaxed tracking-wide font-bold">
-                              بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                      {/* Bismillah for first page of surah */}
+                      {currentPage === 0 && selectedSurah !== 9 && (
+                        <>
+                          {/* Surah title header */}
+                          <div className="py-2.5 text-center border-b border-[#8B7355]/15 dark:border-[#C4A96A]/15 bg-gradient-to-b from-[#F5EFE0]/50 to-transparent dark:from-[#2a1f0e]/30">
+                            <p className="font-arabic text-[13px] text-[#5C4A2A] dark:text-[#C4A96A]">
+                              سُورَةُ {surah?.name}
                             </p>
-                            <div className="h-[1.5px] w-full bg-gradient-to-r from-transparent via-[#8B7355]/50 to-transparent dark:via-[#C4A96A]/50 mt-3" />
                           </div>
-                        </div>
-                      </>
-                    )}
+                          {/* Bismillah — premium centered style */}
+                          <div className="py-4 text-center">
+                            <div className="inline-block">
+                              <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-[#8B7355]/40 to-transparent dark:via-[#C4A96A]/40 mb-3" />
+                              <p className="font-arabic text-[24px] md:text-[26px] text-[#2D5016] dark:text-[#7BAF4C] leading-relaxed tracking-wide">
+                                بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                              </p>
+                              <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-[#8B7355]/40 to-transparent dark:via-[#C4A96A]/40 mt-3" />
+                            </div>
+                          </div>
+                        </>
+                      )}
 
-                    {/* === FLOWING AYAH TEXT === */}
-                    <div className="px-4 py-4 md:px-6 md:py-5" dir="rtl">
-                      <p className="font-arabic text-[26px] md:text-[30px] font-bold leading-[2.8] md:leading-[3] text-[#1a1008] dark:text-[#E8DCC8] text-justify w-full"
-                         style={{ wordSpacing: '0.08em', letterSpacing: '0.01em', textAlignLast: 'center' }}>
-                        {pages[currentPage]?.map((ayah, idx) => {
-                          // Strip bismillah from first ayah to avoid duplicate
-                          let displayText = ayah.text;
-                          if (currentPage === 0 && idx === 0 && selectedSurah !== 9) {
-                            displayText = displayText.replace(/بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ/, '').trim();
-                          }
-                          if (!displayText && currentPage === 0 && idx === 0) return null;
-                          return (
-                            <span key={ayah.number}>
-                              {tajweedEnabled ? (
-                                <TajweedText
-                                  text={displayText}
-                                  enabled={true}
-                                  className="inline"
-                                />
-                              ) : (
-                                <span>{displayText}</span>
-                              )}
-                              <span className="inline-flex items-center justify-center mx-1 text-[#2D5016] dark:text-[#7BAF4C] text-[14px] md:text-[16px] font-bold select-none align-middle"
-                                    style={{ fontFamily: 'serif' }}>
-                                ﴿{toArabicNum(ayah.numberInSurah)}﴾
+                      {/* === FLOWING AYAH TEXT === */}
+                      <div className="px-3 py-3 md:px-5 md:py-4 min-h-[520px] flex items-start" dir="rtl">
+                        <p className="font-arabic text-[20px] md:text-[24px] leading-[2.5] md:leading-[2.7] text-[#1a1008] dark:text-[#E8DCC8] text-justify w-full"
+                           style={{ wordSpacing: '0.05em', letterSpacing: '0.01em' }}>
+                          {pages[currentPage]?.map((ayah, idx) => {
+                            // Strip bismillah from first ayah to avoid duplicate
+                            let displayText = ayah.text;
+                            if (currentPage === 0 && idx === 0 && selectedSurah !== 9) {
+                              displayText = displayText.replace(/بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ/, '').trim();
+                            }
+                            if (!displayText && currentPage === 0 && idx === 0) return null;
+                            return (
+                              <span key={ayah.number}>
+                                {tajweedEnabled ? (
+                                  <TajweedText
+                                    text={displayText}
+                                    enabled={true}
+                                    className="inline"
+                                  />
+                                ) : (
+                                  <span>{displayText}</span>
+                                )}
+                                <span className="inline-flex items-center justify-center mx-0.5 text-[#2D5016] dark:text-[#7BAF4C] text-[13px] md:text-[15px] font-bold select-none align-middle"
+                                      style={{ fontFamily: 'serif' }}>
+                                  ﴿{toArabicNum(ayah.numberInSurah)}﴾
+                                </span>
                               </span>
-                            </span>
-                          );
-                        })}
-                      </p>
-                    </div>
+                            );
+                          })}
+                        </p>
+                      </div>
 
-                    {/* Bottom ornamental bar */}
-                    <div className="h-[2.5px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/60 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/60 dark:to-[#C4A96A]/10" />
+                      {/* Bottom ornamental bar */}
+                      <div className="h-[2px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/50 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/50 dark:to-[#C4A96A]/10" />
+                    </div>
                   </div>
                 </div>
               </div>
