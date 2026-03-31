@@ -1,57 +1,106 @@
+# রিডিং ভিউ — PDF ডকুমেন্টের সাথে সঠিক ম্যাচ
+
+## বর্তমান সমস্যা (স্ক্রিনশট vs PDF তুলনা)
 
 
-# রিডিং ভিউ — PDF ম্যাচ ফিক্স
+| সমস্যা            | বর্তমান অ্যাপ                | PDF ডকুমেন্ট                     |
+| ----------------- | ---------------------------- | -------------------------------- |
+| বিসমিল্লাহ        | দুইবার দেখাচ্ছে              | একবার, কেন্দ্রে                  |
+| টেক্সট লাইন       | লাইনের মধ্যে কোনো বিভাজক নেই | প্রতিটি লাইনের নিচে সূক্ষ্ম রেখা |
+| কর্নার অর্নামেন্ট | ছোট `❧` Unicode              | বড় curved scrollwork কর্নার পিস |
+| ব্যাকগ্রাউন্ড     | ক্রিম (`#FFFDF7`) — ঠিক আছে  | সাদা/ক্রিম — ঠিক                 |
+| পেজ হেডার         | ঠিক আছে তবে ফন্ট ছোট         | বড় ও বোল্ড হেডার                |
+| সাইড মার্কার      | নেই                          | বাম পাশে `ع` (রুকু), জুয নম্বর   |
+| টেক্সট justify    | আংশিক                        | প্রতিটি লাইন পুরো প্রস্থ জুড়ে   |
+| প্রতি পেজে লােইন  | আংশিক                        | সুন্দরভাবে গোছানো ১৫ লাইন        |
 
-## পরীক্ষায় পাওয়া সমস্যা ও সমাধান
+
+## পরিবর্তন পরিকল্পনা
 
 ### ফাইল: `src/components/quran/ReadingView.tsx`
 
-**১. বিসমিল্লাহ ডুপ্লিকেট ফিক্স (সবচেয়ে গুরুত্বপূর্ণ)**
-- লাইন 252 এ `replace()` কাজ করছে না কারণ API থেকে আসা টেক্সটে diacritics ভিন্ন হতে পারে
-- সমাধান: regex-এ flexible matching — `بسم` দিয়ে শুরু হলে এবং `الرحيم` দিয়ে শেষ হলে সেই অংশটুকু strip করা, অথবা প্রথম আয়াত (`numberInSurah === 1`) হলে এবং `currentPage === 0` হলে প্রথম ~40 ক্যারেক্টার বাদ দেওয়া (যেটাতে বিসমিল্লাহ থাকে)
-- আরো নিরাপদ পদ্ধতি: `ayah.text.replace(/^بِسْمِ.*?الرَّحِيمِ\s*/, '')` — broader regex
+**১. বিসমিল্লাহ ডুপ্লিকেট চূড়ান্ত ফিক্স**
 
-**২. রুকু সংখ্যা যোগ (PDF পেজ ৩ অনুযায়ী)**
-- সূরা হেডারে (লাইন 224-230) `ركوعاتها` যোগ করা
-- সূরা অনুযায়ী রুকু সংখ্যা ডাটা যোগ করতে হবে — একটি simple lookup object `surahRukuCount` তৈরি করে ReadingView-এ রাখা
+- `stripBismillah` ফাংশন কাজ করছে না — API টেক্সটে সম্ভবত ভিন্ন encoding
+- নতুন পদ্ধতি: `numberInSurah === 1` এবং `currentPage === 0` হলে, টেক্সটের প্রথম ৫০ ক্যারেক্টারে `بسم` থাকলে সেই অংশ বাদ দেওয়া
+- আরো aggressive regex: `/بسم.{0,50}?(الرحيم|لرَّحِيمِ|لرحيم)/` — diacritics সহ/ছাড়া উভয়ই ধরবে
 
-**৩. কর্নার অর্নামেন্ট বড় ও সুন্দর করা**
-- বর্তমান `❦` (22px) → CSS-based elaborate corner pieces
-- প্রতিটি কর্নারে `::before`/`::after` দিয়ে curved floral motif — `border-radius` + gradient দিয়ে scrollwork effect
-- অথবা বড় Unicode ornament `❧` / `☙` সাইজ `text-[36px]` করে আরো prominent
+**২. প্রতিটি লাইনের মধ্যে সূক্ষ্ম horizontal rule**
 
-**৪. টেক্সট full-width justify উন্নতি**
-- `textAlignLast: 'justify'` (center থেকে পরিবর্তন) — শেষ লাইন ছাড়া সব লাইন পূর্ণ প্রস্থে
-- `word-spacing: 0.15em` বাড়ানো
+- PDF-তে প্রতিটি টেক্সট লাইনের নিচে পাতলা রেখা আছে — এটা আসল মুসহাফের বৈশিষ্ট্য
+- CSS দিয়ে: `background-image: repeating-linear-gradient(...)` ব্যবহার করে line-height অনুযায়ী পটভূমিতে ruled lines তৈরি
+- এতে টেক্সট flowing থাকবে কিন্তু নিচে ruled lines দেখাবে (notebook paper এর মতো)
 
-**৫. সাইড মার্জিন মার্কার** (রুকু চিহ্ন)
-- PDF-এ বাম পাশে `ع` (রুকু শেষ) চিহ্ন দেখা যায়
-- আয়াত রেন্ডারের সময় রুকু-শেষ আয়াতগুলোতে বাম মার্জিনে `ع` চিহ্ন যোগ করা (absolute positioned)
+**৩. কর্নার অর্নামেন্ট আপগ্রেড**
 
-### ফাইল: `src/components/quran/types.ts`
-- কোনো পরিবর্তন নেই — `CHARS_PER_LINE = 30` ঠিক আছে
+- বর্তমান ছোট `❧` বাদ দিয়ে CSS-based scrollwork কর্নার
+- প্রতিটি কর্নারে `width: 40px; height: 40px` box, `border` দিয়ে L-shape + `border-radius` দিয়ে কার্ল ইফেক্ট
+- অথবা আরো বড় Unicode ornament `❦` সাইজ `text-[48px]` করে
+
+**৪. সাইড মার্জিন রুকু মার্কার**
+
+- PDF-তে ডান পাশে `ع` চিহ্ন (রুকু সমাপ্তি) দেখা যায়
+- এটা এখন implement না করে পরবর্তীতে যোগ করা যাবে — প্রথমে মূল layout ঠিক করা জরুরি
+
+**৫. হেডার ফন্ট সাইজ বাড়ানো**
+
+- বর্তমান `text-[11px]` → `text-[13px]` হেডারে
+- পেজ নম্বর `text-[12px]` → `text-[14px]`
+
+**৫. প্রতি পেজে লাইন ঠিক রাখা**
+
+- প্রতি লাইনে সুন্দরভাবে গুছিয়ে ১৫ লাইন থাকবে ডকুমেন্ট অনুযায়ী, প্রয়োজনে প্রতিটা পেজ ডকুমেন্ট থেকে কপি করে বসাও
 
 ### টেকনিক্যাল ডিটেইল
 
-**বিসমিল্লাহ regex fix:**
-```typescript
-// Broader regex to catch various diacritic forms
-displayText = displayText.replace(/^بِسْمِ\s+ٱ?للَّهِ\s+ٱ?لرَّحْمَـ?ٰ?نِ\s+ٱ?لرَّحِيمِ\s*/, '').trim();
-// Fallback: if text starts with بسم, strip first bismillah occurrence
-if (!displayText || displayText === ayah.text) {
-  displayText = ayah.text.replace(/^[^\u0660-\u0669]{0,60}الرحيم\s*/, '').trim() || ayah.text;
-}
-```
+**Ruled lines (CSS background approach):**
 
-**Corner ornaments CSS approach:**
 ```css
-/* Each corner: 30px box with curved border + gradient */
-.corner-ornament {
-  width: 30px; height: 30px;
-  border: 3px solid #8B7355;
-  border-radius: 0 0 100% 0; /* varies per corner */
+/* line-height ~2.8em, font-size 28px → each line ≈ 78px */
+background-image: repeating-linear-gradient(
+  to bottom,
+  transparent 0px,
+  transparent 76px,
+  rgba(139,115,85,0.15) 76px,
+  rgba(139,115,85,0.15) 78px
+);
+```
+
+এটা `<p>` element-এ inline style হিসেবে যোগ করা হবে, যাতে প্রতিটি লাইনের ঠিক নিচে পাতলা রেখা দেখায়।
+
+**Bismillah aggressive strip:**
+
+```typescript
+function stripBismillah(text: string): string {
+  // Try multiple patterns for different diacritic forms
+  let result = text.replace(/بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ/, '').trim();
+  if (result !== text.trim() && result.length > 0) return result;
+  // Broader: any text starting with بسم up to الرحيم
+  result = text.replace(/^بِ?سْ?مِ?\s*.{0,50}?لرَّ?حِ?يمِ?\s*/, '').trim();
+  if (result.length > 0 && result !== text.trim()) return result;
+  // Last resort: find لرحيم and cut everything before it
+  if (text.startsWith('بِسْ') || text.startsWith('بسم')) {
+    const idx = text.indexOf('لرحيم');
+    if (idx > 0 && idx < 60) {
+      return text.substring(idx + 5).trim() || text;
+    }
+  }
+  return text;
 }
 ```
 
-মোট ১টি ফাইল পরিবর্তন: `ReadingView.tsx`
+**Corner ornament CSS:**
 
+```html
+<!-- Each corner: absolute positioned decorative L-shape -->
+<span class="absolute -top-2 -right-2 w-10 h-10 border-t-[3px] border-r-[3px] 
+  border-[#8B7355] rounded-tr-xl" />
+```
+
+চার কোণায় ৪টি ভিন্ন দিকে rotated L-shape border — PDF-এর curved scrollwork-এর কাছাকাছি।
+
+### ফাইল পরিবর্তন
+
+- প্রতি লাইনে সুন্দরভাবে গুছিয়ে ১৫ লাইন থাকবে ডকুমেন্ট অনুযায়ী, প্রয়োজনে প্রতিটা পেজ ডকুমেন্ট থেকে কপি করে বসাও
+
+শুধু ১টি ফাইল: `src/components/quran/ReadingView.tsx`
