@@ -1,70 +1,57 @@
 
 
-# Imdadia Hafezi Quran স্টাইল — সম্পূর্ণ রিডিজাইন
+# রিডিং ভিউ — PDF ম্যাচ ফিক্স
 
-## PDF থেকে মূল বৈশিষ্ট্য (পেজ ৩-৫ বিশ্লেষণ)
+## পরীক্ষায় পাওয়া সমস্যা ও সমাধান
 
-### সূরা শুরুর পেজ (পেজ ৩):
-- ভারী অলংকৃত বর্ডার ফ্রেম
-- সূরার তথ্য: আয়াত সংখ্যা, সূরার নাম, মাদানিয়া/মাক্কিয়া, রুকু সংখ্যা
-- বিসমিল্লাহ কেন্দ্রে, নিচে রেখা
-- বড় বোল্ড টেক্সট, প্রথম পেজে কম লাইন (~৭-৮)
+### ফাইল: `src/components/quran/ReadingView.tsx`
 
-### সাধারণ পেজ (পেজ ৪-৫):
-- **হেডার**: ডানে = জুয মার্কার (الٓمٓ ١), মাঝে = পৃষ্ঠা নম্বর, বামে = সূরার নাম ও নম্বর
-- **চার কোণায় বড় ডেকোরেটিভ কার্ল/ফ্লারিশ** (corner ornaments)
-- **১৫ লাইন অত্যন্ত বড় বোল্ড আরবি টেক্সট** — পুরো প্রস্থ জুড়ে justified
-- পাশে রুকু/জুয মার্কার
-- **ফুটার**: منزل ١
+**১. বিসমিল্লাহ ডুপ্লিকেট ফিক্স (সবচেয়ে গুরুত্বপূর্ণ)**
+- লাইন 252 এ `replace()` কাজ করছে না কারণ API থেকে আসা টেক্সটে diacritics ভিন্ন হতে পারে
+- সমাধান: regex-এ flexible matching — `بسم` দিয়ে শুরু হলে এবং `الرحيم` দিয়ে শেষ হলে সেই অংশটুকু strip করা, অথবা প্রথম আয়াত (`numberInSurah === 1`) হলে এবং `currentPage === 0` হলে প্রথম ~40 ক্যারেক্টার বাদ দেওয়া (যেটাতে বিসমিল্লাহ থাকে)
+- আরো নিরাপদ পদ্ধতি: `ayah.text.replace(/^بِسْمِ.*?الرَّحِيمِ\s*/, '')` — broader regex
 
-## বর্তমান vs PDF পার্থক্য
+**২. রুকু সংখ্যা যোগ (PDF পেজ ৩ অনুযায়ী)**
+- সূরা হেডারে (লাইন 224-230) `ركوعاتها` যোগ করা
+- সূরা অনুযায়ী রুকু সংখ্যা ডাটা যোগ করতে হবে — একটি simple lookup object `surahRukuCount` তৈরি করে ReadingView-এ রাখা
 
-| বিষয় | বর্তমান | PDF অনুযায়ী হবে |
-|-------|---------|-----------------|
-| ফন্ট সাইজ | `20px/24px` | `28px/32px` + `font-bold` |
-| কর্নার অর্নামেন্ট | নেই | চার কোণায় ডেকোরেটিভ কার্ল (Unicode/CSS) |
-| বর্ডার | পাতলা `3px/2px` | মোটা `4px/3px`, আরো prominent |
-| সূরা শুরু হেডার | শুধু নাম | আয়াত সংখ্যা + নাম + মাক্কি/মাদানি + রুকু সংখ্যা |
-| টেক্সট justification | সাধারণ `text-justify` | Full justify + `text-align-last: center` |
-| min-height | `520px` fixed | কন্টেন্ট-driven |
-| CHARS_PER_LINE | `45` | `30` (বড় ফন্টে কম ক্যারেক্টার) |
+**৩. কর্নার অর্নামেন্ট বড় ও সুন্দর করা**
+- বর্তমান `❦` (22px) → CSS-based elaborate corner pieces
+- প্রতিটি কর্নারে `::before`/`::after` দিয়ে curved floral motif — `border-radius` + gradient দিয়ে scrollwork effect
+- অথবা বড় Unicode ornament `❧` / `☙` সাইজ `text-[36px]` করে আরো prominent
 
-## পরিবর্তন
+**৪. টেক্সট full-width justify উন্নতি**
+- `textAlignLast: 'justify'` (center থেকে পরিবর্তন) — শেষ লাইন ছাড়া সব লাইন পূর্ণ প্রস্থে
+- `word-spacing: 0.15em` বাড়ানো
 
-### ফাইল ১: `src/components/quran/ReadingView.tsx`
+**৫. সাইড মার্জিন মার্কার** (রুকু চিহ্ন)
+- PDF-এ বাম পাশে `ع` (রুকু শেষ) চিহ্ন দেখা যায়
+- আয়াত রেন্ডারের সময় রুকু-শেষ আয়াতগুলোতে বাম মার্জিনে `ع` চিহ্ন যোগ করা (absolute positioned)
 
-**১. কর্নার অর্নামেন্ট** — ফ্রেমের চার কোণায় absolute-positioned ডেকোরেটিভ elements:
+### ফাইল: `src/components/quran/types.ts`
+- কোনো পরিবর্তন নেই — `CHARS_PER_LINE = 30` ঠিক আছে
+
+### টেকনিক্যাল ডিটেইল
+
+**বিসমিল্লাহ regex fix:**
+```typescript
+// Broader regex to catch various diacritic forms
+displayText = displayText.replace(/^بِسْمِ\s+ٱ?للَّهِ\s+ٱ?لرَّحْمَـ?ٰ?نِ\s+ٱ?لرَّحِيمِ\s*/, '').trim();
+// Fallback: if text starts with بسم, strip first bismillah occurrence
+if (!displayText || displayText === ayah.text) {
+  displayText = ayah.text.replace(/^[^\u0660-\u0669]{0,60}الرحيم\s*/, '').trim() || ayah.text;
+}
 ```
-┌─ ❦ ────────────── ❦ ─┐
-│                        │
-│   আয়াত টেক্সট...      │
-│                        │
-└─ ❦ ────────────── ❦ ─┘
+
+**Corner ornaments CSS approach:**
+```css
+/* Each corner: 30px box with curved border + gradient */
+.corner-ornament {
+  width: 30px; height: 30px;
+  border: 3px solid #8B7355;
+  border-radius: 0 0 100% 0; /* varies per corner */
+}
 ```
-Unicode ornamental characters (`❦`, `﴾`, কাস্টম SVG-like CSS shapes) দিয়ে কর্নার পিস
 
-**২. টেক্সট সাইজ ও বোল্ড** — `text-[28px] md:text-[32px] font-bold` এবং `leading-[2.8] md:leading-[3]`
-
-**৩. সূরা শুরুর হেডার সমৃদ্ধ করা** — PDF অনুযায়ী:
-- আয়াত সংখ্যা (آياتها ٢٨٦)
-- সূরার নাম ও নম্বর + মাদানিয়া/মাক্কিয়া
-- রুকু সংখ্যা (ركوعاتها ২০)
-
-**৪. বর্ডার মোটা করা** — outer `border-[4px]`, inner `border-[3px]`, আরো গাঢ় রঙ
-
-**৫. min-height সরানো** — `min-h-[520px]` → content-driven height
-
-**৬. Full justification** — `text-justify` + inline style `textAlignLast: 'center'`
-
-**৭. আয়াত নম্বর মার্কার বড় করা** — `text-[15px] md:text-[17px]`
-
-### ফাইল ২: `src/components/quran/types.ts`
-
-- `CHARS_PER_LINE` কে `45` থেকে `30` এ কমানো (বড় ফন্টে প্রতি লাইনে কম ক্যারেক্টার ফিট হবে)
-
-### ফাইল ৩: `src/data/surahList.ts`
-
-- কোনো পরিবর্তন নেই — ইতিমধ্যে `numberOfAyahs` ও `revealType` আছে, সেগুলো ব্যবহার করা হবে
-
-মোট ২টি ফাইল পরিবর্তন।
+মোট ১টি ফাইল পরিবর্তন: `ReadingView.tsx`
 
