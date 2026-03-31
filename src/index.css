@@ -6,26 +6,26 @@
 
 @layer base {
   :root {
-    --background: 140 20% 97%;
-    --foreground: 150 30% 10%;
+    --background: 38 40% 95%;
+    --foreground: 25 40% 14%;
 
-    --card: 140 15% 95%;
-    --card-foreground: 150 30% 10%;
+    --card: 40 50% 98%;
+    --card-foreground: 25 40% 14%;
 
-    --popover: 140 15% 95%;
-    --popover-foreground: 150 30% 10%;
+    --popover: 40 50% 98%;
+    --popover-foreground: 25 40% 14%;
 
-    --primary: 152 55% 28%;
-    --primary-foreground: 45 80% 95%;
+    --primary: 120 55% 22%;
+    --primary-foreground: 40 60% 95%;
 
-    --secondary: 45 60% 50%;
-    --secondary-foreground: 150 30% 10%;
+    --secondary: 40 45% 55%;
+    --secondary-foreground: 25 40% 14%;
 
-    --muted: 140 10% 90%;
-    --muted-foreground: 150 10% 45%;
+    --muted: 38 20% 90%;
+    --muted-foreground: 30 15% 45%;
 
-    --accent: 45 70% 55%;
-    --accent-foreground: 150 30% 10%;
+    --accent: 40 50% 58%;
+    --accent-foreground: 25 40% 14%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -33,43 +33,50 @@
     --success: 142 71% 35%;
     --success-foreground: 0 0% 100%;
 
-    --border: 140 15% 85%;
-    --input: 140 15% 85%;
-    --ring: 152 55% 28%;
+    --border: 38 25% 82%;
+    --input: 38 25% 82%;
+    --ring: 120 55% 22%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 152 30% 15%;
-    --sidebar-foreground: 45 80% 95%;
-    --sidebar-primary: 45 60% 50%;
-    --sidebar-primary-foreground: 150 30% 10%;
-    --sidebar-accent: 152 40% 22%;
-    --sidebar-accent-foreground: 45 80% 95%;
-    --sidebar-border: 152 30% 25%;
-    --sidebar-ring: 45 60% 50%;
+    --sidebar-background: 120 35% 14%;
+    --sidebar-foreground: 40 60% 95%;
+    --sidebar-primary: 40 45% 55%;
+    --sidebar-primary-foreground: 25 40% 14%;
+    --sidebar-accent: 120 30% 20%;
+    --sidebar-accent-foreground: 40 60% 95%;
+    --sidebar-border: 120 25% 25%;
+    --sidebar-ring: 40 45% 55%;
+
+    --gold: 40 50% 58%;
+    --gold-light: 40 40% 72%;
+    --islamic-green: 120 55% 22%;
+    --islamic-green-light: 120 45% 32%;
+    --parchment: 38 40% 95%;
+    --parchment-dark: 38 30% 88%;
   }
 
   .dark {
-    --background: 150 25% 6%;
-    --foreground: 45 30% 92%;
+    --background: 30 20% 5%;
+    --foreground: 38 25% 90%;
 
-    --card: 150 20% 10%;
-    --card-foreground: 45 30% 92%;
+    --card: 30 18% 9%;
+    --card-foreground: 38 25% 90%;
 
-    --popover: 150 20% 10%;
-    --popover-foreground: 45 30% 92%;
+    --popover: 30 18% 9%;
+    --popover-foreground: 38 25% 90%;
 
-    --primary: 152 55% 35%;
-    --primary-foreground: 45 80% 95%;
+    --primary: 120 45% 35%;
+    --primary-foreground: 40 60% 95%;
 
-    --secondary: 45 50% 40%;
-    --secondary-foreground: 45 80% 95%;
+    --secondary: 40 35% 38%;
+    --secondary-foreground: 40 60% 95%;
 
-    --muted: 150 15% 15%;
-    --muted-foreground: 140 10% 55%;
+    --muted: 30 15% 14%;
+    --muted-foreground: 35 12% 55%;
 
-    --accent: 45 60% 45%;
-    --accent-foreground: 150 30% 10%;
+    --accent: 40 40% 42%;
+    --accent-foreground: 30 18% 9%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 100%;
@@ -77,18 +84,25 @@
     --success: 142 60% 40%;
     --success-foreground: 0 0% 100%;
 
-    --border: 150 15% 18%;
-    --input: 150 15% 18%;
-    --ring: 152 55% 35%;
+    --border: 30 15% 16%;
+    --input: 30 15% 16%;
+    --ring: 120 45% 35%;
 
-    --sidebar-background: 150 25% 6%;
-    --sidebar-foreground: 45 30% 92%;
-    --sidebar-primary: 45 50% 40%;
-    --sidebar-primary-foreground: 150 30% 10%;
-    --sidebar-accent: 150 20% 12%;
-    --sidebar-accent-foreground: 45 30% 92%;
-    --sidebar-border: 150 15% 18%;
-    --sidebar-ring: 45 50% 40%;
+    --sidebar-background: 30 20% 5%;
+    --sidebar-foreground: 38 25% 90%;
+    --sidebar-primary: 40 35% 38%;
+    --sidebar-primary-foreground: 30 18% 9%;
+    --sidebar-accent: 30 18% 11%;
+    --sidebar-accent-foreground: 38 25% 90%;
+    --sidebar-border: 30 15% 16%;
+    --sidebar-ring: 40 35% 38%;
+
+    --gold: 40 40% 42%;
+    --gold-light: 40 30% 32%;
+    --islamic-green: 120 45% 35%;
+    --islamic-green-light: 120 35% 25%;
+    --parchment: 30 20% 5%;
+    --parchment-dark: 30 18% 9%;
   }
 }
 
@@ -116,5 +130,47 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  .islamic-header {
+    @apply text-primary-foreground py-4 shadow-lg;
+    background: linear-gradient(135deg, hsl(var(--islamic-green)) 0%, hsl(var(--islamic-green-light)) 50%, hsl(var(--islamic-green)) 100%);
+  }
+
+  .islamic-card {
+    @apply rounded-xl border bg-card shadow-sm transition-all duration-300;
+    border-color: hsl(var(--gold) / 0.2);
+    box-shadow: 0 2px 12px hsl(var(--gold) / 0.06);
+  }
+
+  .islamic-card:hover {
+    border-color: hsl(var(--gold) / 0.35);
+    box-shadow: 0 4px 20px hsl(var(--gold) / 0.12);
+  }
+
+  .glass-card {
+    @apply rounded-xl border backdrop-blur-sm;
+    background: hsl(var(--card) / 0.85);
+    border-color: hsl(var(--gold) / 0.15);
+  }
+
+  .gold-divider {
+    @apply flex items-center justify-center gap-3;
+  }
+
+  .gold-divider::before,
+  .gold-divider::after {
+    content: '';
+    @apply h-px w-12;
+    background: linear-gradient(90deg, transparent, hsl(var(--gold) / 0.4));
+  }
+
+  .gold-divider::after {
+    background: linear-gradient(90deg, hsl(var(--gold) / 0.4), transparent);
+  }
+
+  .corner-ornament {
+    @apply absolute w-4 h-4;
+    border-color: hsl(var(--gold) / 0.25);
   }
 }

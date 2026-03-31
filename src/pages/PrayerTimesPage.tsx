@@ -56,7 +56,7 @@ export default function PrayerTimesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-primary text-primary-foreground py-4">
+      <header className="islamic-header">
         <div className="container flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to="/" className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></Link>
@@ -67,9 +67,8 @@ export default function PrayerTimesPage() {
       </header>
 
       <div className="container py-6 max-w-lg">
-        {/* Notification permission banner */}
         {permission !== "granted" && (
-          <div className="bg-accent/20 border border-accent rounded-xl p-4 mb-4 flex items-center justify-between">
+          <div className="islamic-card p-4 mb-4 flex items-center justify-between bg-accent/10">
             <div>
               <p className="text-sm font-semibold text-foreground">
                 {t("🔔 নামাজের অ্যালার্ম চালু করুন", "🔔 Enable Prayer Alarms", "🔔 تفعيل تنبيهات الصلاة")}
@@ -78,13 +77,12 @@ export default function PrayerTimesPage() {
                 {t("নামাজের সময় হলে নোটিফিকেশন পাবেন", "Get notified at prayer times", "احصل على إشعارات أوقات الصلاة")}
               </p>
             </div>
-            <Button size="sm" onClick={requestPermission}>
+            <Button size="sm" onClick={requestPermission} className="bg-accent text-accent-foreground hover:bg-accent/90">
               {t("চালু করুন", "Enable", "تفعيل")}
             </Button>
           </div>
         )}
 
-        {/* Location */}
         <div className="flex items-center gap-2 text-muted-foreground mb-4">
           <MapPin className="w-4 h-4" />
           {loadingLocation ? (
@@ -94,26 +92,26 @@ export default function PrayerTimesPage() {
           )}
         </div>
 
-        {/* Next prayer countdown */}
         {nextPrayer && timings && (
-          <div className="bg-primary/10 rounded-xl p-5 mb-6 text-center">
+          <div className="islamic-card p-5 mb-6 text-center relative overflow-hidden">
+            <span className="corner-ornament top-0 right-0 border-t-2 border-r-2 rounded-tr-lg" />
+            <span className="corner-ornament top-0 left-0 border-t-2 border-l-2 rounded-tl-lg" />
             <p className="text-sm text-muted-foreground mb-1">
               {t("পরবর্তী নামাজ", "Next Prayer", "الصلاة القادمة")}
             </p>
             <h2 className="text-2xl font-bold text-primary">
               {prayerNames[nextPrayer.name][langKey]}
             </h2>
-            <div className="flex items-center justify-center gap-2 mt-2 text-foreground">
+            <div className="flex items-center justify-center gap-2 mt-2 text-accent font-semibold">
               <Clock className="w-4 h-4" />
-              <span className="font-semibold">{nextPrayer.countdown}</span>
+              <span>{nextPrayer.countdown}</span>
             </div>
           </div>
         )}
 
-        {/* Prayer times grid */}
         {isLoading ? (
           <div className="space-y-3">
-            {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
+            {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
           </div>
         ) : timings ? (
           <div className="space-y-3">
@@ -124,7 +122,9 @@ export default function PrayerTimesPage() {
                 <div
                   key={key}
                   className={`flex items-center justify-between rounded-xl border p-4 transition-all ${
-                    isNext ? "border-primary bg-primary/5 shadow-sm" : "border-border bg-card"
+                    isNext
+                      ? "islamic-card border-l-4 !border-l-accent shadow-md"
+                      : "border-border bg-card"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -139,7 +139,7 @@ export default function PrayerTimesPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`text-lg font-bold tabular-nums ${isNext ? "text-primary" : "text-foreground"}`}>
+                    <span className={`text-lg font-bold tabular-nums ${isNext ? "text-accent" : "text-foreground"}`}>
                       {(timings as any)[key]?.split(" ")[0]}
                     </span>
                     {isAlarmable && (
@@ -147,16 +147,11 @@ export default function PrayerTimesPage() {
                         onClick={() => toggleAlarm(key as AlarmablePrayer)}
                         className={`p-1.5 rounded-full transition-colors ${
                           alarms[key as AlarmablePrayer]
-                            ? "text-primary bg-primary/10"
+                            ? "text-accent bg-accent/15"
                             : "text-muted-foreground hover:text-foreground"
                         }`}
-                        title={alarms[key as AlarmablePrayer] ? "Alarm On" : "Alarm Off"}
                       >
-                        {alarms[key as AlarmablePrayer] ? (
-                          <Bell className="w-4 h-4" />
-                        ) : (
-                          <BellOff className="w-4 h-4" />
-                        )}
+                        {alarms[key as AlarmablePrayer] ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
                       </button>
                     )}
                   </div>
