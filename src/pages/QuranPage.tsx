@@ -279,6 +279,8 @@ export default function QuranPage() {
                             }}
                             autoPlay={autoPlay && playingAyah === ayah.numberInSurah}
                             playbackRate={playbackRate}
+                            repeatMode={repeatAyah === ayah.numberInSurah}
+                            onToggleRepeat={() => setRepeatAyah(repeatAyah === ayah.numberInSurah ? null : ayah.numberInSurah)}
                           />
                           <button
                             onClick={() => toggleFavorite(selectedSurah, ayah.numberInSurah, ayah.text)}
