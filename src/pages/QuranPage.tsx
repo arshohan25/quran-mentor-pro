@@ -61,6 +61,39 @@ export default function QuranPage() {
   const [hiddenAyahs, setHiddenAyahs] = useState<Set<number>>(new Set());
   const [hifzMode, setHifzMode] = useState<"manual" | "all-hidden">("manual");
 
+  // Hifz progress — persisted per surah in localStorage
+  const HIFZ_KEY = "hifz-progress";
+  const loadHifzProgress = (): Record<number, number[]> => {
+    try { return JSON.parse(localStorage.getItem(HIFZ_KEY) || "{}"); } catch { return {}; }
+  };
+  const [hifzProgress, setHifzProgress] = useState<Record<number, number[]>>(loadHifzProgress);
+
+  const isMemorized = (surah: number, ayahNum: number) =>
+    (hifzProgress[surah] || []).includes(ayahNum);
+
+  const toggleMemorized = (surah: number, ayahNum: number) => {
+    setHifzProgress(prev => {
+      const list = prev[surah] || [];
+      const next = list.includes(ayahNum)
+        ? { ...prev, [surah]: list.filter(a => a !== ayahNum) }
+        : { ...prev, [surah]: [...list, ayahNum] };
+      localStorage.setItem(HIFZ_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const markAllMemorized = (surah: number, ayahNums: number[]) => {
+    setHifzProgress(prev => {
+      const list = prev[surah] || [];
+      const allDone = ayahNums.every(a => list.includes(a));
+      const next = allDone
+        ? { ...prev, [surah]: list.filter(a => !ayahNums.includes(a)) }
+        : { ...prev, [surah]: [...new Set([...list, ...ayahNums])] };
+      localStorage.setItem(HIFZ_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
   const toggleHideAyah = (num: number) => {
     setHiddenAyahs(prev => {
       const next = new Set(prev);
