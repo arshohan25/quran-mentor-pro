@@ -8,12 +8,15 @@ interface TajweedTextProps {
 }
 
 export default function TajweedText({ text, enabled, className = "" }: TajweedTextProps) {
+  const isInline = className.includes("inline");
+  const Tag = isInline ? "span" : "p";
+
   if (!enabled) {
-    return <p className={className}>{text}</p>;
+    return <Tag className={className}>{text}</Tag>;
   }
 
   const html = applyTajweedColors(text);
-  return <p className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+  return <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 export function TajweedLegend() {
