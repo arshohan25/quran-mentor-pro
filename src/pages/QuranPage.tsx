@@ -94,6 +94,40 @@ export default function QuranPage() {
     setCurrentPage(0);
   }, [selectedSurah]);
 
+  // Audio playback
+  const playAyah = (index: number) => {
+    if (!audioData || !audioData[index]) return;
+    const audioUrl = (audioData[index] as any).audio;
+    if (!audioUrl) return;
+    if (audioRef.current) audioRef.current.pause();
+    const audio = new Audio(audioUrl);
+    audioRef.current = audio;
+    setCurrentAyah(index);
+    setIsPlaying(true);
+    saveLastAudio(selectedSurah, index + 1, selectedQari);
+    audio.play();
+    audio.onended = () => {
+      if (index < (audioData?.length || 0) - 1) {
+        playAyah(index + 1);
+      } else {
+        setIsPlaying(false);
+      }
+    };
+  };
+
+  const togglePlay = () => {
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      playAyah(currentAyah);
+    }
+  };
+
+  useEffect(() => {
+    return () => { if (audioRef.current) audioRef.current.pause(); };
+  }, []);
+
   const currentSurah = surahList.find((s) => s.number === selectedSurah);
 
   // Split ayahs into pages of LINES_PER_PAGE
