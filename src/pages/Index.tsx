@@ -77,7 +77,7 @@ const Index = () => {
           <div className="flex justify-end mb-4">
             <LanguageSwitcher />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">
             {t("কুরআন শিক্ষা ও নামাজ", "Quran Learning & Prayer", "تعلم القرآن والصلاة")}
           </h1>
           <p className="text-primary-foreground/80 text-lg">
