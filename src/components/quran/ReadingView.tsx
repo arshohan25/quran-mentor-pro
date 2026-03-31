@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import TajweedText, { TajweedLegend } from "@/components/TajweedText";
 import SurahSelector from "./SurahSelector";
 import SurahNav from "./SurahNav";
-import { LINES_PER_PAGE, type QuranSectionProps } from "./types";
+import { LINES_PER_PAGE, CHARS_PER_LINE, type QuranSectionProps } from "./types";
 
 // Convert number to Arabic numerals
 function toArabicNum(n: number): string {
