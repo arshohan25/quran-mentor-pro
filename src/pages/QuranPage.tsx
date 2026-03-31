@@ -13,7 +13,7 @@ import HifzView from "@/components/quran/HifzView";
 import BookmarksView from "@/components/quran/BookmarksView";
 
 const CATEGORIES = [
-  { id: "reading" as const, icon: BookOpen, labelBn: "কুরআন তেলাওয়াত", labelEn: "Quran Reading", labelAr: "تلاوة القرآن", active: true },
+  
   { id: "translation" as const, icon: BookText, labelBn: "তরজমা ও তাফসির", labelEn: "Translation & Tafsir", labelAr: "الترجمة والتفسير", active: true },
   { id: "audio" as const, icon: Headphones, labelBn: "অডিও তেলাওয়াত", labelEn: "Audio Recitation", labelAr: "التلاوة الصوتية", active: true },
   { id: "wordmeaning" as const, icon: Languages, labelBn: "শব্দার্থ", labelEn: "Word Meaning", labelAr: "معاني الكلمات", active: true },
