@@ -346,8 +346,10 @@ export default function QuranPage() {
             ) : data ? (
               <ScrollArea className="h-[calc(100vh-320px)]">
                 <div className="space-y-4">
-                  {data.arabic.ayahs.map((ayah, idx) => (
-                    <div key={ayah.number} className="rounded-xl border border-border bg-card p-4">
+                  {data.arabic.ayahs.map((ayah, idx) => {
+                    const inLoopRange = loopRange && ayah.numberInSurah >= loopRange.start && ayah.numberInSurah <= loopRange.end;
+                    return (
+                    <div key={ayah.number} className={`rounded-xl border bg-card p-4 ${inLoopRange ? "border-accent/50 ring-1 ring-accent/20" : "border-border"}`}>
                       <div className="flex items-start gap-3 mb-3">
                         <div className="flex flex-col items-center gap-1 shrink-0">
                           <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
@@ -358,13 +360,21 @@ export default function QuranPage() {
                             isActive={playingAyah === ayah.numberInSurah}
                             onPlay={() => setPlayingAyah(ayah.numberInSurah)}
                             onStop={() => {
-                              if (autoPlay && data && idx < data.arabic.ayahs.length - 1) {
+                              // Loop range takes priority
+                              if (loopRange && ayah.numberInSurah >= loopRange.start && ayah.numberInSurah <= loopRange.end) {
+                                if (ayah.numberInSurah < loopRange.end) {
+                                  setPlayingAyah(ayah.numberInSurah + 1);
+                                } else {
+                                  // End of range, loop back to start
+                                  setPlayingAyah(loopRange.start);
+                                }
+                              } else if (autoPlay && data && idx < data.arabic.ayahs.length - 1) {
                                 setPlayingAyah(data.arabic.ayahs[idx + 1].numberInSurah);
                               } else {
                                 setPlayingAyah(null);
                               }
                             }}
-                            autoPlay={autoPlay && playingAyah === ayah.numberInSurah}
+                            autoPlay={(loopRange ? inLoopRange : autoPlay) && playingAyah === ayah.numberInSurah}
                             playbackRate={playbackRate}
                             repeatMode={repeatAyah === ayah.numberInSurah}
                             onToggleRepeat={() => setRepeatAyah(repeatAyah === ayah.numberInSurah ? null : ayah.numberInSurah)}
