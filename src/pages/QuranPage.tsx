@@ -109,20 +109,27 @@ export default function QuranPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-primary text-primary-foreground py-4">
-        <div className="container flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="hover:opacity-80">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <h1 className="text-xl font-bold">{t("কুরআন পড়ুন", "Read Quran", "اقرأ القرآن")}</h1>
+      <header className="bg-primary text-primary-foreground py-3 md:py-4">
+        <div className="container">
+          {/* Top row: back + title + language */}
+          <div className="flex items-center justify-between mb-2 md:mb-0">
+            <div className="flex items-center gap-2 md:gap-3">
+              <Link to="/" className="hover:opacity-80">
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+              <h1 className="text-lg md:text-xl font-bold">{t("কুরআন পড়ুন", "Read Quran", "اقرأ القرآن")}</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          {/* Bottom row: controls - scrollable on mobile */}
+          <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto pb-1 scrollbar-hide">
             <ToggleGroup
               type="single"
               value={viewMode}
               onValueChange={(v) => v && setViewMode(v as "verse" | "word" | "hifz")}
-              className="bg-primary-foreground/10 rounded-lg p-0.5"
+              className="bg-primary-foreground/10 rounded-lg p-0.5 shrink-0"
             >
               <ToggleGroupItem value="verse" className="data-[state=on]:bg-primary-foreground/20 text-primary-foreground px-2 py-1 text-xs rounded" title={t("আয়াত মোড", "Verse Mode", "وضع الآية")}>
                 <AlignLeft className="w-4 h-4" />
@@ -142,57 +149,57 @@ export default function QuranPage() {
                 setPlaybackRate(next);
                 localStorage.setItem("playbackRate", String(next));
               }}
-              className="px-2 py-1 rounded-lg text-xs font-bold transition-colors bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 min-w-[40px]"
+              className="px-2 py-1 rounded-lg text-xs font-bold transition-colors bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 min-w-[40px] shrink-0"
               title={t("গতি", "Speed", "السرعة")}
             >
               {playbackRate}x
             </button>
             <button
               onClick={() => setAutoPlay(!autoPlay)}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-1.5 md:p-2 rounded-lg transition-colors shrink-0 ${
                 autoPlay
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "text-primary-foreground/60 hover:text-primary-foreground"
               }`}
               title={t("অটো-প্লে", "Auto-Play", "تشغيل تلقائي")}
             >
-              <Repeat className="w-5 h-5" />
+              <Repeat className="w-4 h-4 md:w-5 md:h-5" />
             </button>
             <button
               onClick={() => setShowLoopRange(!showLoopRange)}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-1.5 md:p-2 rounded-lg transition-colors shrink-0 ${
                 loopRange
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "text-primary-foreground/60 hover:text-primary-foreground"
               }`}
               title={t("আয়াত রেঞ্জ লুপ", "Ayah Range Loop", "تكرار نطاق الآيات")}
             >
-              <ListMusic className="w-5 h-5" />
+              <ListMusic className="w-4 h-4 md:w-5 md:h-5" />
             </button>
             <button
               onClick={() => { setShowAyahSearch(!showAyahSearch); if (showAyahSearch) setAyahSearch(""); }}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-1.5 md:p-2 rounded-lg transition-colors shrink-0 ${
                 showAyahSearch
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "text-primary-foreground/60 hover:text-primary-foreground"
               }`}
               title={t("আয়াত খুঁজুন", "Search Ayah", "بحث آية")}
             >
-              {showAyahSearch ? <SearchX className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+              {showAyahSearch ? <SearchX className="w-4 h-4 md:w-5 md:h-5" /> : <Search className="w-4 h-4 md:w-5 md:h-5" />}
             </button>
             <button
               onClick={() => setTajweedEnabled(!tajweedEnabled)}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-1.5 md:p-2 rounded-lg transition-colors shrink-0 ${
                 tajweedEnabled
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "text-primary-foreground/60 hover:text-primary-foreground"
               }`}
               title={t("তাজবীদ কালার", "Tajweed Colors", "ألوان التجويد")}
             >
-              <Palette className="w-5 h-5" />
+              <Palette className="w-4 h-4 md:w-5 md:h-5" />
             </button>
             <Select value={selectedQari} onValueChange={setSelectedQari}>
-              <SelectTrigger className="w-auto min-w-[120px] h-8 text-xs bg-primary-foreground/10 border-none text-primary-foreground">
+              <SelectTrigger className="w-auto min-w-[90px] md:min-w-[120px] h-7 md:h-8 text-xs bg-primary-foreground/10 border-none text-primary-foreground shrink-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -203,7 +210,6 @@ export default function QuranPage() {
                 ))}
               </SelectContent>
             </Select>
-            <LanguageSwitcher />
           </div>
         </div>
       </header>
