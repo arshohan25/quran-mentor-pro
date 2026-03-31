@@ -69,6 +69,7 @@ interface QuranSectionProps {
 }
 
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
+  const { saveLastRead } = useBookmark();
   const { t } = useLanguage();
   const [currentPage, setCurrentPage] = useState(0);
   const [tajweedEnabled, setTajweedEnabled] = useState(() => {
