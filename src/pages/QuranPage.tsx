@@ -53,8 +53,31 @@ export default function QuranPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const { data, isLoading } = useSurahWithTranslations(
-    activeSection === "reading" || activeSection === "translation" || activeSection === "audio" ? selectedSurah : 0
+    ["reading", "translation", "audio", "hifz"].includes(activeSection || "") ? selectedSurah : 0
   );
+
+  // Hifz state
+  const [hifzPage, setHifzPage] = useState(0);
+  const [hiddenAyahs, setHiddenAyahs] = useState<Set<number>>(new Set());
+  const [hifzMode, setHifzMode] = useState<"manual" | "all-hidden">("manual");
+
+  const toggleHideAyah = (num: number) => {
+    setHiddenAyahs(prev => {
+      const next = new Set(prev);
+      if (next.has(num)) next.delete(num); else next.add(num);
+      return next;
+    });
+  };
+
+  const hifzPages = useMemo(() => {
+    if (!data) return [];
+    const ayahs = data.arabic.ayahs;
+    const result: typeof ayahs[] = [];
+    for (let i = 0; i < ayahs.length; i += LINES_PER_PAGE) {
+      result.push(ayahs.slice(i, i + LINES_PER_PAGE));
+    }
+    return result;
+  }, [data]);
 
   const { data: audioData, isLoading: loadingAudio } = useSurahAudio(
     activeSection === "audio" ? selectedSurah : 0,
