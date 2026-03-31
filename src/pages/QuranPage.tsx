@@ -109,20 +109,27 @@ export default function QuranPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-primary text-primary-foreground py-4">
-        <div className="container flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="hover:opacity-80">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <h1 className="text-xl font-bold">{t("কুরআন পড়ুন", "Read Quran", "اقرأ القرآن")}</h1>
+      <header className="bg-primary text-primary-foreground py-3 md:py-4">
+        <div className="container">
+          {/* Top row: back + title + language */}
+          <div className="flex items-center justify-between mb-2 md:mb-0">
+            <div className="flex items-center gap-2 md:gap-3">
+              <Link to="/" className="hover:opacity-80">
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+              <h1 className="text-lg md:text-xl font-bold">{t("কুরআন পড়ুন", "Read Quran", "اقرأ القرآن")}</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          {/* Bottom row: controls - scrollable on mobile */}
+          <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto pb-1 scrollbar-hide">
             <ToggleGroup
               type="single"
               value={viewMode}
               onValueChange={(v) => v && setViewMode(v as "verse" | "word" | "hifz")}
-              className="bg-primary-foreground/10 rounded-lg p-0.5"
+              className="bg-primary-foreground/10 rounded-lg p-0.5 shrink-0"
             >
               <ToggleGroupItem value="verse" className="data-[state=on]:bg-primary-foreground/20 text-primary-foreground px-2 py-1 text-xs rounded" title={t("আয়াত মোড", "Verse Mode", "وضع الآية")}>
                 <AlignLeft className="w-4 h-4" />
@@ -142,57 +149,57 @@ export default function QuranPage() {
                 setPlaybackRate(next);
                 localStorage.setItem("playbackRate", String(next));
               }}
-              className="px-2 py-1 rounded-lg text-xs font-bold transition-colors bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 min-w-[40px]"
+              className="px-2 py-1 rounded-lg text-xs font-bold transition-colors bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 min-w-[40px] shrink-0"
               title={t("গতি", "Speed", "السرعة")}
             >
               {playbackRate}x
             </button>
             <button
               onClick={() => setAutoPlay(!autoPlay)}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-1.5 md:p-2 rounded-lg transition-colors shrink-0 ${
                 autoPlay
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "text-primary-foreground/60 hover:text-primary-foreground"
               }`}
               title={t("অটো-প্লে", "Auto-Play", "تشغيل تلقائي")}
             >
-              <Repeat className="w-5 h-5" />
+              <Repeat className="w-4 h-4 md:w-5 md:h-5" />
             </button>
             <button
               onClick={() => setShowLoopRange(!showLoopRange)}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-1.5 md:p-2 rounded-lg transition-colors shrink-0 ${
                 loopRange
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "text-primary-foreground/60 hover:text-primary-foreground"
               }`}
               title={t("আয়াত রেঞ্জ লুপ", "Ayah Range Loop", "تكرار نطاق الآيات")}
             >
-              <ListMusic className="w-5 h-5" />
+              <ListMusic className="w-4 h-4 md:w-5 md:h-5" />
             </button>
             <button
               onClick={() => { setShowAyahSearch(!showAyahSearch); if (showAyahSearch) setAyahSearch(""); }}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-1.5 md:p-2 rounded-lg transition-colors shrink-0 ${
                 showAyahSearch
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "text-primary-foreground/60 hover:text-primary-foreground"
               }`}
               title={t("আয়াত খুঁজুন", "Search Ayah", "بحث آية")}
             >
-              {showAyahSearch ? <SearchX className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+              {showAyahSearch ? <SearchX className="w-4 h-4 md:w-5 md:h-5" /> : <Search className="w-4 h-4 md:w-5 md:h-5" />}
             </button>
             <button
               onClick={() => setTajweedEnabled(!tajweedEnabled)}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-1.5 md:p-2 rounded-lg transition-colors shrink-0 ${
                 tajweedEnabled
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "text-primary-foreground/60 hover:text-primary-foreground"
               }`}
               title={t("তাজবীদ কালার", "Tajweed Colors", "ألوان التجويد")}
             >
-              <Palette className="w-5 h-5" />
+              <Palette className="w-4 h-4 md:w-5 md:h-5" />
             </button>
             <Select value={selectedQari} onValueChange={setSelectedQari}>
-              <SelectTrigger className="w-auto min-w-[120px] h-8 text-xs bg-primary-foreground/10 border-none text-primary-foreground">
+              <SelectTrigger className="w-auto min-w-[90px] md:min-w-[120px] h-7 md:h-8 text-xs bg-primary-foreground/10 border-none text-primary-foreground shrink-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -203,7 +210,6 @@ export default function QuranPage() {
                 ))}
               </SelectContent>
             </Select>
-            <LanguageSwitcher />
           </div>
         </div>
       </header>
@@ -322,16 +328,16 @@ export default function QuranPage() {
           </button>
 
           {currentSurah && (
-            <div className="bg-primary/5 rounded-xl p-5 mb-4 text-center space-y-3">
-              <h2 className="font-arabic text-3xl text-primary">{currentSurah.name}</h2>
-              <p className="text-foreground font-semibold">
+             <div className="bg-primary/5 rounded-xl p-3 md:p-5 mb-4 text-center space-y-2 md:space-y-3">
+              <h2 className="font-arabic text-2xl md:text-3xl text-primary">{currentSurah.name}</h2>
+              <p className="text-foreground font-semibold text-sm md:text-base">
                 {language === "bn" ? currentSurah.bengaliName : currentSurah.englishName}
               </p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground text-xs md:text-sm">
                 {currentSurah.englishNameTranslation} • {currentSurah.numberOfAyahs}{" "}
                 {t("আয়াত", "Ayahs", "آيات")}
               </p>
-              <div className="flex items-center justify-center gap-3 text-xs">
+              <div className="flex items-center justify-center gap-2 md:gap-3 text-xs flex-wrap">
                 <span className={`px-2.5 py-1 rounded-full font-medium ${
                   currentSurah.revelationType === "Meccan"
                     ? "bg-accent/15 text-accent"
@@ -345,10 +351,9 @@ export default function QuranPage() {
                   {t(`নাযিলের ক্রম: ${currentSurah.number}`, `Revelation order: ${currentSurah.number}`, `ترتيب النزول: ${currentSurah.number}`)}
                 </span>
               </div>
-              {/* Bismillah banner - not shown for Surah At-Tawba (9) */}
               {currentSurah.number !== 9 && (
                 <div className="pt-2">
-                  <p className="font-arabic text-2xl text-primary/80 leading-relaxed">
+                  <p className="font-arabic text-xl md:text-2xl text-primary/80 leading-relaxed">
                     بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -383,7 +388,7 @@ export default function QuranPage() {
 
           {/* Loop Range Selector */}
           {showLoopRange && currentSurah && (
-            <div className="mb-4 rounded-xl border border-accent/30 bg-accent/5 p-4">
+            <div className="mb-4 rounded-xl border border-accent/30 bg-accent/5 p-3 md:p-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                   <ListMusic className="w-4 h-4 text-accent" />
@@ -398,7 +403,7 @@ export default function QuranPage() {
                   </button>
                 )}
               </div>
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2 md:gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
                   <label className="text-xs text-muted-foreground">{t("শুরু", "From", "من")}</label>
                   <select
@@ -479,14 +484,14 @@ export default function QuranPage() {
                 ))}
               </div>
             ) : data ? (
-              <ScrollArea className="h-[calc(100vh-320px)]">
+              <ScrollArea className="h-[calc(100vh-280px)] md:h-[calc(100vh-320px)]">
                 <div className="space-y-4">
                   {filteredIndices.map((idx) => {
                     const ayah = data.arabic.ayahs[idx];
                     const inLoopRange = loopRange && ayah.numberInSurah >= loopRange.start && ayah.numberInSurah <= loopRange.end;
                     return (
-                    <div key={ayah.number} className={`rounded-xl border bg-card p-4 ${inLoopRange ? "border-accent/50 ring-1 ring-accent/20" : "border-border"}`}>
-                      <div className="flex items-start gap-3 mb-3">
+                    <div key={ayah.number} className={`rounded-xl border bg-card p-3 md:p-4 ${inLoopRange ? "border-accent/50 ring-1 ring-accent/20" : "border-border"}`}>
+                      <div className="flex items-start gap-2 md:gap-3 mb-3">
                         <div className="flex flex-col items-center gap-1 shrink-0">
                           <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
                             {ayah.numberInSurah}
@@ -532,10 +537,10 @@ export default function QuranPage() {
                         <TajweedText
                           text={ayah.text}
                           enabled={tajweedEnabled}
-                          className="font-arabic text-2xl leading-loose text-foreground flex-1 text-right"
+                          className="font-arabic text-xl md:text-2xl leading-loose text-foreground flex-1 text-right"
                         />
                       </div>
-                      <div className="border-t border-border pt-3 space-y-2 pl-11">
+                      <div className="border-t border-border pt-3 space-y-2 pl-0 md:pl-11">
                         <p className="text-sm text-foreground leading-relaxed">
                           <span className="text-xs text-muted-foreground font-semibold">বাংলা: </span>
                           {data.bengali.ayahs[idx]?.text}
@@ -560,10 +565,10 @@ export default function QuranPage() {
                 ))}
               </div>
             ) : wordData ? (
-              <ScrollArea className="h-[calc(100vh-320px)]">
+              <ScrollArea className="h-[calc(100vh-280px)] md:h-[calc(100vh-320px)]">
                 <div className="space-y-4">
                   {wordData.map((verse) => (
-                    <div key={verse.verse_key} className="rounded-xl border border-border bg-card p-4">
+                    <div key={verse.verse_key} className="rounded-xl border border-border bg-card p-3 md:p-4">
                       <div className="flex items-start gap-3 mb-3">
                         <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
                           {verse.verse_number}
@@ -572,9 +577,9 @@ export default function QuranPage() {
                           {verse.words.map((word) => (
                             <div
                               key={word.id}
-                              className="flex flex-col items-center px-2 py-1.5 rounded-lg bg-muted/50 hover:bg-primary/10 transition-colors min-w-[60px]"
+                              className="flex flex-col items-center px-1.5 md:px-2 py-1 md:py-1.5 rounded-lg bg-muted/50 hover:bg-primary/10 transition-colors min-w-[50px] md:min-w-[60px]"
                             >
-                              <span className="font-arabic text-xl text-foreground leading-relaxed">
+                              <span className="font-arabic text-lg md:text-xl text-foreground leading-relaxed">
                                 {word.text_uthmani}
                               </span>
                               <span className="text-[10px] text-muted-foreground mt-1 leading-tight text-center" dir="ltr">
@@ -592,29 +597,29 @@ export default function QuranPage() {
           )}
 
           {/* Previous/Next Surah Navigation */}
-          <div className="flex items-center justify-between mt-6 mb-2">
+          <div className="flex items-center justify-between mt-4 md:mt-6 mb-2 gap-2">
             <button
               onClick={() => { if (selectedSurah > 1) { setSelectedSurah(selectedSurah - 1); setPlayingAyah(null); setAyahSearch(""); } }}
               disabled={selectedSurah <= 1}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-2 md:py-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed min-w-0"
             >
-              <ChevronLeft className="w-4 h-4" />
-              <span className="text-sm font-medium">
+              <ChevronLeft className="w-4 h-4 shrink-0" />
+              <span className="text-xs md:text-sm font-medium truncate">
                 {selectedSurah > 1 ? (language === "bn" ? surahList[selectedSurah - 2]?.bengaliName : surahList[selectedSurah - 2]?.englishName) : t("আগের", "Previous", "السابقة")}
               </span>
             </button>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground shrink-0">
               {selectedSurah} / 114
             </span>
             <button
               onClick={() => { if (selectedSurah < 114) { setSelectedSurah(selectedSurah + 1); setPlayingAyah(null); setAyahSearch(""); } }}
               disabled={selectedSurah >= 114}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-2 md:py-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed min-w-0"
             >
-              <span className="text-sm font-medium">
+              <span className="text-xs md:text-sm font-medium truncate">
                 {selectedSurah < 114 ? (language === "bn" ? surahList[selectedSurah]?.bengaliName : surahList[selectedSurah]?.englishName) : t("পরের", "Next", "التالية")}
               </span>
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4 shrink-0" />
             </button>
           </div>
         </div>
