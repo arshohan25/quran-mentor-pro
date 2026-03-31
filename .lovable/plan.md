@@ -1,37 +1,86 @@
 
 
-# রিডিং ভিউ — ক্রিটিকাল ফিক্স
+# রিডিং ভিউ — রেফারেন্স ইমেজ অনুযায়ী লাইন-ভিত্তিক রিডিজাইন
 
-## পরীক্ষায় পাওয়া সমস্যাগুলো
+## রেফারেন্স ইমেজ বিশ্লেষণ
 
-### ১. বিসমিল্লাহ এখনও ডুপ্লিকেট (সূরা ২ এ স্পষ্ট দেখা যাচ্ছে)
-API থেকে সূরা ২ এর প্রথম আয়াত আসছে: `بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ الٓمٓ`
-`stripBismillah()` ফাংশন কাজ করছে কিন্তু `الٓمٓ` (আলিফ লাম মীম) রিটার্ন করছে — তবুও স্ক্রিনে পুরো বিসমিল্লাহ দেখাচ্ছে। সমস্যা হতে পারে Tajweed component এর মধ্যে — `TajweedText` কে `displayText` পাস হচ্ছে কিন্তু Tajweed কম্পোনেন্ট হয়তো original text ব্যবহার করছে।
+ইমেজে দেখা যাচ্ছে:
+1. **প্রতিটি লাইন আলাদা row** — প্রতি লাইনের নিচে একটি হালকা horizontal rule আছে
+2. **সূরা হেডার একটি আলাদা decorated band** — সূরার নাম, আয়াত সংখ্যা, মাক্কিয়া/মাদানিয়া, রুকু — সব এক লাইনে, এটা ১৫ লাইনের মধ্যে গণ্য
+3. **বিসমিল্লাহ একটি আলাদা লাইন** — এটাও ১৫ লাইনের মধ্যে গণ্য
+4. **আয়াত টেক্সট justified** — প্রতিটি লাইন পুরো প্রস্থ জুড়ে, মাঝখানে aligned
+5. **একটি পেজে একাধিক সূরা থাকতে পারে** (যেমন সূরা নাসর, লাহাব, ইখলাস একই পেজে)
+6. **ডান মার্জিনে `ع` (রুকু)** এবং **বাম মার্জিনে পারা/মানজিল নম্বর**
+7. **হেডার (ফ্রেমের বাইরে)**: ডানে সূরার নাম রেঞ্জ, মাঝে পেজ নম্বর, বামে জুয নম্বর ও নাম
 
-### ২. ফন্ট অনেক বড়, ১৫ লাইন ফিট হচ্ছে না
-বর্তমানে `text-[28px] md:text-[32px]` এবং `leading-[2.8]` — এতে প্রতি পেজে মাত্র ~৮ লাইন দেখাচ্ছে। PDF-এ ১৫ লাইন কম্প্যাক্টভাবে ফিট করা আছে।
+## মূল আর্কিটেকচারাল পরিবর্তন
 
-### ৩. সূরা আল-ফাতিহায় (৭ আয়াত) পুরো সূরা এক পেজে হওয়া উচিত কিন্তু স্ক্রল করতে হচ্ছে
+বর্তমান সিস্টেম **একটি সূরা লোড করে তার আয়াতগুলো পেজে ভাগ করে**। কিন্তু রেফারেন্সে একটি পেজে **একাধিক সূরা** থাকতে পারে — এটা বাস্তবায়ন করতে হলে সমস্ত কুরআনের ডাটা একসাথে লোড করা লাগবে যা API limitation-এর কারণে সম্ভব নয়।
 
-## সমাধান — `src/components/quran/ReadingView.tsx`
+তাই **একক সূরা ভিত্তিক** রেখেই প্রতি পেজে ১৫ লাইন এবং রেফারেন্সের ভিজ্যুয়াল স্টাইল ম্যাচ করা হবে। সূরা হেডার ও বিসমিল্লাহ লাইন কাউন্টে অন্তর্ভুক্ত হবে।
 
-### ফিক্স ১: বিসমিল্লাহ স্ট্রিপিং ডিবাগ ও ফিক্স
-- `stripBismillah` এ আরেকটি strategy যোগ: `ٱلرَّحِيمِ` এর পরে space + বাকি text — এটাই return
-- গুরুত্বপূর্ণ: Tajweed enabled থাকলেও `displayText` (stripped version) পাস হচ্ছে কিনা নিশ্চিত করা
-- `TajweedText` কম্পোনেন্ট চেক করে দেখা — `text` prop ঠিকমতো ব্যবহার হচ্ছে কিনা
+## পরিবর্তন পরিকল্পনা
 
-### ফিক্স ২: ফন্ট সাইজ ও লাইন-হাইট কমানো — ১৫ লাইন ফিটের জন্য
-- `text-[28px] md:text-[32px]` → `text-[20px] md:text-[22px]`
-- `leading-[2.8] md:leading-[3]` → `leading-[2.2] md:leading-[2.4]`
-- `word-spacing: 0.15em` → `0.08em`
-- Ruled line gradient কে নতুন line-height অনুযায়ী adjust
-- `CHARS_PER_LINE` কে `30` থেকে `40` এ বাড়ানো (ছোট ফন্টে বেশি ক্যারেক্টার ফিট হবে)
+### ফাইল: `src/components/quran/ReadingView.tsx`
 
-### ফিক্স ৩: আয়াত নম্বর মার্কার সাইজ কমানো
-- `text-[15px] md:text-[17px]` → `text-[12px] md:text-[14px]` — টেক্সটের সাথে proportional
+**১. পেজিনেশন লজিক আপডেট — সূরা হেডার ও বিসমিল্লাহ লাইন কাউন্টে যোগ**
+- প্রথম পেজে: সূরা হেডার = ১ লাইন, বিসমিল্লাহ = ১ লাইন → বাকি ১৩ লাইন আয়াতের জন্য
+- পরবর্তী পেজে: পুরো ১৫ লাইন আয়াতের জন্য
+- `CHARS_PER_LINE = 45` করে আরো accurate line estimation
 
-### ফাইল পরিবর্তন
-1. `src/components/quran/ReadingView.tsx` — ফন্ট সাইজ, লাইন-হাইট, বিসমিল্লাহ ফিক্স
-2. `src/components/quran/types.ts` — `CHARS_PER_LINE = 40`
-3. সম্ভবত `src/components/TajweedText.tsx` — চেক করতে হবে text prop ঠিকমতো render হচ্ছে কিনা
+**২. লাইন-ভিত্তিক রেন্ডারিং — প্রতিটি লাইন আলাদা row**
+- বর্তমান flowing `<p>` বাদ দিয়ে **প্রতিটি আয়াত আলাদা block** হিসেবে render, প্রতিটির নিচে border-bottom
+- আয়াত টেক্সট `text-justify` এবং `text-center` alignment (vertically centered per line)
+- প্রতিটি লাইনের নিচে `border-b border-[#8B7355]/15` — সূক্ষ্ম horizontal rule
+
+**৩. সূরা হেডার ব্যান্ড — রেফারেন্স স্টাইল**
+- গাঢ় ব্যাকগ্রাউন্ড ব্যান্ড (`bg-[#2D5016]/10`) সহ decorated border
+- একটি লাইনে: `آياتها ٥ | (١١١) سورة اللهب مكية | ركوعها ١`
+- ব্যান্ডের বাম-ডানে ছোট floral ornament
+
+**৪. বিসমিল্লাহ লাইন**
+- পূর্ণ প্রস্থ জুড়ে কেন্দ্রে, নিচে ruled line
+- `text-[20px]` সাইজ, `font-arabic`
+
+**৫. কর্নার অর্নামেন্ট বড় করা**
+- `w-12 h-12` (৪৮px) L-shape corners, `border-[3px]`, `rounded-3xl`
+- রেফারেন্সে বেশ prominent scrollwork আছে
+
+**৬. টেক্সট alignment = center (vertically per line)**
+- `items-center` প্রতিটি line container-এ
+
+### ফাইল: `src/components/quran/types.ts`
+- `CHARS_PER_LINE = 45` (বড় করে আরো accurate estimation)
+
+### টেকনিক্যাল ডিটেইল
+
+**নতুন পেজিনেশন:**
+```typescript
+// First page: surah header (1 line) + bismillah (1 line) + 13 lines of ayahs
+// Other pages: 15 lines of ayahs
+const linesForAyahs = (pageIndex === 0 && selectedSurah !== 9) 
+  ? LINES_PER_PAGE - 2  // header + bismillah 
+  : LINES_PER_PAGE;
+```
+
+**লাইন-ভিত্তিক রেন্ডারিং:**
+```tsx
+// Each ayah as a block with bottom border
+<div className="border-b border-[#8B7355]/15 py-[2px] flex items-center justify-center">
+  <span className="font-arabic text-[20px] text-justify w-full">
+    {ayahText} ﴿{number}﴾
+  </span>
+</div>
+```
+
+**সূরা হেডার ব্যান্ড:**
+```tsx
+<div className="border-b-2 border-[#8B7355]/30 bg-[#F5EFE0]/80 py-1.5 flex items-center justify-between px-3">
+  <span>آياتها {count}</span>
+  <span className="font-bold text-[16px]">({number}) سورة {name} {type}</span>
+  <span>ركوعها {ruku}</span>
+</div>
+```
+
+মোট ২টি ফাইল পরিবর্তন।
 
