@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid, BookOpen, Repeat, Heart, ListMusic, SearchX } from "lucide-react";
+import { ArrowLeft, ArrowRight, Search, Palette, AlignLeft, LayoutGrid, BookOpen, Repeat, Heart, ListMusic, SearchX, ChevronLeft, ChevronRight } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations, useWordByWord, useSurahAudio } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -590,6 +590,33 @@ export default function QuranPage() {
               </ScrollArea>
             ) : null
           )}
+
+          {/* Previous/Next Surah Navigation */}
+          <div className="flex items-center justify-between mt-6 mb-2">
+            <button
+              onClick={() => { if (selectedSurah > 1) { setSelectedSurah(selectedSurah - 1); setPlayingAyah(null); setAyahSearch(""); } }}
+              disabled={selectedSurah <= 1}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span className="text-sm font-medium">
+                {selectedSurah > 1 ? (language === "bn" ? surahList[selectedSurah - 2]?.bengaliName : surahList[selectedSurah - 2]?.englishName) : t("আগের", "Previous", "السابقة")}
+              </span>
+            </button>
+            <span className="text-xs text-muted-foreground">
+              {selectedSurah} / 114
+            </span>
+            <button
+              onClick={() => { if (selectedSurah < 114) { setSelectedSurah(selectedSurah + 1); setPlayingAyah(null); setAyahSearch(""); } }}
+              disabled={selectedSurah >= 114}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <span className="text-sm font-medium">
+                {selectedSurah < 114 ? (language === "bn" ? surahList[selectedSurah]?.bengaliName : surahList[selectedSurah]?.englishName) : t("পরের", "Next", "التالية")}
+              </span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
