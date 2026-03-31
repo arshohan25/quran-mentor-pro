@@ -118,8 +118,8 @@ const Index = () => {
               to={section.path}
               className="group block rounded-xl border border-border bg-card p-4 sm:p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
             >
-              <div className={`inline-flex p-3 rounded-lg bg-gradient-to-br ${section.gradient} text-primary-foreground mb-4 group-hover:scale-110 transition-transform`}>
-                <section.icon className="w-7 h-7" />
+              <div className={`inline-flex p-2.5 sm:p-3 rounded-lg bg-gradient-to-br ${section.gradient} text-primary-foreground mb-3 sm:mb-4 group-hover:scale-110 transition-transform`}>
+                <section.icon className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
               <h2 className="text-xl font-semibold text-card-foreground mb-2">
                 {section.title}
