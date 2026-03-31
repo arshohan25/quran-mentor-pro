@@ -186,29 +186,6 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
 
   return (
     <div className="min-h-screen bg-[#F5EFE0] dark:bg-[#1a1510]">
-      {/* Compact top toolbar */}
-      <header className="bg-[#2D5016] dark:bg-[#1a3009] text-white py-2 shadow-lg sticky top-0 z-20">
-        <div className="container">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button onClick={onBack} className="hover:opacity-80 transition-opacity p-1">
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              
-            </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => { setTajweedEnabled(!tajweedEnabled); localStorage.setItem("tajweedEnabled", String(!tajweedEnabled)); }}
-                className={`p-1.5 rounded-lg transition-colors ${tajweedEnabled ? "bg-white/20" : "text-white/60 hover:text-white"}`}
-                title={t("তাজবীদ কালার", "Tajweed Colors", "ألوان التجويد")}
-              >
-                <Palette className="w-4 h-4" />
-              </button>
-              <SurahSelector value={selectedSurah} onChange={handleSurahChange} />
-            </div>
-          </div>
-        </div>
-      </header>
 
       <div className="container py-3 max-w-xl mx-auto px-2">
         {tajweedEnabled && <div className="mb-3"><TajweedLegend /></div>}
