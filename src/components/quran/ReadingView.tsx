@@ -283,16 +283,6 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                         })}
                       </p>
                     </div>
-
-                    <div className="h-[3px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/60 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/60 dark:to-[#C4A96A]/10" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-center pt-1.5">
-                <span className="font-arabic text-[11px] text-[#8B7355] dark:text-[#9B8365]">
-                  مَنْزِل {toArabicNum(currentManzil)}
-                </span>
               </div>
             </div>
 
