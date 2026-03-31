@@ -9,9 +9,17 @@ interface AudioBookmark extends Bookmark {
   qari: string;
 }
 
+interface FavoriteAyah {
+  surah: number;
+  ayah: number;
+  text?: string;
+  addedAt: number;
+}
+
 interface Bookmarks {
   lastRead?: Bookmark;
   lastAudio?: AudioBookmark;
+  favorites?: FavoriteAyah[];
 }
 
 const STORAGE_KEY = "quran-bookmarks";
@@ -48,5 +56,25 @@ export function useBookmark() {
     });
   }, []);
 
-  return { bookmarks, saveLastRead, saveLastAudio };
+  const toggleFavorite = useCallback((surah: number, ayah: number, text?: string) => {
+    setBookmarks((prev) => {
+      const favorites = prev.favorites || [];
+      const exists = favorites.some((f) => f.surah === surah && f.ayah === ayah);
+      const nextFavorites = exists
+        ? favorites.filter((f) => !(f.surah === surah && f.ayah === ayah))
+        : [...favorites, { surah, ayah, text, addedAt: Date.now() }];
+      const next = { ...prev, favorites: nextFavorites };
+      save(next);
+      return next;
+    });
+  }, []);
+
+  const isFavorite = useCallback(
+    (surah: number, ayah: number) => {
+      return (bookmarks.favorites || []).some((f) => f.surah === surah && f.ayah === ayah);
+    },
+    [bookmarks.favorites]
+  );
+
+  return { bookmarks, saveLastRead, saveLastAudio, toggleFavorite, isFavorite };
 }

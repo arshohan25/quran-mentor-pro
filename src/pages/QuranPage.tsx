@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid, BookOpen, Repeat } from "lucide-react";
+import { ArrowLeft, Search, Palette, AlignLeft, LayoutGrid, BookOpen, Repeat, Heart } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations, useWordByWord, useSurahAudio } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -29,7 +29,7 @@ const QARI_LIST = [
 
 export default function QuranPage() {
   const { t, language } = useLanguage();
-  const { saveLastRead } = useBookmark();
+  const { saveLastRead, toggleFavorite, isFavorite } = useBookmark();
   const [searchParams] = useSearchParams();
   const [selectedSurah, setSelectedSurah] = useState(() => {
     const s = searchParams.get("surah");
@@ -262,6 +262,19 @@ export default function QuranPage() {
                             }}
                             autoPlay={autoPlay && playingAyah === ayah.numberInSurah}
                           />
+                          <button
+                            onClick={() => toggleFavorite(selectedSurah, ayah.numberInSurah, ayah.text)}
+                            className="p-1 rounded-full transition-colors hover:bg-primary/10"
+                            title={t("বুকমার্ক", "Bookmark", "إشارة مرجعية")}
+                          >
+                            <Heart
+                              className={`w-4 h-4 transition-colors ${
+                                isFavorite(selectedSurah, ayah.numberInSurah)
+                                  ? "fill-destructive text-destructive"
+                                  : "text-muted-foreground hover:text-destructive"
+                              }`}
+                            />
+                          </button>
                         </div>
                         <TajweedText
                           text={ayah.text}
