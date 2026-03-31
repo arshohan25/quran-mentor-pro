@@ -346,7 +346,14 @@ export default function QuranPage() {
             <div className="rounded-xl border border-border bg-card p-4 md:p-6">
               <div className="space-y-1" dir="rtl">
                 {pages[currentPage]?.map((ayah) => (
-                  <div key={ayah.number} className="flex items-baseline gap-2 py-1.5 border-b border-border/30 last:border-b-0">
+                  <div key={ayah.number} className="flex items-center gap-1 py-1.5 border-b border-border/30 last:border-b-0">
+                    <button
+                      onClick={() => toggleFavorite(selectedSurah, ayah.numberInSurah, ayah.text)}
+                      className="p-0.5 shrink-0"
+                      dir="ltr"
+                    >
+                      <Star className={`w-3.5 h-3.5 ${isFavorite(selectedSurah, ayah.numberInSurah) ? "fill-accent text-accent" : "text-muted-foreground/30"}`} />
+                    </button>
                     <span className="text-[10px] text-muted-foreground font-bold min-w-[20px] text-center shrink-0 font-sans" dir="ltr">
                       {ayah.numberInSurah}
                     </span>
