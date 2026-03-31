@@ -200,7 +200,6 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
             tajweedEnabled={tajweedEnabled}
             onTajweedToggle={handleTajweedToggle}
           />
-          />
         </div>
       </header>
 
