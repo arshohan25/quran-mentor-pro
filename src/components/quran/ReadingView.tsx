@@ -183,13 +183,16 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const realPage = pages[currentPage]?.[0]?.page;
 
   return (
-    <div className="min-h-screen bg-[#F5EFE0] dark:bg-[#1a1510]">
+    <div className="min-h-screen bg-[#F5EFE0] dark:bg-[#1a1510] flex flex-col">
       {/* Header bar */}
       <header className="bg-[#2D5016] dark:bg-[#1a3009] text-white py-2">
         <div className="container flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button onClick={onBack} className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></button>
-            <SurahSelector value={selectedSurah} onChange={handleSurahChange} />
+            <div>
+              <SurahSelector value={selectedSurah} onChange={handleSurahChange} />
+              <p className="text-[10px] opacity-70 pl-1">{t("পৃষ্ঠা", "Page", "صفحة")} {realPage ? realPage : currentPage + 1}</p>
+            </div>
           </div>
           <ReadingSettings
             fontSize={arabicFontSize}
@@ -218,89 +221,68 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
               className="transition-transform duration-200 ease-out"
               style={{ transform: `translateX(${swipeOffset}px)`, opacity: isAnimating ? 0.6 : 1 }}
             >
-              {/* Outer header */}
-              <div className="flex items-center justify-between px-2 pb-1.5" dir="rtl">
-                <span className="font-arabic text-[13px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
-                  {getJuzName(currentJuz)}
-                </span>
-                <span className="text-[14px] text-[#8B7355] dark:text-[#9B8365] font-bold tabular-nums">
-                  {realPage ? toArabicNum(realPage) : toArabicNum(currentPage + 1)}
-                </span>
-                <span className="font-arabic text-[13px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
-                  {surah?.name} {toArabicNum(selectedSurah)}
-                </span>
-              </div>
+              {/* Mushaf page frame */}
+              <div className="relative bg-[#FFFDF7] dark:bg-[#1e1708] rounded border-2 border-[#8B7355]/40 dark:border-[#C4A96A]/40 shadow-[0_4px_20px_rgba(92,74,42,0.15)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] min-h-[70vh]">
+                {/* Top info bar inside frame */}
+                <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#8B7355]/20 dark:border-[#C4A96A]/20 text-[11px]" dir="rtl">
+                  <span className="font-arabic text-[#5C4A2A] dark:text-[#C4A96A] font-semibold">{getJuzName(currentJuz)}</span>
+                  <span className="text-[#8B7355] dark:text-[#9B8365] tabular-nums">{realPage ? toArabicNum(realPage) : toArabicNum(currentPage + 1)}</span>
+                  <span className="font-arabic text-[#5C4A2A] dark:text-[#C4A96A] font-semibold">{surah?.name}</span>
+                </div>
 
-              {/* Ornamental frame */}
-              <div className="relative">
-                <div className="rounded-sm border-[4px] border-[#8B7355]/60 dark:border-[#C4A96A]/50 bg-[#FFFDF7] dark:bg-[#1e1708] shadow-[0_6px_30px_rgba(92,74,42,0.2)] dark:shadow-[0_6px_30px_rgba(0,0,0,0.5)]">
-                  <div className="m-[5px] border-[3px] border-[#8B7355]/40 dark:border-[#C4A96A]/35 rounded-sm relative">
-                    <span className="absolute -top-[3px] -right-[3px] w-12 h-12 border-t-[3px] border-r-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-tr-3xl z-10" />
-                    <span className="absolute -top-[3px] -left-[3px] w-12 h-12 border-t-[3px] border-l-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-tl-3xl z-10" />
-                    <span className="absolute -bottom-[3px] -right-[3px] w-12 h-12 border-b-[3px] border-r-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-br-3xl z-10" />
-                    <span className="absolute -bottom-[3px] -left-[3px] w-12 h-12 border-b-[3px] border-l-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-bl-3xl z-10" />
 
-                    <div className="h-[3px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/60 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/60 dark:to-[#C4A96A]/10" />
-
+                    {/* Surah header banner */}
                     {currentPage === 0 && (
-                      <div className="border-b-2 border-[#8B7355]/40 dark:border-[#C4A96A]/30 bg-gradient-to-r from-[#F5EFE0]/80 via-[#E8DCC8]/60 to-[#F5EFE0]/80 dark:from-[#2a1f0e]/60 dark:via-[#1e1708]/40 dark:to-[#2a1f0e]/60 py-2 px-3" dir="rtl">
-                        <div className="text-center font-arabic text-[#5C4A2A] dark:text-[#C4A96A] space-y-0.5">
-                          <div className="text-[13px] md:text-[15px]">آياتها {toArabicNum(surah?.numberOfAyahs || 0)}</div>
-                          <div className="text-[17px] md:text-[20px] font-bold flex items-center justify-center gap-2">
-                            <span className="text-[10px] font-normal opacity-70">❁</span>
-                            ({toArabicNum(selectedSurah)}) سُورَةُ {surah?.name}
-                            {surah?.revelationType === "Meccan" ? " مَكِّيَّة" : " مَدَنِيَّة"}
-                            <span className="text-[10px] font-normal opacity-70">❁</span>
-                          </div>
-                          <div className="text-[13px] md:text-[15px]">ركوعاتها {toArabicNum(SURAH_RUKU_COUNT[selectedSurah] || 1)}</div>
+                      <div className="mx-2 mt-2 mb-1 border-2 border-[#4A90A4]/50 dark:border-[#C4A96A]/40 rounded-lg bg-gradient-to-r from-[#E8F4F8]/80 via-[#D4EBF2]/60 to-[#E8F4F8]/80 dark:from-[#1a2a30]/60 dark:via-[#1e1708]/40 dark:to-[#1a2a30]/60 py-2.5 px-4 text-center relative overflow-hidden">
+                        <div className="absolute inset-0 opacity-[0.08]">
+                          <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-[#4A90A4] rounded-tl-lg" />
+                          <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-[#4A90A4] rounded-tr-lg" />
+                          <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-[#4A90A4] rounded-bl-lg" />
+                          <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-[#4A90A4] rounded-br-lg" />
                         </div>
+                        <p className="font-arabic text-[18px] md:text-[22px] font-bold text-[#2D5016] dark:text-[#C4A96A] relative z-10">
+                          سُورَةُ {surah?.name}
+                        </p>
                       </div>
                     )}
 
+                    {/* Bismillah */}
                     {currentPage === 0 && selectedSurah !== 9 && (
-                      <div className="border-b border-[#8B7355]/40 dark:border-[#C4A96A]/30 py-2.5 text-center">
-                        <p className="font-arabic font-bold text-[#2D5016] dark:text-[#7BAF4C] leading-relaxed"
-                           style={{ fontSize: `${Math.max(arabicFontSize, 20)}px` }}>
+                      <div className="py-2 text-center">
+                        <p className="font-arabic font-bold text-[#1a1008] dark:text-[#E8DCC8]"
+                           style={{ fontSize: `${Math.max(arabicFontSize - 2, 18)}px` }}>
                           بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                         </p>
                       </div>
                     )}
 
-                    <div className="px-3 md:px-5" dir="rtl">
-                      {pages[currentPage]?.map((ayah, idx) => {
-                        let displayText = ayah.text;
-                        if (currentPage === 0 && idx === 0 && selectedSurah !== 9) {
-                          displayText = stripBismillah(displayText);
-                        }
-                        if (!displayText && currentPage === 0 && idx === 0) return null;
-                        return (
-                          <div key={ayah.number} className="border-b border-[#8B7355]/40 dark:border-[#C4A96A]/30 flex items-center min-h-[2.8em]">
-                            <p className="font-arabic font-bold leading-[2.4] sm:leading-[2.6] md:leading-[2.8] text-[#1a1008] dark:text-[#E8DCC8] text-justify w-full py-[2px]"
-                               style={{ fontSize: `${arabicFontSize}px`, wordSpacing: '0.08em', letterSpacing: '0.01em', textAlignLast: 'center' }}>
+                    {/* Flowing paragraph — all ayahs as one continuous block */}
+                    <div className="px-4 md:px-6 py-2" dir="rtl">
+                      <p className="font-arabic font-bold text-[#1a1008] dark:text-[#E8DCC8] text-justify leading-[2.2] sm:leading-[2.4] md:leading-[2.6]"
+                         style={{ fontSize: `${arabicFontSize}px`, wordSpacing: '0.12em', letterSpacing: '0.01em' }}>
+                        {pages[currentPage]?.map((ayah, idx) => {
+                          let displayText = ayah.text;
+                          if (currentPage === 0 && idx === 0 && selectedSurah !== 9) {
+                            displayText = stripBismillah(displayText);
+                          }
+                          if (!displayText && currentPage === 0 && idx === 0) return null;
+                          return (
+                            <span key={ayah.number}>
                               {tajweedEnabled ? (
                                 <TajweedText text={displayText} enabled={true} className="inline" />
                               ) : (
                                 <span>{displayText}</span>
                               )}
-                              <span className="inline-flex items-center justify-center mx-1 text-[#2D5016] dark:text-[#7BAF4C] font-bold select-none align-middle"
-                                    style={{ fontSize: `${Math.max(11, arabicFontSize - 9)}px`, fontFamily: 'serif' }}>
+                              <span className="inline-flex items-center justify-center mx-0.5 text-[#2D5016] dark:text-[#7BAF4C] font-bold select-none align-middle"
+                                    style={{ fontSize: `${Math.max(11, arabicFontSize - 7)}px`, fontFamily: 'serif' }}>
                                 ﴿{toArabicNum(ayah.numberInSurah)}﴾
                               </span>
-                            </p>
-                          </div>
-                        );
-                      })}
+                              {' '}
+                            </span>
+                          );
+                        })}
+                      </p>
                     </div>
-
-                    <div className="h-[3px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/60 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/60 dark:to-[#C4A96A]/10" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-center pt-1.5">
-                <span className="font-arabic text-[11px] text-[#8B7355] dark:text-[#9B8365]">
-                  مَنْزِل {toArabicNum(currentManzil)}
-                </span>
               </div>
             </div>
 
