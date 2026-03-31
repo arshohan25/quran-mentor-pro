@@ -71,7 +71,7 @@ const Index = () => {
       {/* Header */}
       <header className="relative overflow-hidden bg-primary text-primary-foreground">
         <div className="absolute inset-0 opacity-10">
-          <div className="font-arabic text-[200px] leading-none text-center pt-8 select-none">﷽</div>
+          <div className="font-arabic text-[100px] sm:text-[150px] md:text-[200px] leading-none text-center pt-8 select-none">﷽</div>
         </div>
         <div className="relative z-10 container py-8 text-center">
           <div className="flex justify-end mb-4">
