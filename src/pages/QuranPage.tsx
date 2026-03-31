@@ -150,7 +150,6 @@ export default function QuranPage() {
             >
               <ListMusic className="w-5 h-5" />
             </button>
-            </button>
             <button
               onClick={() => setTajweedEnabled(!tajweedEnabled)}
               className={`p-2 rounded-lg transition-colors ${
