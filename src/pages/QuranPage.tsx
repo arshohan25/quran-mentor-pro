@@ -113,6 +113,19 @@ export default function QuranPage() {
               </ToggleGroupItem>
             </ToggleGroup>
             <button
+              onClick={() => {
+                const rates = [0.5, 0.75, 1, 1.25, 1.5];
+                const idx = rates.indexOf(playbackRate);
+                const next = rates[(idx + 1) % rates.length];
+                setPlaybackRate(next);
+                localStorage.setItem("playbackRate", String(next));
+              }}
+              className="px-2 py-1 rounded-lg text-xs font-bold transition-colors bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 min-w-[40px]"
+              title={t("গতি", "Speed", "السرعة")}
+            >
+              {playbackRate}x
+            </button>
+            <button
               onClick={() => setAutoPlay(!autoPlay)}
               className={`p-2 rounded-lg transition-colors ${
                 autoPlay
