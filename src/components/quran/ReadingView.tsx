@@ -221,29 +221,15 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
               className="transition-transform duration-200 ease-out"
               style={{ transform: `translateX(${swipeOffset}px)`, opacity: isAnimating ? 0.6 : 1 }}
             >
-              {/* Outer header */}
-              <div className="flex items-center justify-between px-2 pb-1.5" dir="rtl">
-                <span className="font-arabic text-[13px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
-                  {getJuzName(currentJuz)}
-                </span>
-                <span className="text-[14px] text-[#8B7355] dark:text-[#9B8365] font-bold tabular-nums">
-                  {realPage ? toArabicNum(realPage) : toArabicNum(currentPage + 1)}
-                </span>
-                <span className="font-arabic text-[13px] text-[#5C4A2A] dark:text-[#C4A96A] font-bold">
-                  {surah?.name} {toArabicNum(selectedSurah)}
-                </span>
-              </div>
+              {/* Mushaf page frame */}
+              <div className="relative bg-[#FFFDF7] dark:bg-[#1e1708] rounded border-2 border-[#8B7355]/40 dark:border-[#C4A96A]/40 shadow-[0_4px_20px_rgba(92,74,42,0.15)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] min-h-[70vh]">
+                {/* Top info bar inside frame */}
+                <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#8B7355]/20 dark:border-[#C4A96A]/20 text-[11px]" dir="rtl">
+                  <span className="font-arabic text-[#5C4A2A] dark:text-[#C4A96A] font-semibold">{getJuzName(currentJuz)}</span>
+                  <span className="text-[#8B7355] dark:text-[#9B8365] tabular-nums">{realPage ? toArabicNum(realPage) : toArabicNum(currentPage + 1)}</span>
+                  <span className="font-arabic text-[#5C4A2A] dark:text-[#C4A96A] font-semibold">{surah?.name}</span>
+                </div>
 
-              {/* Ornamental frame */}
-              <div className="relative">
-                <div className="rounded-sm border-[4px] border-[#8B7355]/60 dark:border-[#C4A96A]/50 bg-[#FFFDF7] dark:bg-[#1e1708] shadow-[0_6px_30px_rgba(92,74,42,0.2)] dark:shadow-[0_6px_30px_rgba(0,0,0,0.5)]">
-                  <div className="m-[5px] border-[3px] border-[#8B7355]/40 dark:border-[#C4A96A]/35 rounded-sm relative">
-                    <span className="absolute -top-[3px] -right-[3px] w-12 h-12 border-t-[3px] border-r-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-tr-3xl z-10" />
-                    <span className="absolute -top-[3px] -left-[3px] w-12 h-12 border-t-[3px] border-l-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-tl-3xl z-10" />
-                    <span className="absolute -bottom-[3px] -right-[3px] w-12 h-12 border-b-[3px] border-r-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-br-3xl z-10" />
-                    <span className="absolute -bottom-[3px] -left-[3px] w-12 h-12 border-b-[3px] border-l-[3px] border-[#8B7355] dark:border-[#C4A96A] rounded-bl-3xl z-10" />
-
-                    <div className="h-[3px] bg-gradient-to-r from-[#8B7355]/10 via-[#8B7355]/60 to-[#8B7355]/10 dark:from-[#C4A96A]/10 dark:via-[#C4A96A]/60 dark:to-[#C4A96A]/10" />
 
                     {/* Surah header banner */}
                     {currentPage === 0 && (
