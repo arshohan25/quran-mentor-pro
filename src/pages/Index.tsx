@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 const Index = () => {
   const { t, language } = useLanguage();
   const { bookmarks } = useBookmark();
+  const { enabled: duaNotifEnabled, toggleEnabled: toggleDuaNotif, todaysDua, permission: duaPerm, requestPermission: requestDuaPerm } = useDailyDuaNotification();
 
   const quickActions = [
     { icon: Book, label: t("কুরআন", "Quran", "القرآن"), path: "/quran", color: "text-primary" },
