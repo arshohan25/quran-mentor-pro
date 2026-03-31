@@ -577,7 +577,7 @@ export default function QuranPage() {
                           {verse.words.map((word) => (
                             <div
                               key={word.id}
-                              className="flex flex-col items-center px-2 py-1.5 rounded-lg bg-muted/50 hover:bg-primary/10 transition-colors min-w-[60px]"
+                              className="flex flex-col items-center px-1.5 md:px-2 py-1 md:py-1.5 rounded-lg bg-muted/50 hover:bg-primary/10 transition-colors min-w-[50px] md:min-w-[60px]"
                             >
                               <span className="font-arabic text-xl text-foreground leading-relaxed">
                                 {word.text_uthmani}
