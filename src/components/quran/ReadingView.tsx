@@ -194,7 +194,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
               <button onClick={onBack} className="hover:opacity-80 transition-opacity p-1">
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <h1 className="text-xs font-semibold opacity-90">{t("কুরআন তেলাওয়াত", "Quran Reading", "تلاوة القرآن")}</h1>
+              
             </div>
             <div className="flex items-center gap-1.5">
               <button
