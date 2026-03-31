@@ -33,6 +33,7 @@ const App = () => (
               <Route path="/prayer" element={<PrayerPage />} />
               <Route path="/prayer-times" element={<PrayerTimesPage />} />
               <Route path="/hifz" element={<HifzDashboardPage />} />
+              <Route path="/bookmarks" element={<BookmarksPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
