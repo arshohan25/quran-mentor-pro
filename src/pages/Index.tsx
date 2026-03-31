@@ -71,13 +71,13 @@ const Index = () => {
       {/* Header */}
       <header className="relative overflow-hidden bg-primary text-primary-foreground">
         <div className="absolute inset-0 opacity-10">
-          <div className="font-arabic text-[200px] leading-none text-center pt-8 select-none">﷽</div>
+          <div className="font-arabic text-[100px] sm:text-[150px] md:text-[200px] leading-none text-center pt-8 select-none">﷽</div>
         </div>
         <div className="relative z-10 container py-8 text-center">
           <div className="flex justify-end mb-4">
             <LanguageSwitcher />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">
             {t("কুরআন শিক্ষা ও নামাজ", "Quran Learning & Prayer", "تعلم القرآن والصلاة")}
           </h1>
           <p className="text-primary-foreground/80 text-lg">
@@ -111,17 +111,17 @@ const Index = () => {
         {/* Daily Ayah */}
         <DailyAyah />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {sections.map((section) => (
             <Link
               key={section.path}
               to={section.path}
-              className="group block rounded-xl border border-border bg-card p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+              className="group block rounded-xl border border-border bg-card p-4 sm:p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
             >
-              <div className={`inline-flex p-3 rounded-lg bg-gradient-to-br ${section.gradient} text-primary-foreground mb-4 group-hover:scale-110 transition-transform`}>
-                <section.icon className="w-7 h-7" />
+              <div className={`inline-flex p-2.5 sm:p-3 rounded-lg bg-gradient-to-br ${section.gradient} text-primary-foreground mb-3 sm:mb-4 group-hover:scale-110 transition-transform`}>
+                <section.icon className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
-              <h2 className="text-xl font-semibold text-card-foreground mb-2">
+              <h2 className="text-lg sm:text-xl font-semibold text-card-foreground mb-1.5 sm:mb-2">
                 {section.title}
               </h2>
               <p className="text-muted-foreground text-sm">
@@ -133,7 +133,7 @@ const Index = () => {
 
         {/* Bismillah decoration */}
         <div className="mt-12 text-center">
-          <p className="font-arabic text-4xl text-primary/60">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
+          <p className="font-arabic text-2xl sm:text-3xl md:text-4xl text-primary/60">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
           <p className="text-muted-foreground text-sm mt-2">
             {t(
               "পরম করুণাময় অসীম দয়ালু আল্লাহর নামে",

@@ -107,7 +107,7 @@ export default function AudioPage() {
         </div>
 
         {/* Player controls */}
-        <div className="bg-primary/5 rounded-xl p-6 mb-6 text-center">
+        <div className="bg-primary/5 rounded-xl p-4 sm:p-6 mb-6 text-center">
           {currentSurahInfo && (
             <div className="mb-4">
               <h2 className="font-arabic text-2xl text-primary">{currentSurahInfo.name}</h2>
@@ -138,7 +138,7 @@ export default function AudioPage() {
         {loadingSurah ? (
           <div className="space-y-3">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
         ) : surahData ? (
-          <ScrollArea className="h-[calc(100vh-450px)]">
+          <ScrollArea className="h-[calc(100vh-380px)] min-h-[200px]">
             <div className="space-y-3">
               {surahData.arabic.ayahs.map((ayah, idx) => (
                 <button

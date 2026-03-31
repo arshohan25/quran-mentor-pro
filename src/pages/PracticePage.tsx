@@ -173,13 +173,13 @@ export default function PracticePage() {
         <div className="flex flex-col items-center gap-4">
           <button
             onClick={isRecording ? stopRecording : startRecording}
-            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${
+            className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all ${
               isRecording
                 ? "bg-destructive text-destructive-foreground animate-pulse-glow"
                 : "bg-primary text-primary-foreground hover:scale-105"
             }`}
           >
-            {isRecording ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
+            {isRecording ? <MicOff className="w-6 h-6 sm:w-8 sm:h-8" /> : <Mic className="w-6 h-6 sm:w-8 sm:h-8" />}
           </button>
           <p className="text-sm text-muted-foreground">
             {isRecording

@@ -49,9 +49,9 @@ export default function PrayerPage() {
 
         {/* Prayer tabs */}
         <Tabs defaultValue="Fajr">
-          <TabsList className="w-full grid grid-cols-5 mb-4">
+          <TabsList className="w-full flex overflow-x-auto mb-4 scrollbar-hide">
             {prayers.map((p) => (
-              <TabsTrigger key={p.name} value={p.name} className="text-xs md:text-sm">
+              <TabsTrigger key={p.name} value={p.name} className="flex-1 min-w-0 text-[10px] sm:text-xs md:text-sm px-2 sm:px-3">
                 {language === "bn" ? p.nameBn : p.name}
               </TabsTrigger>
             ))}
@@ -74,7 +74,7 @@ export default function PrayerPage() {
                 </p>
               </div>
 
-              <ScrollArea className="h-[calc(100vh-400px)]">
+              <ScrollArea className="h-[calc(100vh-350px)] min-h-[200px]">
                 <Accordion type="multiple" className="space-y-2">
                   {prayer.steps.map((step, idx) => (
                     <AccordionItem key={idx} value={`step-${idx}`} className="border border-border rounded-lg px-4">
