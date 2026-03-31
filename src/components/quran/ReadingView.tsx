@@ -9,6 +9,7 @@ import TajweedText, { TajweedLegend } from "@/components/TajweedText";
 import SurahSelector from "./SurahSelector";
 import SurahNav from "./SurahNav";
 import ReadingSettings from "./ReadingSettings";
+import MushafFrame, { SurahBanner } from "./MushafFrame";
 import { useBookmark } from "@/hooks/useBookmark";
 
 function toArabicNum(n: number): string {
