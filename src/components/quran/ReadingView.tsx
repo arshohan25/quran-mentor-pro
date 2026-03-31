@@ -247,12 +247,12 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                     {/* === FLOWING AYAH TEXT === */}
                     <div className="px-4 py-4 md:px-6 md:py-5 flex items-start" dir="rtl">
                       <p className="font-arabic text-[28px] md:text-[32px] font-bold leading-[2.8] md:leading-[3] text-[#1a1008] dark:text-[#E8DCC8] text-justify w-full"
-                         style={{ wordSpacing: '0.08em', letterSpacing: '0.02em', textAlignLast: 'center' }}>
+                         style={{ wordSpacing: '0.15em', letterSpacing: '0.02em', textAlignLast: 'justify' }}>
                         {pages[currentPage]?.map((ayah, idx) => {
                           // Strip bismillah from first ayah to avoid duplicate
                           let displayText = ayah.text;
                           if (currentPage === 0 && idx === 0 && selectedSurah !== 9) {
-                            displayText = displayText.replace(/بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ/, '').trim();
+                            displayText = stripBismillah(displayText);
                           }
                           if (!displayText && currentPage === 0 && idx === 0) return null;
                           return (
