@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { RefreshCw, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface AyahData {
@@ -12,7 +12,7 @@ interface AyahData {
 function getDailyAyahNumber() {
   const today = new Date();
   const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-  return (seed % 6236) + 1; // Total ayahs in Quran
+  return (seed % 6236) + 1;
 }
 
 export default function DailyAyah() {
@@ -43,7 +43,7 @@ export default function DailyAyah() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-accent/30 bg-accent/5 p-5 mb-6 animate-pulse">
+      <div className="islamic-card p-5 mb-6 animate-pulse">
         <div className="h-4 bg-muted rounded w-1/3 mb-3" />
         <div className="h-6 bg-muted rounded w-full mb-2" />
         <div className="h-4 bg-muted rounded w-2/3" />
@@ -54,7 +54,13 @@ export default function DailyAyah() {
   if (error || !data) return null;
 
   return (
-    <div className="rounded-xl border border-accent/30 bg-gradient-to-br from-accent/10 to-primary/5 p-5 mb-6">
+    <div className="islamic-card p-5 mb-6 relative overflow-hidden">
+      {/* Corner ornaments */}
+      <span className="corner-ornament top-0 right-0 border-t-2 border-r-2 rounded-tr-lg" />
+      <span className="corner-ornament top-0 left-0 border-t-2 border-l-2 rounded-tl-lg" />
+      <span className="corner-ornament bottom-0 right-0 border-b-2 border-r-2 rounded-br-lg" />
+      <span className="corner-ornament bottom-0 left-0 border-b-2 border-l-2 rounded-bl-lg" />
+
       <div className="flex items-center gap-2 mb-3">
         <Sparkles className="w-4 h-4 text-accent" />
         <span className="text-sm font-semibold text-accent">
@@ -66,11 +72,15 @@ export default function DailyAyah() {
         {data.arabic.text}
       </p>
 
+      <div className="gold-divider my-3">
+        <span className="text-accent/40 text-xs">✦</span>
+      </div>
+
       <p className="text-sm text-muted-foreground mb-1">
         {t(data.bengali, data.english, data.arabic.text)}
       </p>
 
-      <p className="text-xs text-muted-foreground/70 mt-2">
+      <p className="text-xs text-muted-foreground/70 mt-2 inline-flex items-center gap-1 bg-accent/10 px-2 py-1 rounded-md">
         — {data.arabic.surah.englishName} ({data.arabic.surah.name}), {t("আয়াত", "Ayah", "آية")} {data.arabic.numberInSurah}
       </p>
     </div>

@@ -18,18 +18,22 @@ export default function LanguageSwitcher() {
       <Button
         size="sm"
         variant="ghost"
-        className="h-7 w-7 p-0 text-primary-foreground/70 hover:text-primary-foreground"
+        className="h-7 w-7 p-0 text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10"
         onClick={toggleTheme}
       >
         {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
       </Button>
-      <div className="flex gap-1 bg-background/20 rounded-lg p-1">
+      <div className="flex gap-0.5 bg-white/10 rounded-lg p-0.5">
         {langs.map((l) => (
           <Button
             key={l.id}
             size="sm"
-            variant={language === l.id ? "secondary" : "ghost"}
-            className={`text-xs px-3 py-1 h-7 ${language === l.id ? "bg-background/30 text-primary-foreground" : "text-primary-foreground/70 hover:text-primary-foreground"}`}
+            variant="ghost"
+            className={`text-xs px-3 py-1 h-7 rounded-md transition-all ${
+              language === l.id
+                ? "bg-accent/90 text-accent-foreground shadow-sm font-semibold"
+                : "text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10"
+            }`}
             onClick={() => setLanguage(l.id)}
           >
             {l.label}
