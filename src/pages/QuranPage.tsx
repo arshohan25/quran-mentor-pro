@@ -149,7 +149,7 @@ export default function QuranPage() {
     return (
       <JuzBrowser
         onBack={onBack}
-        onNavigateToSurah={(surah) => { setSelectedSurah(surah); setActiveSection("reading"); }}
+        onNavigateToSurah={(surah) => { setSelectedSurah(surah); setActiveSection("translation"); }}
       />
     );
   }
