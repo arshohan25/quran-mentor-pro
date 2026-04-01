@@ -23,6 +23,7 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
   const [page, setPage] = useState(0);
   const [showDashboard, setShowDashboard] = useState(false);
   const [hiddenAyahs, setHiddenAyahs] = useState<Set<number>>(new Set());
+  const [activeRecitationAyah, setActiveRecitationAyah] = useState<number | null>(null);
   const [hifzProgress, setHifzProgress] = useState<Record<number, number[]>>(loadHifzProgress);
 
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
