@@ -1,33 +1,60 @@
 
 
-# Add Mushaf Reading View — Quran.com Style Clean Layout
+# Real-Time Voice-Guided Hifz Practice — Word-by-Word Live Feedback
 
 ## Overview
-Create a new `ReadingView.tsx` component that displays Arabic-only Quran text in a clean, minimal Quran.com-inspired layout. No translations — pure reading experience.
+When a user hides an ayah in HifzView and starts reciting, the system will reveal words one-by-one in real-time as they speak. If a word is wrong, it shows red, plays an error sound, and blocks progress until corrected.
 
-## New File: `src/components/quran/ReadingView.tsx`
+## How It Works
 
-- **Header**: Teal `#008374` bar with back button, surah name (Arabic), SurahSelector dropdown, and ReadingSettings (font size, dark mode, tajweed toggle)
-- **Surah info bar**: Shows current page number, juz number, and hizb — small muted text below header
-- **Surah header**: Centered Arabic surah name + bismillah for non-Tawbah surahs, with a thin separator line
-- **Ayah display**: Right-to-left Arabic text using Amiri font, flowing inline paragraph style (not per-ayah cards). Verse numbers shown as teal `﴿١﴾` markers inline
-- **Pagination**: Chunk ayahs into pages (~15 per page). Simple prev/next buttons at bottom with page indicator
-- **Swipe support**: Touch swipe left/right for page navigation
-- **Tajweed**: Optional tajweed color-coding via existing `applyTajweedColors` utility
-- **Background**: Clean `bg-white dark:bg-gray-950`, no parchment or ornate styling
-- **Data**: Uses existing `useSurah()` hook with `quran-uthmani` edition
-- **Page/Juz display**: Uses `mushafPages.ts` data for page numbers
+```text
+Hidden Ayah: [████████████████████████]
+User recites "بسم" → [بِسْمِ] ████████████████
+User recites "الله" → [بِسْمِ ٱللَّهِ] ██████████████
+User says wrong word → [بِسْمِ ٱللَّهِ] [الرحيم] ← RED + beep
+User corrects "الرحمن" → [بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ] ████
+...continues until complete
+```
 
-## File Changes
+## Changes
 
-### 1. `src/components/quran/ReadingView.tsx` (NEW)
-Full component as described above.
+### 1. New Component: `src/components/quran/LiveRecitationCheck.tsx`
+A self-contained component that takes an ayah's Arabic text and handles the entire live recitation flow:
 
-### 2. `src/components/quran/types.ts`
-Add `"reading"` back to `ActiveSection` type.
+- **Props**: `ayahText: string`, `onComplete: () => void`, `onCancel: () => void`
+- **State**: `revealedWordIndex` (how many words revealed), `currentError: number | null` (index of wrong word), `isListening: boolean`
+- **Logic**:
+  - Splits ayah text into words array
+  - Uses Web Speech API (`continuous: true`, `interimResults: true`, `lang: "ar-SA"`)
+  - On each speech result, compares the latest recognized word against `words[revealedWordIndex]` using `normalizeArabic()` (reuse from PracticePage)
+  - **Correct**: Increment `revealedWordIndex`, word appears in green briefly then normal
+  - **Wrong**: Set `currentError` to that index, word appears in red with underline, play error beep sound (Web Audio API — short 400Hz tone), do NOT increment index
+  - When next correct word is spoken, clear error and proceed
+  - When all words revealed: auto-stop, call `onComplete()`
+- **UI**: 
+  - Row of words: revealed words shown normally, current position has a pulsing cursor, unrevealed words are blurred/hidden
+  - Mic button at bottom (same style as PracticePage)
+  - Progress indicator: "3/7 words"
 
-### 3. `src/pages/QuranPage.tsx`
-- Import `ReadingView`
-- Add "মুসহাফ" / "Mushaf" / "المصحف" category to `CATEGORIES` array with the existing `IslamicMushafIcon`
-- Add conditional render for `activeSection === "reading"`
+### 2. Error Sound Effect
+- Use Web Audio API (`AudioContext`) to generate a short beep (no external file needed)
+- ~200ms, 400Hz sine wave, volume 0.3
+- Play on wrong word detection
+
+### 3. Integrate into `src/components/quran/HifzView.tsx`
+- Add state: `activeRecitationAyah: number | null`
+- When user taps a **hidden** ayah, instead of just toggling visibility, start `LiveRecitationCheck` for that ayah
+- Replace the blurred ayah row with the `LiveRecitationCheck` component inline
+- On complete: mark as memorized (optional prompt), clear `activeRecitationAyah`
+- On cancel: return to blurred state
+- Add a small mic icon indicator on hidden ayahs to hint "tap to practice"
+
+### 4. Reuse Utilities
+- Move `normalizeArabic()` from `PracticePage.tsx` to a shared util (e.g., `src/utils/arabicUtils.ts`) so both components can use it
+
+## Files Changed
+1. **NEW** `src/utils/arabicUtils.ts` — shared `normalizeArabic()` function
+2. **NEW** `src/components/quran/LiveRecitationCheck.tsx` — word-by-word live recitation component
+3. **EDIT** `src/components/quran/HifzView.tsx` — integrate LiveRecitationCheck on hidden ayah tap
+4. **EDIT** `src/pages/PracticePage.tsx` — import `normalizeArabic` from shared util
 
