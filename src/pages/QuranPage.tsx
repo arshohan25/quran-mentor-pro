@@ -12,6 +12,7 @@ import HifzView from "@/components/quran/HifzView";
 import BookmarksView from "@/components/quran/BookmarksView";
 import TopicBrowser from "@/components/quran/TopicBrowser";
 import JuzBrowser from "@/components/quran/JuzBrowser";
+import ReadingView from "@/components/quran/ReadingView";
 
 // Islamic SVG icons as components
 const IslamicBookIcon = ({ className = "" }: { className?: string }) => (
