@@ -1,17 +1,21 @@
-import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Eye, EyeOff, BarChart3, CheckCircle, Circle, GraduationCap, Mic, MicOff } from "lucide-react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { ArrowLeft, Eye, EyeOff, BarChart3, CheckCircle, Circle, GraduationCap, Mic, MicOff, Settings2 } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import SurahSelector from "./SurahSelector";
 import SurahNav from "./SurahNav";
 import PageNav from "./PageNav";
 import { useArabicRecitationEngine } from "@/hooks/useArabicRecitationEngine";
 import { tokenizeArabicWords } from "@/utils/arabicUtils";
+import type { MatchMode } from "@/utils/arabicUtils";
 import { LINES_PER_PAGE, type QuranSectionProps } from "./types";
+
+const SENSITIVITY_KEY = "hifz-sensitivity-mode";
 
 const HIFZ_KEY = "hifz-progress";
 
@@ -26,6 +30,9 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
   const [hiddenAyahs, setHiddenAyahs] = useState<Set<number>>(new Set());
   const [activeRecitationAyah, setActiveRecitationAyah] = useState<number | null>(null);
   const [hifzProgress, setHifzProgress] = useState<Record<number, number[]>>(loadHifzProgress);
+  const [sensitivityMode, setSensitivityMode] = useState<MatchMode>(() => {
+    try { return (localStorage.getItem(SENSITIVITY_KEY) as MatchMode) || "balanced"; } catch { return "balanced"; }
+  });
 
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
   const currentSurah = surahList.find((s) => s.number === selectedSurah);
@@ -38,7 +45,7 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
     return ayah?.text || "";
   }, [activeRecitationAyah, data]);
 
-  const handleRecitationComplete = () => {
+  const handleRecitationComplete = useCallback(() => {
     if (activeRecitationAyah !== null && data) {
       const ayah = data.arabic.ayahs.find(a => a.number === activeRecitationAyah);
       if (ayah) {
@@ -49,9 +56,22 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
       }
     }
     setActiveRecitationAyah(null);
-  };
+  }, [activeRecitationAyah, data, selectedSurah]);
 
-  const recitation = useArabicRecitationEngine(recitationAyahText, "balanced", handleRecitationComplete);
+  const recitation = useArabicRecitationEngine(recitationAyahText, sensitivityMode, handleRecitationComplete);
+
+  // Auto-start listening when activeRecitationAyah is set and text is ready
+  useEffect(() => {
+    if (activeRecitationAyah !== null && recitationAyahText && !recitation.state.isListening) {
+      const timer = setTimeout(() => recitation.startListening(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [activeRecitationAyah, recitationAyahText]);
+
+  const handleSensitivityChange = (mode: string) => {
+    setSensitivityMode(mode as MatchMode);
+    try { localStorage.setItem(SENSITIVITY_KEY, mode); } catch {}
+  };
 
   const startRecitation = (ayahNumber: number) => {
     setActiveRecitationAyah(ayahNumber);
@@ -120,6 +140,20 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
               </button>
               {!showDashboard && (
                 <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="p-1.5 rounded-lg text-primary-foreground/60 hover:text-primary-foreground transition-colors" title={t("সেনসিটিভিটি", "Sensitivity", "الحساسية")}>
+                        <Settings2 className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-[140px]">
+                      <DropdownMenuRadioGroup value={sensitivityMode} onValueChange={handleSensitivityChange}>
+                        <DropdownMenuRadioItem value="strict">{t("কড়া", "Strict", "صارم")}</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="balanced">{t("মাঝামাঝি", "Balanced", "متوازن")}</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="assist">{t("সহজ", "Assist", "مساعد")}</DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <button onClick={() => {
                     if (allHidden) setHiddenAyahs(prev => { const n = new Set(prev); currentAyahs.forEach(a => n.delete(a.number)); return n; });
                     else setHiddenAyahs(prev => { const n = new Set(prev); currentAyahs.forEach(a => n.add(a.number)); return n; });
