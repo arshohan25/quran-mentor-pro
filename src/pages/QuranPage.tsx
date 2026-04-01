@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import type { ActiveSection } from "@/components/quran/types";
-import ReadingView from "@/components/quran/ReadingView";
+
 import TranslationView from "@/components/quran/TranslationView";
 import AudioView from "@/components/quran/AudioView";
 import WordMeaningView from "@/components/quran/WordMeaningView";
