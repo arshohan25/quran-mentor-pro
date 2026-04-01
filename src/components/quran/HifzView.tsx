@@ -224,7 +224,7 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
                         <button onClick={() => toggleMemorized(selectedSurah, ayah.numberInSurah)} className="p-0.5 shrink-0" dir="ltr">
                           {memorized ? <CheckCircle className="w-4 h-4 text-primary" /> : <Circle className="w-4 h-4 text-muted-foreground/40" />}
                         </button>
-                        <button onClick={() => isHidden ? setActiveRecitationAyah(ayah.number) : toggleHideAyah(ayah.number)}
+                        <button onClick={() => isHidden ? startRecitation(ayah.number) : toggleHideAyah(ayah.number)}
                           className={`flex-1 flex items-baseline gap-2 py-0.5 px-1 text-right rounded transition-all ${isHidden ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50"}`}>
                           <span className="text-[10px] text-muted-foreground font-bold min-w-[20px] text-center shrink-0 font-sans" dir="ltr">{ayah.numberInSurah}</span>
                           {isHidden ? (
