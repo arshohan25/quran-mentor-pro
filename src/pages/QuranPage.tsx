@@ -141,7 +141,7 @@ export default function QuranPage() {
     return (
       <TopicBrowser
         onBack={onBack}
-        onNavigateToSurah={(surah) => { setSelectedSurah(surah); setActiveSection("reading"); }}
+        onNavigateToSurah={(surah) => { setSelectedSurah(surah); setActiveSection("translation"); }}
       />
     );
   }
