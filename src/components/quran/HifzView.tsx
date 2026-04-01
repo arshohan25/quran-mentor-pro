@@ -31,6 +31,14 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
 
   useEffect(() => { setPage(0); setHiddenAyahs(new Set()); setActiveRecitationAyah(null); }, [selectedSurah]);
 
+  const startRecitation = (ayahNumber: number) => {
+    setActiveRecitationAyah(ayahNumber);
+  };
+
+  const cancelRecitation = () => {
+    setActiveRecitationAyah(null);
+  };
+
   const isMemorized = (surah: number, ayahNum: number) => (hifzProgress[surah] || []).includes(ayahNum);
 
   const toggleMemorized = (surah: number, ayahNum: number) => {
