@@ -1,69 +1,77 @@
 
-# Live Recitation কাজ না করার ফিক্স প্ল্যান
+## লক্ষ্য
+মাইক্রোফোন যেন আলাদা বড় বক্সে না এসে **আয়াত লাইনের ইনলাইন mic আইকন** থেকে চালু/বন্ধ হয়, এবং একই লাইনে শব্দ-শব্দ রিভিল + ভুল হলে রেড মার্ক + সতর্ক সাউন্ড কাজ করে। সাথে আরবি ট্র্যাকিংকে বেশি tolerant ও dynamic করা।
 
-## সমস্যা (কেন এখন fail করছে)
-1. `normalizeArabic()` খুব basic — Quran text-এর `ٱ`, extended tashkeel/waqf marks remove হচ্ছে না, তাই correct recitation-ও mismatch ধরা হচ্ছে।
-2. `processedLengthRef` + `interimResults` লজিক transcript drift করছে; ভুল হলে index/flow নষ্ট হয়ে শুধু beep loop হয়।
-3. ভুল detect হলে recovery weak — user correct করলেও matcher পুরোনো transcript state-এ আটকে যায়।
-4. UI-তে current word খুব faint (`text-muted-foreground/20`), mobile-এ “দেখা যাচ্ছে না” মনে হয়।
+## সমস্যা নির্ণয়
+- `HifzView.tsx` এখন hidden ayah ক্লিক করলে পুরো row বদলে বড় `LiveRecitationCheck` কার্ড দেখায় (এটাই আপনি চান না)।
+- `LiveRecitationCheck.tsx` এ final transcript processing এখনও repeat/duplicate token case-এ mismatch তৈরি করে।
+- matching এখনো যথেষ্ট robust না (accent/weak voice/fuzzy উচ্চারণে fail করছে)।
+- **Do I know what the issue is?** হ্যাঁ।
 
-## কী কী বদলানো হবে
+## ইমপ্লিমেন্টেশন প্ল্যান
+1. **Inline Recitation UX (No separate card)**
+   - `HifzView.tsx` এ hidden ayah row-এর inline `Mic` আইকনকে primary trigger করা হবে।
+   - mic চাপলে একই লাইনে recitation mode চালু হবে; বড় centered mic/cancel UI সরিয়ে ফেলা হবে।
+   - word reveal, current target, error state সব একই ayah row-এর ভিতরে render হবে।
 
-### 1) Arabic matching engine hardening (`src/utils/arabicUtils.ts`)
-- `normalizeArabic()` Quran-text friendly করা:
-  - সব harakat + extended Quran marks remove (`\u0610-\u061A`, `\u064B-\u065F`, `\u0670`, `\u06D6-\u06ED`)
-  - `ٱ/أ/إ/آ` → `ا`, `ى` → `ي`, `ة` → `ه`, `ؤ` → `و`, `ئ` → `ي`
-  - tatweel/punctuation/extra spaces clean
-- নতুন helper add:
-  - `tokenizeArabicWords(text)`
-  - `isArabicWordMatch(expected, spoken)` (normalized exact match + common form fallback)
+2. **Advanced Arabic Tracking Engine**
+   - `arabicUtils.ts` এ matcher upgrade:
+     - stronger normalization (existing + consistency pass),
+     - phonetic confusion mapping,
+     - light affix handling,
+     - edit-distance similarity scoring।
+   - `isArabicWordMatch` কে score-based করা হবে (strict boolean না), dynamic threshold সহ।
 
-### 2) Live recognition flow rewrite (`src/components/quran/LiveRecitationCheck.tsx`)
-- `processedLengthRef` বাদ দিয়ে stable sequential matcher:
-  - expected words list
-  - recognized final tokens queue
-  - সবসময় next expected word-এর সাথে compare
-- `onresult` এ শুধু নতুন `final` results score হবে (interim শুধু display)।
-- ভুল হলে:
-  - `errorIndex` set
-  - beep cooldown (rapid continuous beep বন্ধ)
-  - index এগোবে না
-- সঠিক বললে:
-  - error clear
-  - same point থেকে reveal continue
-- completion: সব শব্দ match হলে success beep + `onComplete()`।
+3. **Dynamic/Assist Matching Mode**
+   - তিনটি sensitivity mode যোগ: `Strict / Balanced / Assist` (default: Balanced)।
+   - Assist mode weak/unclear voice এর জন্য বেশি tolerant threshold ব্যবহার করবে।
+   - ছোট শব্দে strict, বড় শব্দে lenient threshold — dynamic scaling।
 
-### 3) Visibility/UX fix (`src/components/quran/LiveRecitationCheck.tsx`)
-- current target word readable highlight করা (faint pulse নয়)।
-- unrevealed অংশ stronger placeholder style।
-- ভুল শব্দে স্পষ্ট red mark + warning text persist until correction।
-- speech error/permisson fallback inline message যোগ করা।
+4. **Speech Result Processing Fix**
+   - final results থেকে only new tokens process করার জন্য dedupe strategy (result index + token history)।
+   - `maxAlternatives` ব্যবহার করে best candidate বাছাই।
+   - duplicate/previously matched token হলে ignore (false error কমাতে)।
+   - beep only confirmed mismatch এ (rapid ভুল beep loop বন্ধ)।
 
-### 4) Hifz integration polish (`src/components/quran/HifzView.tsx`)
-- active recitation block mobile-এ auto-scroll into view।
-- recitation start/cancel এ state reset clean করা (error/transcript leak না থাকে)।
-- hidden ayah practice trigger flow unchanged, কিন্তু restart behavior stable করা।
+5. **Inline Feedback & Flow**
+   - same line-এ:
+     - revealed words normal,
+     - current word highlight,
+     - wrong target red mark,
+     - micro progress indicator।
+   - correct word বললে সঙ্গে সঙ্গে reveal advance; ভুল হলে সামনে যাবে না।
 
-### 5) Regression compatibility (`src/pages/PracticePage.tsx`)
-- updated normalization utility ব্যবহার করে existing practice compare flow consistent রাখা।
+6. **Hifz Integration Stability**
+   - এক সময়ে একটিই active recitation row।
+   - stop/cancel/restart এ clean state reset।
+   - complete হলে auto unhide + memorized mark (current behavior রেখে stable করা)।
 
 ## টেকনিক্যাল ডিটেইলস
 ```text
-Before:
-fullTranscript + processedLength + interim rewrites
-=> false mismatch + drift + beep loop
-
-After:
-onresult(new final segment only)
-  -> tokenize
-  -> compare token with expected[current]
-     - match: reveal++, clear error
-     - mismatch: set error, beep (cooldown), hold current
+Mic click (inline row)
+ -> start speech session
+ -> on each NEW final token:
+    bestScore = max(score(token, expectedWord), alternatives)
+    if bestScore >= threshold(mode, wordLength):
+       reveal++
+       clear error
+    else if not duplicate/old token:
+       set errorIndex(current)
+       play warning beep (cooldown + confirmation)
+ -> when reveal == totalWords:
+    stop session
+    complete callback
 ```
 
-## টেস্ট প্ল্যান (implementation শেষে)
-1. Surah 1 ayah 1 (`ٱللَّهِ` সহ) এ false mismatch না হওয়া।
-2. ভুল হলে red mark + single warning beep + no forward progress।
-3. সাথে সাথে correct করলে same point থেকে progress।
-4. long ayah-এ continuous reveal stuck না হওয়া।
-5. mobile viewport (384x655) এ recitation UI clearly visible থাকা।
+## ফাইল পরিবর্তন (পরবর্তী ইমপ্লিমেন্টে)
+- `src/components/quran/HifzView.tsx` (inline mic trigger + row-level recitation rendering)
+- `src/components/quran/LiveRecitationCheck.tsx` (card থেকে inline engine/UI refactor)
+- `src/utils/arabicUtils.ts` (advanced dynamic Arabic matcher)
+- (প্রয়োজনে) `src/hooks/useArabicRecitationEngine.ts` (logic আলাদা করে maintainable করা)
+
+## ভেরিফিকেশন প্ল্যান
+- mobile viewport (384x655) এ inline mic থেকে শুরু হচ্ছে কিনা।
+- large popup/card না এসে একই লাইনে reveal হচ্ছে কিনা।
+- ভুল শব্দে red + beep + block, সঠিক বললে unblock।
+- weak voice test এ Assist mode এ recognition উন্নত হচ্ছে কিনা।
+- Surah Al-Fatiha full pass: no random beep loop, no stalled progress।
