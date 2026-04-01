@@ -30,6 +30,9 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
   const [hiddenAyahs, setHiddenAyahs] = useState<Set<number>>(new Set());
   const [activeRecitationAyah, setActiveRecitationAyah] = useState<number | null>(null);
   const [hifzProgress, setHifzProgress] = useState<Record<number, number[]>>(loadHifzProgress);
+  const [sensitivityMode, setSensitivityMode] = useState<MatchMode>(() => {
+    try { return (localStorage.getItem(SENSITIVITY_KEY) as MatchMode) || "balanced"; } catch { return "balanced"; }
+  });
 
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
   const currentSurah = surahList.find((s) => s.number === selectedSurah);
@@ -42,7 +45,7 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
     return ayah?.text || "";
   }, [activeRecitationAyah, data]);
 
-  const handleRecitationComplete = () => {
+  const handleRecitationComplete = useCallback(() => {
     if (activeRecitationAyah !== null && data) {
       const ayah = data.arabic.ayahs.find(a => a.number === activeRecitationAyah);
       if (ayah) {
@@ -53,9 +56,22 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
       }
     }
     setActiveRecitationAyah(null);
-  };
+  }, [activeRecitationAyah, data, selectedSurah]);
 
-  const recitation = useArabicRecitationEngine(recitationAyahText, "balanced", handleRecitationComplete);
+  const recitation = useArabicRecitationEngine(recitationAyahText, sensitivityMode, handleRecitationComplete);
+
+  // Auto-start listening when activeRecitationAyah is set and text is ready
+  useEffect(() => {
+    if (activeRecitationAyah !== null && recitationAyahText && !recitation.state.isListening) {
+      const timer = setTimeout(() => recitation.startListening(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [activeRecitationAyah, recitationAyahText]);
+
+  const handleSensitivityChange = (mode: string) => {
+    setSensitivityMode(mode as MatchMode);
+    try { localStorage.setItem(SENSITIVITY_KEY, mode); } catch {}
+  };
 
   const startRecitation = (ayahNumber: number) => {
     setActiveRecitationAyah(ayahNumber);
