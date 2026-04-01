@@ -191,16 +191,48 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
                   {currentAyahs.map((ayah) => {
                     const isHidden = hiddenAyahs.has(ayah.number);
                     const memorized = isMemorized(selectedSurah, ayah.numberInSurah);
+                    const isReciting = activeRecitationAyah === ayah.number;
+
+                    if (isReciting) {
+                      return (
+                        <div key={ayah.number} className="py-1.5 border-b border-border/30 last:border-b-0">
+                          <LiveRecitationCheck
+                            ayahText={ayah.text}
+                            onComplete={() => {
+                              setActiveRecitationAyah(null);
+                              setHiddenAyahs(prev => { const n = new Set(prev); n.delete(ayah.number); return n; });
+                              if (!isMemorized(selectedSurah, ayah.numberInSurah)) {
+                                toggleMemorized(selectedSurah, ayah.numberInSurah);
+                              }
+                            }}
+                            onCancel={() => setActiveRecitationAyah(null)}
+                          />
+                        </div>
+                      );
+                    }
+
                     return (
                       <div key={ayah.number} className={`flex items-center gap-1 py-1.5 border-b border-border/30 last:border-b-0 rounded transition-all ${memorized ? "bg-primary/8" : ""}`}>
                         <button onClick={() => toggleMemorized(selectedSurah, ayah.numberInSurah)} className="p-0.5 shrink-0" dir="ltr">
                           {memorized ? <CheckCircle className="w-4 h-4 text-primary" /> : <Circle className="w-4 h-4 text-muted-foreground/40" />}
                         </button>
-                        <button onClick={() => toggleHideAyah(ayah.number)}
+                        <button onClick={() => isHidden ? setActiveRecitationAyah(ayah.number) : toggleHideAyah(ayah.number)}
                           className={`flex-1 flex items-baseline gap-2 py-0.5 px-1 text-right rounded transition-all ${isHidden ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50"}`}>
                           <span className="text-[10px] text-muted-foreground font-bold min-w-[20px] text-center shrink-0 font-sans" dir="ltr">{ayah.numberInSurah}</span>
-                          <span className={`font-arabic text-lg md:text-xl lg:text-2xl leading-[2.2] flex-1 transition-all ${isHidden ? "blur-md select-none text-muted-foreground" : "text-foreground"}`}>{ayah.text}</span>
+                          {isHidden ? (
+                            <span className="flex-1 flex items-center justify-between">
+                              <Mic className="w-4 h-4 text-primary/60" />
+                              <span className="font-arabic text-lg md:text-xl lg:text-2xl leading-[2.2] flex-1 blur-md select-none text-muted-foreground">{ayah.text}</span>
+                            </span>
+                          ) : (
+                            <span className="font-arabic text-lg md:text-xl lg:text-2xl leading-[2.2] flex-1 text-foreground">{ayah.text}</span>
+                          )}
                         </button>
+                        {!isHidden && (
+                          <button onClick={() => toggleHideAyah(ayah.number)} className="p-0.5 shrink-0" dir="ltr">
+                            <EyeOff className="w-3.5 h-3.5 text-muted-foreground/40 hover:text-muted-foreground" />
+                          </button>
+                        )}
                       </div>
                     );
                   })}
