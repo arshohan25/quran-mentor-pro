@@ -32,11 +32,33 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
 
   useEffect(() => { setPage(0); setHiddenAyahs(new Set()); setActiveRecitationAyah(null); }, [selectedSurah]);
 
+  const recitationAyahText = useMemo(() => {
+    if (activeRecitationAyah === null || !data) return "";
+    const ayah = data.arabic.ayahs.find(a => a.number === activeRecitationAyah);
+    return ayah?.text || "";
+  }, [activeRecitationAyah, data]);
+
+  const handleRecitationComplete = () => {
+    if (activeRecitationAyah !== null && data) {
+      const ayah = data.arabic.ayahs.find(a => a.number === activeRecitationAyah);
+      if (ayah) {
+        setHiddenAyahs(prev => { const n = new Set(prev); n.delete(ayah.number); return n; });
+        if (!isMemorized(selectedSurah, ayah.numberInSurah)) {
+          toggleMemorized(selectedSurah, ayah.numberInSurah);
+        }
+      }
+    }
+    setActiveRecitationAyah(null);
+  };
+
+  const recitation = useArabicRecitationEngine(recitationAyahText, "balanced", handleRecitationComplete);
+
   const startRecitation = (ayahNumber: number) => {
     setActiveRecitationAyah(ayahNumber);
   };
 
   const cancelRecitation = () => {
+    recitation.stopListening();
     setActiveRecitationAyah(null);
   };
 
