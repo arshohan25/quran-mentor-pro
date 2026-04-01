@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Eye, EyeOff, BarChart3, CheckCircle, Circle, GraduationCap, Mic } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, BarChart3, CheckCircle, Circle, GraduationCap, Mic, MicOff } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -9,7 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import SurahSelector from "./SurahSelector";
 import SurahNav from "./SurahNav";
 import PageNav from "./PageNav";
-import LiveRecitationCheck from "./LiveRecitationCheck";
+import { useArabicRecitationEngine } from "@/hooks/useArabicRecitationEngine";
+import { tokenizeArabicWords } from "@/utils/arabicUtils";
 import { LINES_PER_PAGE, type QuranSectionProps } from "./types";
 
 const HIFZ_KEY = "hifz-progress";
@@ -31,11 +32,33 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
 
   useEffect(() => { setPage(0); setHiddenAyahs(new Set()); setActiveRecitationAyah(null); }, [selectedSurah]);
 
+  const recitationAyahText = useMemo(() => {
+    if (activeRecitationAyah === null || !data) return "";
+    const ayah = data.arabic.ayahs.find(a => a.number === activeRecitationAyah);
+    return ayah?.text || "";
+  }, [activeRecitationAyah, data]);
+
+  const handleRecitationComplete = () => {
+    if (activeRecitationAyah !== null && data) {
+      const ayah = data.arabic.ayahs.find(a => a.number === activeRecitationAyah);
+      if (ayah) {
+        setHiddenAyahs(prev => { const n = new Set(prev); n.delete(ayah.number); return n; });
+        if (!isMemorized(selectedSurah, ayah.numberInSurah)) {
+          toggleMemorized(selectedSurah, ayah.numberInSurah);
+        }
+      }
+    }
+    setActiveRecitationAyah(null);
+  };
+
+  const recitation = useArabicRecitationEngine(recitationAyahText, "balanced", handleRecitationComplete);
+
   const startRecitation = (ayahNumber: number) => {
     setActiveRecitationAyah(ayahNumber);
   };
 
   const cancelRecitation = () => {
+    recitation.stopListening();
     setActiveRecitationAyah(null);
   };
 
@@ -209,22 +232,36 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
                           </button>
 
                           {isReciting ? (
-                            <div className="flex-1 px-1">
-                              <div className="flex items-center gap-1 mb-1" dir="ltr">
-                                <span className="text-[10px] text-muted-foreground font-bold font-sans">{ayah.numberInSurah}</span>
-                              </div>
-                              <LiveRecitationCheck
-                                ayahText={ayah.text}
-                                onComplete={() => {
-                                  setActiveRecitationAyah(null);
-                                  setHiddenAyahs(prev => { const n = new Set(prev); n.delete(ayah.number); return n; });
-                                  if (!isMemorized(selectedSurah, ayah.numberInSurah)) {
-                                    toggleMemorized(selectedSurah, ayah.numberInSurah);
+                            <>
+                              <button onClick={() => recitation.toggleListening()}
+                                className={`flex-1 flex items-baseline gap-2 py-0.5 px-1 text-right rounded transition-all bg-primary/5`}>
+                                <span className="text-[10px] text-muted-foreground font-bold min-w-[20px] text-center shrink-0 font-sans" dir="ltr">{ayah.numberInSurah}</span>
+                                <span className="flex-1 flex items-center justify-between">
+                                  {recitation.state.isListening
+                                    ? <MicOff className="w-4 h-4 text-destructive animate-pulse shrink-0" />
+                                    : <Mic className="w-4 h-4 text-primary shrink-0" />
                                   }
-                                }}
-                                onCancel={cancelRecitation}
-                              />
-                            </div>
+                                  <span className="font-arabic text-lg md:text-xl lg:text-2xl leading-[2.2] flex-1 flex flex-wrap gap-x-1.5 justify-end">
+                                    {recitation.state.words.map((word, i) => {
+                                      const isRevealed = i < recitation.state.revealedIndex;
+                                      const isCurrent = i === recitation.state.revealedIndex;
+                                      const isError = recitation.state.errorIndex === i;
+                                      return (
+                                        <span key={i} className={`transition-all duration-200 ${
+                                          isRevealed ? "text-foreground" :
+                                          isError ? "text-destructive font-bold" :
+                                          isCurrent ? "text-primary" :
+                                          "blur-md select-none text-muted-foreground"
+                                        }`}>{word}</span>
+                                      );
+                                    })}
+                                  </span>
+                                </span>
+                              </button>
+                              <button onClick={cancelRecitation} className="p-0.5 shrink-0" dir="ltr">
+                                <Eye className="w-3.5 h-3.5 text-muted-foreground/40 hover:text-muted-foreground" />
+                              </button>
+                            </>
                           ) : (
                             <>
                               <button onClick={() => isHidden ? startRecitation(ayah.number) : toggleHideAyah(ayah.number)}
