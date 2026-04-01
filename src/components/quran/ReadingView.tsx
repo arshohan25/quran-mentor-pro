@@ -9,7 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import TajweedText from "@/components/TajweedText";
 import SurahSelector from "./SurahSelector";
 import ReadingSettings from "./ReadingSettings";
-import MushafFrame, { SurahBanner } from "./MushafFrame";
 import { useBookmark } from "@/hooks/useBookmark";
 
 function toArabicNum(n: number): string {
@@ -87,7 +86,6 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
   const surah = surahList.find(s => s.number === selectedSurah);
 
-  // Group ayahs by their real Mushaf page number from the API
   const pages = useMemo(() => {
     if (!data) return [];
     const ayahs = data.arabic.ayahs;
@@ -97,7 +95,6 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
       if (!pageMap.has(pg)) pageMap.set(pg, []);
       pageMap.get(pg)!.push(ayah);
     }
-    // Sort by page number and return as array of { pageNum, ayahs }
     return Array.from(pageMap.entries())
       .sort((a, b) => a[0] - b[0])
       .map(([pageNum, ayas]) => ({ pageNum, ayahs: ayas }));
@@ -105,7 +102,6 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
 
   const totalPages = pages.length;
 
-  // Clamp pageIndex whenever pages change, or jump to target Mushaf page
   useEffect(() => {
     if (totalPages === 0) return;
     if (targetMushafPage !== null) {
@@ -125,19 +121,16 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     if (isNaN(num) || num < 1 || num > 604) return;
     setShowPageJump(false);
     setPageJumpInput("");
-    // Check if this page is within current surah
     const idx = pages.findIndex(p => p.pageNum === num);
     if (idx >= 0) {
       setPageIndex(idx);
     } else {
-      // Navigate to the surah that contains this page
       const targetSurah = surahForPage(num);
       setTargetMushafPage(num);
       setSelectedSurah(targetSurah);
     }
   };
 
-  // Auto-save reading position
   useEffect(() => {
     const currentPageData = pages[pageIndex];
     if (currentPageData && currentPageData.ayahs[0]) {
@@ -199,15 +192,14 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const currentJuz = firstAyah ? getJuzNumber(selectedSurah, firstAyah.numberInSurah) : 1;
   const isFirstPageOfSurah = currentPageData?.ayahs.some(a => a.numberInSurah === 1);
 
-  // Reading progress: last ayah on current page / total ayahs in surah
   const surahTotalAyahs = data?.arabic.ayahs.length || 1;
   const lastAyahOnPage = currentPageData?.ayahs[currentPageData.ayahs.length - 1];
   const readProgress = lastAyahOnPage ? Math.round((lastAyahOnPage.numberInSurah / surahTotalAyahs) * 100) : 0;
 
   return (
-    <div className="h-screen bg-[#F5EFE0] dark:bg-[#1a1510] flex flex-col overflow-hidden">
-      {/* Header bar */}
-      <header className="bg-[#2D5016] dark:bg-[#1a3009] text-white py-2">
+    <div className="h-screen bg-white dark:bg-gray-950 flex flex-col overflow-hidden">
+      {/* Header */}
+      <header className="bg-[#008374] text-white py-2">
         <div className="container flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button onClick={onBack} className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></button>
@@ -229,20 +221,18 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
             onTajweedToggle={handleTajweedToggle}
           />
         </div>
-        {/* Reading progress bar */}
-        <div className="h-1 bg-[#1a3009]/50 dark:bg-[#0d1a05]">
+        {/* Progress bar */}
+        <div className="h-1 bg-[#006b5f]">
           <div
-            className="h-full bg-gradient-to-r from-[#7BAF4C] to-[#A3D977] transition-all duration-300 ease-out"
+            className="h-full bg-gradient-to-r from-[#00b4a0] to-[#4dd9c0] transition-all duration-300 ease-out"
             style={{ width: `${readProgress}%` }}
           />
         </div>
       </header>
 
-
-
-      {/* Page jump panel */}
+      {/* Page jump */}
       {showPageJump && (
-        <div className="bg-[#2D5016]/90 dark:bg-[#1a3009]/95 px-4 py-2.5 flex items-center gap-2">
+        <div className="bg-[#008374]/90 px-4 py-2.5 flex items-center gap-2">
           <input
             type="number"
             min={1}
@@ -269,7 +259,8 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
         </div>
       )}
 
-      <div className="flex-1 overflow-hidden flex flex-col px-1 py-1">
+      {/* Content */}
+      <div className="flex-1 overflow-hidden flex flex-col">
         {isLoading ? (
           <div className="space-y-3 p-4 flex-1">
             {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-8 rounded" />)}
@@ -285,47 +276,42 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
               className="transition-transform duration-200 ease-out flex-1 flex flex-col"
               style={{ transform: `translateX(${swipeOffset}px)`, opacity: isAnimating ? 0.6 : 1 }}
             >
-              <MushafFrame className="flex-1">
+              {/* Clean card container */}
+              <div className="flex-1 flex flex-col bg-white dark:bg-gray-950">
                 {/* Top info bar */}
-                <div className="flex items-center justify-between px-4 py-1.5 text-[11px]" dir="rtl">
-                  <span className="font-arabic text-[#5C4A2A] dark:text-[#C4A96A] font-semibold">{getJuzName(currentJuz)}</span>
-                  <span className="text-[#8B7355] dark:text-[#9B8365] tabular-nums">{realPageNum ? toArabicNum(realPageNum) : toArabicNum(pageIndex + 1)}</span>
-                  <span className="font-arabic text-[#5C4A2A] dark:text-[#C4A96A] font-semibold">{surah?.name}</span>
+                <div className="flex items-center justify-between px-4 py-2 text-[11px] border-b border-gray-200 dark:border-gray-800" dir="rtl">
+                  <span className="font-arabic text-[#008374] dark:text-[#4dd9c0] font-semibold">{getJuzName(currentJuz)}</span>
+                  <span className="text-gray-400 dark:text-gray-500 tabular-nums">{realPageNum ? toArabicNum(realPageNum) : toArabicNum(pageIndex + 1)}</span>
+                  <span className="font-arabic text-[#008374] dark:text-[#4dd9c0] font-semibold">{surah?.name}</span>
                 </div>
 
-                <div className="mx-3 border-b border-[#8B7355]/15 dark:border-[#C4A96A]/15" />
-
-                {/* Surah header banner */}
+                {/* Surah header */}
                 {isFirstPageOfSurah && (
-                  <SurahBanner>
-                    <p className="font-arabic text-[18px] md:text-[22px] font-bold text-[#2D5016] dark:text-[#C4A96A]">
+                  <div className="text-center py-4 px-6">
+                    <p className="font-arabic text-[22px] md:text-[26px] font-bold text-[#008374] dark:text-[#4dd9c0]">
                       سُورَةُ {surah?.name}
                     </p>
-                  </SurahBanner>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {surah?.englishNameTranslation} · {surah?.numberOfAyahs} {t("আয়াত", "Verses", "آيات")}
+                    </p>
+                  </div>
                 )}
 
                 {/* Bismillah */}
                 {isFirstPageOfSurah && selectedSurah !== 9 && (
-                  <div className="py-1 text-center">
-                    <p className="font-arabic font-bold text-[#1a1008] dark:text-[#E8DCC8]"
+                  <div className="py-2 text-center border-y border-gray-100 dark:border-gray-800 mx-4">
+                    <p className="font-arabic font-bold text-gray-900 dark:text-gray-100"
                        style={{ fontSize: `${Math.max(arabicFontSize - 2, 18)}px` }}>
                       بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                     </p>
-                    <div className="flex items-center justify-center gap-2 mt-0.5 px-8">
-                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#8B7355]/25 to-transparent dark:via-[#C4A96A]/20" />
-                      <svg viewBox="0 0 12 12" className="w-2 h-2 text-[#8B7355]/30 dark:text-[#C4A96A]/25" fill="currentColor">
-                        <rect x="3" y="3" width="6" height="6" transform="rotate(45, 6, 6)" />
-                      </svg>
-                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#8B7355]/25 to-transparent dark:via-[#C4A96A]/20" />
-                    </div>
                   </div>
                 )}
 
-                {/* Flowing paragraph — fills remaining space, clips overflow */}
-                <div className="px-5 md:px-7 py-1 flex-1 overflow-hidden" dir="rtl">
-                  <p className="font-arabic font-bold text-[#1a1008] dark:text-[#E8DCC8] text-justify leading-[2.2] sm:leading-[2.4] md:leading-[2.6]"
+                {/* Arabic text — flowing paragraph */}
+                <div className="px-5 md:px-7 py-3 flex-1 overflow-hidden" dir="rtl">
+                  <p className="font-arabic font-bold text-gray-900 dark:text-gray-100 text-justify leading-[2.2] sm:leading-[2.4] md:leading-[2.6]"
                      style={{ fontSize: `${arabicFontSize}px`, wordSpacing: '0.12em', letterSpacing: '0.01em' }}>
-                    {currentPageData.ayahs.map((ayah, idx) => {
+                    {currentPageData.ayahs.map((ayah) => {
                       let displayText = ayah.text;
                       if (isFirstPageOfSurah && ayah.numberInSurah === 1 && selectedSurah !== 9) {
                         displayText = stripBismillah(displayText);
@@ -338,7 +324,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                           ) : (
                             <span>{displayText}</span>
                           )}
-                          <span className="inline-flex items-center justify-center mx-0.5 text-[#2D5016] dark:text-[#7BAF4C] font-bold select-none align-middle"
+                          <span className="inline-flex items-center justify-center mx-0.5 text-[#008374] dark:text-[#4dd9c0] font-bold select-none align-middle"
                                 style={{ fontSize: `${Math.max(11, arabicFontSize - 7)}px`, fontFamily: 'serif' }}>
                             ﴿{toArabicNum(ayah.numberInSurah)}﴾
                           </span>
@@ -349,22 +335,19 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                   </p>
                 </div>
 
-                {/* Bottom page number with ornament */}
-                <div className="mt-auto">
-                  <div className="mx-3 border-t border-[#8B7355]/15 dark:border-[#C4A96A]/15" />
-                  <div className="text-center py-1 flex items-center justify-center gap-2">
-                    <div className="h-px w-8 bg-gradient-to-r from-transparent to-[#8B7355]/20 dark:to-[#C4A96A]/15" />
-                    <span className="text-[11px] text-[#8B7355] dark:text-[#9B8365] tabular-nums font-medium">
+                {/* Bottom page number */}
+                <div className="mt-auto border-t border-gray-200 dark:border-gray-800">
+                  <div className="text-center py-1.5">
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums font-medium">
                       {realPageNum && toArabicNum(realPageNum)}
                     </span>
-                    <div className="h-px w-8 bg-gradient-to-l from-transparent to-[#8B7355]/20 dark:to-[#C4A96A]/15" />
                   </div>
                 </div>
-              </MushafFrame>
+              </div>
             </div>
 
             {Math.abs(swipeOffset) > 30 && !isAnimating && (
-              <div className={`absolute top-1/2 -translate-y-1/2 ${swipeOffset > 0 ? "left-1" : "right-1"} bg-[#2D5016]/80 text-white rounded-full p-2 shadow-lg`}>
+              <div className={`absolute top-1/2 -translate-y-1/2 ${swipeOffset > 0 ? "left-1" : "right-1"} bg-[#008374]/80 text-white rounded-full p-2 shadow-lg`}>
                 {swipeOffset > 0 ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
               </div>
             )}
