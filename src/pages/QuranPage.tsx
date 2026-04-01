@@ -133,7 +133,7 @@ export default function QuranPage() {
         selectedSurah={selectedSurah}
         setSelectedSurah={setSelectedSurah}
         onBack={onBack}
-        onNavigateToReading={(surah) => { setSelectedSurah(surah); setActiveSection("reading"); }}
+        onNavigateToReading={(surah) => { setSelectedSurah(surah); setActiveSection("translation"); }}
       />
     );
   }
