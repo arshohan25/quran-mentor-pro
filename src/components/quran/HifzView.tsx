@@ -1,17 +1,21 @@
-import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Eye, EyeOff, BarChart3, CheckCircle, Circle, GraduationCap, Mic, MicOff } from "lucide-react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { ArrowLeft, Eye, EyeOff, BarChart3, CheckCircle, Circle, GraduationCap, Mic, MicOff, Settings2 } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import SurahSelector from "./SurahSelector";
 import SurahNav from "./SurahNav";
 import PageNav from "./PageNav";
 import { useArabicRecitationEngine } from "@/hooks/useArabicRecitationEngine";
 import { tokenizeArabicWords } from "@/utils/arabicUtils";
+import type { MatchMode } from "@/utils/arabicUtils";
 import { LINES_PER_PAGE, type QuranSectionProps } from "./types";
+
+const SENSITIVITY_KEY = "hifz-sensitivity-mode";
 
 const HIFZ_KEY = "hifz-progress";
 
