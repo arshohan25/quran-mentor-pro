@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import SurahSelector from "./SurahSelector";
 import SurahNav from "./SurahNav";
 import PageNav from "./PageNav";
+import LiveRecitationCheck from "./LiveRecitationCheck";
 import { LINES_PER_PAGE, type QuranSectionProps } from "./types";
 
 const HIFZ_KEY = "hifz-progress";
