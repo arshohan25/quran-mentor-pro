@@ -106,7 +106,7 @@ export default function QuranPage() {
   const [searchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState<ActiveSection>(() => {
     const s = searchParams.get("surah");
-    return s ? "reading" : null;
+    return s ? "translation" : null;
   });
   const [selectedSurah, setSelectedSurah] = useState(() => {
     const s = searchParams.get("surah");
