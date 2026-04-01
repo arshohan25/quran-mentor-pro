@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSurah } from "@/hooks/useQuranApi";
 import { surahList } from "@/data/surahList";
@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { QuranSectionProps } from "@/components/quran/types";
 
 const LINES_PER_PAGE = 15;
+const FATIHAH_NUMBER = 1;
 
 function getJuzForAyah(surah: number, ayah: number): number {
   for (let i = juzList.length - 1; i >= 0; i--) {
@@ -48,6 +49,8 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     contentRef.current?.scrollTo({ top: 0 });
   }, [selectedSurah]);
 
+  const isFatihah = selectedSurah === FATIHAH_NUMBER;
+
   const pages = useMemo(() => {
     if (!data?.ayahs) return [];
     const result: typeof data.ayahs[] = [];
@@ -77,7 +80,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#1B1B2F" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#1C1C2E" }}>
         <div className="text-center space-y-3">
           <p className="text-red-400 text-lg">⚠️ {t("লোড করা যায়নি", "Failed to load", "فشل التحميل")}</p>
           <button onClick={onBack} className="text-sm text-white/50 underline">
@@ -89,12 +92,12 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#1B1B2F" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: "#1C1C2E" }}>
       {/* Single-row sticky header */}
       <header
         className="sticky top-0 z-50 flex items-center justify-between px-3 py-2.5"
         style={{
-          background: "#1B1B2F",
+          background: "#1C1C2E",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
         }}
       >
@@ -102,7 +105,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
           <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
             <ArrowLeft className="w-5 h-5 text-white/60" />
           </button>
-          <span className="text-white/40 text-xs">
+          <span className="text-xs" style={{ color: "#008374" }}>
             {t(`পৃষ্ঠা ${currentMushafPage}`, `Page ${currentMushafPage}`, `صفحة ${toArabicNum(currentMushafPage)}`)}
           </span>
         </div>
@@ -112,7 +115,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-white/40 text-xs">
+          <span className="text-xs" style={{ color: "#008374" }}>
             {t(`জুয ${currentJuz}`, `Juz ${currentJuz}`, `الجزء ${toArabicNum(currentJuz)}`)}
           </span>
           <ReadingSettings fontSize={fontSize} setFontSize={setFontSize} />
@@ -129,80 +132,130 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
           </div>
         ) : (
           <div className="max-w-2xl mx-auto px-4 py-6">
-            {/* Surah intro — first page only */}
+            {/* Surah Header — Quran.com style */}
             {page === 0 && surahInfo && (
-              <div className="text-center mb-6 space-y-3">
-                {/* Bordered frame */}
-                <div
-                  className="py-4 px-8 rounded-lg mx-auto max-w-xs"
-                  style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+              <div
+                className="flex items-center justify-between px-4 py-3 rounded-lg mb-6"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                {/* Left: Arabic name */}
+                <h2
+                  dir="rtl"
+                  style={{
+                    fontFamily: "'Scheherazade New', 'Amiri', serif",
+                    fontSize: "28px",
+                    color: "rgba(255,255,255,0.92)",
+                    lineHeight: 1.4,
+                  }}
                 >
-                  <h2
-                    className="text-2xl md:text-3xl font-bold"
-                    dir="rtl"
-                    style={{
-                      fontFamily: "'Scheherazade New', 'Amiri', serif",
-                      color: "rgba(255,255,255,0.92)",
-                    }}
+                  {surahInfo.name}
+                </h2>
+
+                {/* Right: English info + badge */}
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.85)" }}>
+                      {surahInfo.number}. {surahInfo.englishName}
+                    </p>
+                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                      {surahInfo.englishNameTranslation} • {surahInfo.numberOfAyahs} Ayahs
+                    </p>
+                  </div>
+                  <button
+                    className="p-1.5 rounded-full"
+                    style={{ background: "rgba(0,131,116,0.15)" }}
                   >
-                    {surahInfo.name}
-                  </h2>
-                  <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>
-                    {surahInfo.englishName} • {surahInfo.numberOfAyahs} {t("আয়াত", "Ayahs", "آيات")}
-                  </p>
+                    <Info className="w-4 h-4" style={{ color: "#008374" }} />
+                  </button>
                 </div>
-
-                {/* Bismillah */}
-                {selectedSurah !== 9 && (
-                  <p
-                    className="text-xl md:text-2xl py-2"
-                    dir="rtl"
-                    style={{
-                      fontFamily: "'Scheherazade New', 'Amiri', serif",
-                      color: "rgba(255,255,255,0.92)",
-                    }}
-                  >
-                    بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-                  </p>
-                )}
-
-                <div className="h-px mx-auto w-48" style={{ background: "rgba(255,255,255,0.08)" }} />
               </div>
             )}
 
-            {/* Flowing Arabic text */}
-            <div
-              dir="rtl"
-              style={{
-                fontFamily: "'Scheherazade New', 'Amiri', serif",
-                fontSize: `${fontSize}px`,
-                color: "rgba(255,255,255,0.92)",
-                lineHeight: "2.0",
-                textAlign: "justify",
-              }}
-            >
-              {currentAyahs.map((ayah) => (
-                <span key={ayah.numberInSurah}>
-                  {ayah.text}{" "}
-                  <span
-                    className="inline-block mx-0.5 select-none"
-                    style={{
-                      color: "rgba(255,255,255,0.45)",
-                      fontSize: `${Math.max(12, fontSize * 0.6)}px`,
-                      fontFamily: "serif",
-                    }}
-                  >
-                    ﴿{toArabicNum(ayah.numberInSurah)}﴾
-                  </span>{" "}
-                </span>
-              ))}
-            </div>
+            {/* Bismillah — only for non-Fatihah, non-Tawbah, page 0 */}
+            {page === 0 && !isFatihah && selectedSurah !== 9 && (
+              <p
+                className="text-center mb-6"
+                dir="rtl"
+                style={{
+                  fontFamily: "'Scheherazade New', 'Amiri', serif",
+                  fontSize: `${fontSize}px`,
+                  color: "rgba(255,255,255,0.92)",
+                  lineHeight: "2.0",
+                }}
+              >
+                بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+              </p>
+            )}
 
-            {/* Page number */}
-            <div className="text-center mt-8 mb-4">
-              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: "12px" }}>
+            {/* Al-Fatihah — each ayah on its own centered line */}
+            {isFatihah ? (
+              <div
+                dir="rtl"
+                className="space-y-2"
+                style={{
+                  fontFamily: "'Scheherazade New', 'Amiri', serif",
+                  fontSize: `${Math.max(fontSize, 28)}px`,
+                  color: "rgba(255,255,255,0.92)",
+                  lineHeight: "2.2",
+                  textAlign: "center",
+                }}
+              >
+                {currentAyahs.map((ayah) => (
+                  <p key={ayah.numberInSurah}>
+                    {ayah.text}
+                    {" "}
+                    <span
+                      className="inline-block select-none"
+                      style={{
+                        fontSize: `${Math.max(14, fontSize * 0.55)}px`,
+                        color: "rgba(255,255,255,0.5)",
+                      }}
+                    >
+                      ۝{toArabicNum(ayah.numberInSurah)}
+                    </span>
+                  </p>
+                ))}
+              </div>
+            ) : (
+              /* Normal surahs — flowing justified paragraph */
+              <div
+                dir="rtl"
+                style={{
+                  fontFamily: "'Scheherazade New', 'Amiri', serif",
+                  fontSize: `${fontSize}px`,
+                  color: "rgba(255,255,255,0.92)",
+                  lineHeight: "2.0",
+                  textAlign: "justify",
+                }}
+              >
+                {currentAyahs.map((ayah) => (
+                  <span key={ayah.numberInSurah}>
+                    {ayah.text}
+                    {" "}
+                    <span
+                      className="inline-block mx-0.5 select-none"
+                      style={{
+                        fontSize: `${Math.max(12, fontSize * 0.55)}px`,
+                        color: "rgba(255,255,255,0.5)",
+                      }}
+                    >
+                      ۝{toArabicNum(ayah.numberInSurah)}
+                    </span>
+                    {" "}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Separator line + Page number (teal) */}
+            <div className="mt-8 mb-4">
+              <div className="h-px mx-auto w-full" style={{ background: "rgba(255,255,255,0.08)" }} />
+              <p className="text-center mt-3" style={{ color: "#008374", fontSize: "13px", fontWeight: 500 }}>
                 {currentMushafPage}
-              </span>
+              </p>
             </div>
           </div>
         )}
@@ -211,7 +264,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
         <div
           className="sticky bottom-0 px-4 py-3 flex items-center justify-between"
           style={{
-            background: "rgba(27, 27, 47, 0.95)",
+            background: "rgba(28, 28, 46, 0.95)",
             backdropFilter: "blur(8px)",
             borderTop: "1px solid rgba(255,255,255,0.06)",
           }}
