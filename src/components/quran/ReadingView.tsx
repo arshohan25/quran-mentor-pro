@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Settings } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSurah } from "@/hooks/useQuranApi";
 import { surahList } from "@/data/surahList";
@@ -22,7 +22,6 @@ function getJuzForAyah(surah: number, ayah: number): number {
   return 1;
 }
 
-// Convert number to Arabic-Indic numerals
 function toArabicNum(n: number): string {
   return n.toString().replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[parseInt(d)]);
 }
@@ -33,7 +32,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const [page, setPage] = useState(0);
   const [fontSize, setFontSize] = useState(() => {
     const saved = localStorage.getItem("mushaf-font-size");
-    return saved ? Number(saved) : 28;
+    return saved ? Number(saved) : 26;
   });
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +48,6 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     contentRef.current?.scrollTo({ top: 0 });
   }, [selectedSurah]);
 
-  // Build pages from ayahs
   const pages = useMemo(() => {
     if (!data?.ayahs) return [];
     const result: typeof data.ayahs[] = [];
@@ -66,29 +64,23 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const currentMushafPage = mushafPage + page;
 
   const goNext = () => {
-    if (page < pages.length - 1) {
-      setPage(page + 1);
-    } else if (selectedSurah < 114) {
-      setSelectedSurah(selectedSurah + 1);
-    }
+    if (page < pages.length - 1) setPage(page + 1);
+    else if (selectedSurah < 114) setSelectedSurah(selectedSurah + 1);
     contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const goPrev = () => {
-    if (page > 0) {
-      setPage(page - 1);
-    } else if (selectedSurah > 1) {
-      setSelectedSurah(selectedSurah - 1);
-    }
+    if (page > 0) setPage(page - 1);
+    else if (selectedSurah > 1) setSelectedSurah(selectedSurah - 1);
     contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#1B1B2F" }}>
         <div className="text-center space-y-3">
-          <p className="text-destructive text-lg">⚠️ {t("লোড করা যায়নি", "Failed to load", "فشل التحميل")}</p>
-          <button onClick={onBack} className="text-sm text-muted-foreground underline">
+          <p className="text-red-400 text-lg">⚠️ {t("লোড করা যায়নি", "Failed to load", "فشل التحميل")}</p>
+          <button onClick={onBack} className="text-sm text-white/50 underline">
             {t("ফিরে যান", "Go back", "عودة")}
           </button>
         </div>
@@ -97,35 +89,33 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "hsl(220 20% 7%)" }}>
-      {/* Sticky top bar — Quran.com style */}
-      <header className="sticky top-0 z-50 border-b" style={{
-        background: "hsl(220 20% 10%)",
-        borderColor: "hsl(220 15% 18%)"
-      }}>
-        {/* Primary bar: page info */}
-        <div className="flex items-center justify-between px-3 py-2">
-          <div className="flex items-center gap-2">
-            <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
-              <ArrowLeft className="w-5 h-5 text-white/70" />
-            </button>
-            <span className="text-white/50 text-xs">
-              {t(`পৃষ্ঠা ${currentMushafPage}`, `Page ${currentMushafPage}`, `صفحة ${toArabicNum(currentMushafPage)}`)}
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-white/50 text-xs font-arabic" dir="rtl">
-              {t(`জুয ${currentJuz}`, `Juz ${currentJuz}`, `الجزء ${toArabicNum(currentJuz)}`)}
-            </span>
-            <ReadingSettings fontSize={fontSize} setFontSize={setFontSize} />
-          </div>
+    <div className="min-h-screen flex flex-col" style={{ background: "#1B1B2F" }}>
+      {/* Single-row sticky header */}
+      <header
+        className="sticky top-0 z-50 flex items-center justify-between px-3 py-2.5"
+        style={{
+          background: "#1B1B2F",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
+            <ArrowLeft className="w-5 h-5 text-white/60" />
+          </button>
+          <span className="text-white/40 text-xs">
+            {t(`পৃষ্ঠা ${currentMushafPage}`, `Page ${currentMushafPage}`, `صفحة ${toArabicNum(currentMushafPage)}`)}
+          </span>
         </div>
 
-        {/* Secondary bar: surah selector */}
-        <div className="flex items-center justify-center px-3 pb-2">
-          <div className="text-white">
-            <SurahSelector value={selectedSurah} onChange={(n) => setSelectedSurah(n)} variant="header" />
-          </div>
+        <div className="text-white">
+          <SurahSelector value={selectedSurah} onChange={(n) => setSelectedSurah(n)} variant="header" />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-white/40 text-xs">
+            {t(`জুয ${currentJuz}`, `Juz ${currentJuz}`, `الجزء ${toArabicNum(currentJuz)}`)}
+          </span>
+          <ReadingSettings fontSize={fontSize} setFontSize={setFontSize} />
         </div>
       </header>
 
@@ -134,57 +124,72 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
         {isLoading ? (
           <div className="max-w-2xl mx-auto p-6 space-y-4">
             {Array.from({ length: 10 }).map((_, i) => (
-              <Skeleton key={i} className="h-8 w-full" style={{ background: "hsl(220 15% 15%)" }} />
+              <Skeleton key={i} className="h-8 w-full" style={{ background: "rgba(255,255,255,0.05)" }} />
             ))}
           </div>
         ) : (
           <div className="max-w-2xl mx-auto px-4 py-6">
-            {/* Surah name header — on first page only */}
+            {/* Surah intro — first page only */}
             {page === 0 && surahInfo && (
-              <div className="text-center mb-6 space-y-2">
-                {/* Decorative surah banner */}
-                <div className="relative py-4 px-6 rounded-xl mx-auto max-w-sm" style={{
-                  background: "hsl(220 15% 12%)",
-                  border: "1px solid hsl(220 15% 20%)"
-                }}>
-                  <h2 className="font-arabic text-2xl md:text-3xl font-bold" dir="rtl"
-                    style={{ color: "hsl(170 100% 26%)" }}>
+              <div className="text-center mb-6 space-y-3">
+                {/* Bordered frame */}
+                <div
+                  className="py-4 px-8 rounded-lg mx-auto max-w-xs"
+                  style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+                >
+                  <h2
+                    className="text-2xl md:text-3xl font-bold"
+                    dir="rtl"
+                    style={{
+                      fontFamily: "'Scheherazade New', 'Amiri', serif",
+                      color: "rgba(255,255,255,0.92)",
+                    }}
+                  >
                     {surahInfo.name}
                   </h2>
-                  <p className="text-white/40 text-xs mt-1">
+                  <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>
                     {surahInfo.englishName} • {surahInfo.numberOfAyahs} {t("আয়াত", "Ayahs", "آيات")}
                   </p>
                 </div>
 
-                {/* Bismillah — not for Surah 9 (At-Tawba) */}
+                {/* Bismillah */}
                 {selectedSurah !== 9 && (
-                  <p className="font-arabic text-xl md:text-2xl py-3" dir="rtl"
-                    style={{ color: "hsl(170 100% 26%)" }}>
+                  <p
+                    className="text-xl md:text-2xl py-2"
+                    dir="rtl"
+                    style={{
+                      fontFamily: "'Scheherazade New', 'Amiri', serif",
+                      color: "rgba(255,255,255,0.92)",
+                    }}
+                  >
                     بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                   </p>
                 )}
 
-                <div className="h-px mx-auto w-48" style={{ background: "hsl(220 15% 20%)" }} />
+                <div className="h-px mx-auto w-48" style={{ background: "rgba(255,255,255,0.08)" }} />
               </div>
             )}
 
-            {/* Flowing Arabic text — paragraph style */}
-            <div className="font-arabic leading-[2.4] text-center" dir="rtl" style={{
-              fontSize: `${fontSize}px`,
-              color: "hsl(40 20% 88%)",
-              wordSpacing: "4px",
-              lineHeight: "2.6"
-            }}>
+            {/* Flowing Arabic text */}
+            <div
+              dir="rtl"
+              style={{
+                fontFamily: "'Scheherazade New', 'Amiri', serif",
+                fontSize: `${fontSize}px`,
+                color: "rgba(255,255,255,0.92)",
+                lineHeight: "2.0",
+                textAlign: "justify",
+              }}
+            >
               {currentAyahs.map((ayah) => (
                 <span key={ayah.numberInSurah}>
-                  {/* For surah 1 page 0, skip first ayah if it's bismillah duplicate */}
                   {ayah.text}{" "}
                   <span
-                    className="inline-block mx-1 align-middle select-none"
+                    className="inline-block mx-0.5 select-none"
                     style={{
-                      color: "hsl(170 100% 26%)",
-                      fontSize: `${Math.max(14, fontSize * 0.55)}px`,
-                      fontFamily: "serif"
+                      color: "rgba(255,255,255,0.45)",
+                      fontSize: `${Math.max(12, fontSize * 0.6)}px`,
+                      fontFamily: "serif",
                     }}
                   >
                     ﴿{toArabicNum(ayah.numberInSurah)}﴾
@@ -193,38 +198,41 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
               ))}
             </div>
 
-            {/* Page number at bottom */}
+            {/* Page number */}
             <div className="text-center mt-8 mb-4">
-              <span className="text-white/30 text-xs tracking-wider">
-                — {currentMushafPage} —
+              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: "12px" }}>
+                {currentMushafPage}
               </span>
             </div>
           </div>
         )}
 
-        {/* Page navigation */}
-        <div className="sticky bottom-0 px-4 py-3 flex items-center justify-between" style={{
-          background: "hsl(220 20% 8% / 0.95)",
-          backdropFilter: "blur(8px)",
-          borderTop: "1px solid hsl(220 15% 15%)"
-        }}>
+        {/* Bottom nav */}
+        <div
+          className="sticky bottom-0 px-4 py-3 flex items-center justify-between"
+          style={{
+            background: "rgba(27, 27, 47, 0.95)",
+            backdropFilter: "blur(8px)",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+          }}
+        >
           <button
             onClick={goPrev}
             disabled={page === 0 && selectedSurah <= 1}
             className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm transition-colors disabled:opacity-20"
-            style={{ color: "hsl(170 100% 26%)" }}
+            style={{ color: "rgba(255,255,255,0.6)" }}
           >
             <ChevronLeft className="w-4 h-4" />
             {t("আগে", "Prev", "السابق")}
           </button>
-          <span className="text-white/40 text-xs">
+          <span style={{ color: "rgba(255,255,255,0.3)", fontSize: "12px" }}>
             {page + 1} / {pages.length || 1}
           </span>
           <button
             onClick={goNext}
             disabled={page >= pages.length - 1 && selectedSurah >= 114}
             className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm transition-colors disabled:opacity-20"
-            style={{ color: "hsl(170 100% 26%)" }}
+            style={{ color: "rgba(255,255,255,0.6)" }}
           >
             {t("পরে", "Next", "التالي")}
             <ChevronRight className="w-4 h-4" />
