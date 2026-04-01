@@ -87,7 +87,7 @@ const Index = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span className="text-accent text-xl">☪</span>
-              <h1 className="text-lg sm:text-xl font-bold">
+              <h1 className="text-lg sm:text-xl font-bold font-bengaliDisplay">
                 {t("কুরআন ও নামাজ", "Quran & Prayer", "القرآن والصلاة")}
               </h1>
             </div>
