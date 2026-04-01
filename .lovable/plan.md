@@ -1,49 +1,61 @@
 
 
-# Rebuild Mushaf ReadingView — Exact Quran.com Clone from Screenshots
+# Rebuild Mushaf ReadingView — Pixel-Perfect Quran.com Clone
 
-## Key Differences (Current vs Screenshots)
+## Current Problems (vs Quran.com)
 
-| Point | Screenshot (Quran.com) | Current App |
-|-------|----------------------|-------------|
-| **Surah Header** | Calligraphic Arabic name (left) + "1. Al-Fatihah / The Opener" (right) + teal "info" badge | Bordered frame, centered |
-| **Al-Fatihah layout** | Each ayah on its own line, centered, larger font | Flowing paragraph like all surahs |
-| **Verse markers** | Circular ornamental markers (۝) with Arabic numbers | Plain `﴿١﴾` text brackets |
-| **Page number** | Teal/cyan colored number at bottom | White/muted number |
-| **Bottom separator** | Thin horizontal line below page number | None |
-| **Background** | Dark gray ~`#1C1C2E` | `#1B1B2F` (close, minor tweak) |
-| **Bismillah** | Part of ayah 1 with verse marker (for Fatihah) | Separate decorative element |
+1. **Font**: Using Amiri (thin/light) — Quran.com uses **KFGQPC Uthmani Hafs** (bold, calligraphic)
+2. **Verse markers**: Green `hsl(170 100% 26%)` and oversized — should be subtle, same color as text, small
+3. **Bismillah**: Green colored — should match body text color
+4. **Surah header**: Simple card with green title — Quran.com uses a bordered frame with surah name + English + ayah count, neutral colors
+5. **Line spacing**: `2.6` is too wide — Quran.com uses ~`2.0`
+6. **Text color**: Yellowish `hsl(40 20% 88%)` — should be clean white/near-white
+7. **Page number**: `— 1 —` format — should be plain number
+8. **Header bar**: Two-row header is bulky — Quran.com has a single clean bar
+9. **Word spacing**: `4px` artificial spacing — should be natural
+10. **Text alignment**: `text-center` — Quran.com uses `text-justify`
 
 ## Plan
 
-### 1. Rewrite `ReadingView.tsx` — Complete Overhaul
+### 1. Add KFGQPC Uthmani Font (index.css)
+- Add `@font-face` or Google Fonts import for **"KFGQPC HAFS Uthmanic Script"** (or closest available: `Scheherazade New` from Google Fonts as fallback — it's a proper Uthmani Naskh font, bold and calligraphic)
+- Update `.font-arabic` or add `.font-mushaf` class
 
-**Surah Header (Quran.com style)**:
-- Left side: Calligraphic Arabic surah name (large, Scheherazade New)
-- Right side: "{number}. {englishName}" bold + "{englishNameTranslation}" smaller below + teal "info" badge
-- No bordered frame, no center alignment
+### 2. Rewrite `ReadingView.tsx` — Full Overhaul
 
-**Al-Fatihah Special Layout**:
-- Detect short surahs (Fatihah specifically) — render each ayah on its own centered line
-- Larger font size for short surahs
-- Bismillah is NOT separate — it's part of the API text for ayah 1
+**Header** (single clean bar):
+- Left: Back arrow + Page number
+- Center: Surah name (Arabic) via SurahSelector
+- Right: Juz number + Settings gear
+- Background: `#1B1B2F` (deep navy), thin bottom border
+- Single row, no secondary bar
 
-**Body Text (longer surahs)**:
-- Flowing RTL justified paragraph (same as current)
-- Font: Scheherazade New, default ~26px
+**Surah intro block** (page 0 only):
+- Bordered rectangular frame (subtle border, no background fill)
+- Surah name in Arabic (white, not green)
+- Below: English name + ayah count in small muted text
+- Bismillah below frame in normal text color (not green)
 
-**Verse Markers**:
-- Use Unicode end-of-ayah sign with Arabic numerals inside circular markers
-- Style: slightly smaller than body text, same white color, inline
+**Body text**:
+- Font: Scheherazade New (or KFGQPC if loadable), ~26px default
+- Color: `#FFFFFF` or `rgba(255,255,255,0.92)`
+- `text-align: justify`, `direction: rtl`
+- Line-height: `2.0`
+- No artificial word-spacing
+- Verse end markers: `﴿١﴾` inline, same color as text, ~60% font size, subtle
 
-**Page Number**:
-- Teal/cyan colored (like `#008374` or similar)
-- Centered at bottom
-- Horizontal separator line below
+**Page number** at bottom:
+- Plain number, centered, muted color, no dashes
 
-**Navigation**: Keep existing prev/next bottom bar
+**Navigation bar** (sticky bottom):
+- Same as current but with neutral colors instead of green
 
-### 2. Files Changed
+### 3. Update `ReadingSettings.tsx`
+- Font size range: 20–40 (mushaf needs larger range)
+- No other changes needed
 
-- `src/components/quran/ReadingView.tsx` — Complete rewrite matching screenshots exactly
+### Files Changed
+- `src/index.css` — Add Scheherazade New font import
+- `src/components/quran/ReadingView.tsx` — Complete rewrite
+- `src/components/quran/ReadingSettings.tsx` — Adjust min/max font size
 
