@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Eye, EyeOff, BarChart3, CheckCircle, Circle, GraduationCap, Mic } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, BarChart3, CheckCircle, Circle, GraduationCap, Mic, MicOff } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -9,7 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import SurahSelector from "./SurahSelector";
 import SurahNav from "./SurahNav";
 import PageNav from "./PageNav";
-import LiveRecitationCheck from "./LiveRecitationCheck";
+import { useArabicRecitationEngine } from "@/hooks/useArabicRecitationEngine";
+import { tokenizeArabicWords } from "@/utils/arabicUtils";
 import { LINES_PER_PAGE, type QuranSectionProps } from "./types";
 
 const HIFZ_KEY = "hifz-progress";
