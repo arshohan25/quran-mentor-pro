@@ -12,6 +12,7 @@ import HifzView from "@/components/quran/HifzView";
 import BookmarksView from "@/components/quran/BookmarksView";
 import TopicBrowser from "@/components/quran/TopicBrowser";
 import JuzBrowser from "@/components/quran/JuzBrowser";
+import ReadingView from "@/components/quran/ReadingView";
 
 // Islamic SVG icons as components
 const IslamicBookIcon = ({ className = "" }: { className?: string }) => (
@@ -92,6 +93,7 @@ const IslamicJuzIcon = ({ className = "" }: { className?: string }) => (
 );
 
 const CATEGORIES = [
+  { id: "reading" as const, icon: IslamicMushafIcon, labelBn: "মুসহাফ", labelEn: "Mushaf", labelAr: "المصحف", active: true },
   { id: "translation" as const, icon: IslamicBookIcon, labelBn: "তরজমা ও তাফসির", labelEn: "Translation & Tafsir", labelAr: "الترجمة والتفسير", active: true },
   { id: "audio" as const, icon: IslamicMicIcon, labelBn: "অডিও তেলাওয়াত", labelEn: "Audio Recitation", labelAr: "التلاوة الصوتية", active: true },
   { id: "wordmeaning" as const, icon: IslamicWordIcon, labelBn: "শব্দার্থ", labelEn: "Word Meaning", labelAr: "معاني الكلمات", active: true },
@@ -115,6 +117,9 @@ export default function QuranPage() {
 
   const onBack = () => setActiveSection(null);
 
+  if (activeSection === "reading") {
+    return <ReadingView selectedSurah={selectedSurah} setSelectedSurah={setSelectedSurah} onBack={onBack} />;
+  }
   if (activeSection === "translation") {
     return <TranslationView selectedSurah={selectedSurah} setSelectedSurah={setSelectedSurah} onBack={onBack} />;
   }
