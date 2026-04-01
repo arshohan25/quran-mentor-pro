@@ -1,61 +1,33 @@
 
 
-# Rebuild Mushaf ReadingView — Pixel-Perfect Quran.com Clone
+# Add Mushaf Reading View — Quran.com Style Clean Layout
 
-## Current Problems (vs Quran.com)
+## Overview
+Create a new `ReadingView.tsx` component that displays Arabic-only Quran text in a clean, minimal Quran.com-inspired layout. No translations — pure reading experience.
 
-1. **Font**: Using Amiri (thin/light) — Quran.com uses **KFGQPC Uthmani Hafs** (bold, calligraphic)
-2. **Verse markers**: Green `hsl(170 100% 26%)` and oversized — should be subtle, same color as text, small
-3. **Bismillah**: Green colored — should match body text color
-4. **Surah header**: Simple card with green title — Quran.com uses a bordered frame with surah name + English + ayah count, neutral colors
-5. **Line spacing**: `2.6` is too wide — Quran.com uses ~`2.0`
-6. **Text color**: Yellowish `hsl(40 20% 88%)` — should be clean white/near-white
-7. **Page number**: `— 1 —` format — should be plain number
-8. **Header bar**: Two-row header is bulky — Quran.com has a single clean bar
-9. **Word spacing**: `4px` artificial spacing — should be natural
-10. **Text alignment**: `text-center` — Quran.com uses `text-justify`
+## New File: `src/components/quran/ReadingView.tsx`
 
-## Plan
+- **Header**: Teal `#008374` bar with back button, surah name (Arabic), SurahSelector dropdown, and ReadingSettings (font size, dark mode, tajweed toggle)
+- **Surah info bar**: Shows current page number, juz number, and hizb — small muted text below header
+- **Surah header**: Centered Arabic surah name + bismillah for non-Tawbah surahs, with a thin separator line
+- **Ayah display**: Right-to-left Arabic text using Amiri font, flowing inline paragraph style (not per-ayah cards). Verse numbers shown as teal `﴿١﴾` markers inline
+- **Pagination**: Chunk ayahs into pages (~15 per page). Simple prev/next buttons at bottom with page indicator
+- **Swipe support**: Touch swipe left/right for page navigation
+- **Tajweed**: Optional tajweed color-coding via existing `applyTajweedColors` utility
+- **Background**: Clean `bg-white dark:bg-gray-950`, no parchment or ornate styling
+- **Data**: Uses existing `useSurah()` hook with `quran-uthmani` edition
+- **Page/Juz display**: Uses `mushafPages.ts` data for page numbers
 
-### 1. Add KFGQPC Uthmani Font (index.css)
-- Add `@font-face` or Google Fonts import for **"KFGQPC HAFS Uthmanic Script"** (or closest available: `Scheherazade New` from Google Fonts as fallback — it's a proper Uthmani Naskh font, bold and calligraphic)
-- Update `.font-arabic` or add `.font-mushaf` class
+## File Changes
 
-### 2. Rewrite `ReadingView.tsx` — Full Overhaul
+### 1. `src/components/quran/ReadingView.tsx` (NEW)
+Full component as described above.
 
-**Header** (single clean bar):
-- Left: Back arrow + Page number
-- Center: Surah name (Arabic) via SurahSelector
-- Right: Juz number + Settings gear
-- Background: `#1B1B2F` (deep navy), thin bottom border
-- Single row, no secondary bar
+### 2. `src/components/quran/types.ts`
+Add `"reading"` back to `ActiveSection` type.
 
-**Surah intro block** (page 0 only):
-- Bordered rectangular frame (subtle border, no background fill)
-- Surah name in Arabic (white, not green)
-- Below: English name + ayah count in small muted text
-- Bismillah below frame in normal text color (not green)
-
-**Body text**:
-- Font: Scheherazade New (or KFGQPC if loadable), ~26px default
-- Color: `#FFFFFF` or `rgba(255,255,255,0.92)`
-- `text-align: justify`, `direction: rtl`
-- Line-height: `2.0`
-- No artificial word-spacing
-- Verse end markers: `﴿١﴾` inline, same color as text, ~60% font size, subtle
-
-**Page number** at bottom:
-- Plain number, centered, muted color, no dashes
-
-**Navigation bar** (sticky bottom):
-- Same as current but with neutral colors instead of green
-
-### 3. Update `ReadingSettings.tsx`
-- Font size range: 20–40 (mushaf needs larger range)
-- No other changes needed
-
-### Files Changed
-- `src/index.css` — Add Scheherazade New font import
-- `src/components/quran/ReadingView.tsx` — Complete rewrite
-- `src/components/quran/ReadingSettings.tsx` — Adjust min/max font size
+### 3. `src/pages/QuranPage.tsx`
+- Import `ReadingView`
+- Add "মুসহাফ" / "Mushaf" / "المصحف" category to `CATEGORIES` array with the existing `IslamicMushafIcon`
+- Add conditional render for `activeSection === "reading"`
 

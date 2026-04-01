@@ -46,8 +46,8 @@ export default function ReadingSettings({ fontSize, setFontSize, tajweedEnabled,
           <Slider
             value={[fontSize]}
             onValueChange={([v]) => setFontSize(v)}
-            min={20}
-            max={40}
+            min={16}
+            max={36}
             step={2}
           />
           <p className="font-arabic text-center" dir="rtl" style={{ fontSize: `${fontSize}px` }}>
