@@ -1,19 +1,33 @@
 
 
-# Remove Current Mushaf Ornate Style — Clean Minimal Layout
+# Add Mushaf Reading View — Quran.com Style Clean Layout
 
-## Changes in `src/components/quran/ReadingView.tsx`
+## Overview
+Create a new `ReadingView.tsx` component that displays Arabic-only Quran text in a clean, minimal Quran.com-inspired layout. No translations — pure reading experience.
 
-1. **Remove MushafFrame & SurahBanner** — stop importing and wrapping content in the ornate frame component
-2. **Replace parchment background** (`#F5EFE0` / `#1a1510`) with clean white/dark (`bg-white dark:bg-gray-950`)
-3. **Replace dark green header** (`#2D5016`) with a neutral or teal header (`#008374`)
-4. **Remove ornate elements**: gold/brown borders, diamond SVG dividers, gradient ornaments, decorative page number frame
-5. **Simplify surah header**: plain centered text instead of `SurahBanner` with wing ornaments
-6. **Simplify bismillah**: plain centered text, simple thin line divider instead of diamond ornament
-7. **Clean verse markers**: use teal `#008374` instead of dark green for `﴿١﴾` markers
-8. **Simple bottom page number**: plain text, no gradient lines
-9. **Clean page jump & progress bar**: match teal theme
-10. **Swipe indicator**: teal instead of green
+## New File: `src/components/quran/ReadingView.tsx`
 
-The `MushafFrame.tsx` file itself stays untouched (kept for future use), just no longer imported in ReadingView.
+- **Header**: Teal `#008374` bar with back button, surah name (Arabic), SurahSelector dropdown, and ReadingSettings (font size, dark mode, tajweed toggle)
+- **Surah info bar**: Shows current page number, juz number, and hizb — small muted text below header
+- **Surah header**: Centered Arabic surah name + bismillah for non-Tawbah surahs, with a thin separator line
+- **Ayah display**: Right-to-left Arabic text using Amiri font, flowing inline paragraph style (not per-ayah cards). Verse numbers shown as teal `﴿١﴾` markers inline
+- **Pagination**: Chunk ayahs into pages (~15 per page). Simple prev/next buttons at bottom with page indicator
+- **Swipe support**: Touch swipe left/right for page navigation
+- **Tajweed**: Optional tajweed color-coding via existing `applyTajweedColors` utility
+- **Background**: Clean `bg-white dark:bg-gray-950`, no parchment or ornate styling
+- **Data**: Uses existing `useSurah()` hook with `quran-uthmani` edition
+- **Page/Juz display**: Uses `mushafPages.ts` data for page numbers
+
+## File Changes
+
+### 1. `src/components/quran/ReadingView.tsx` (NEW)
+Full component as described above.
+
+### 2. `src/components/quran/types.ts`
+Add `"reading"` back to `ActiveSection` type.
+
+### 3. `src/pages/QuranPage.tsx`
+- Import `ReadingView`
+- Add "মুসহাফ" / "Mushaf" / "المصحف" category to `CATEGORIES` array with the existing `IslamicMushafIcon`
+- Add conditional render for `activeSection === "reading"`
 
