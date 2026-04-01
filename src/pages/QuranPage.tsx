@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import type { ActiveSection } from "@/components/quran/types";
-import ReadingView from "@/components/quran/ReadingView";
+
 import TranslationView from "@/components/quran/TranslationView";
 import AudioView from "@/components/quran/AudioView";
 import WordMeaningView from "@/components/quran/WordMeaningView";
@@ -92,7 +92,6 @@ const IslamicJuzIcon = ({ className = "" }: { className?: string }) => (
 );
 
 const CATEGORIES = [
-  { id: "reading" as const, icon: IslamicMushafIcon, labelBn: "মুসহাফ", labelEn: "Mushaf", labelAr: "المصحف", active: true },
   { id: "translation" as const, icon: IslamicBookIcon, labelBn: "তরজমা ও তাফসির", labelEn: "Translation & Tafsir", labelAr: "الترجمة والتفسير", active: true },
   { id: "audio" as const, icon: IslamicMicIcon, labelBn: "অডিও তেলাওয়াত", labelEn: "Audio Recitation", labelAr: "التلاوة الصوتية", active: true },
   { id: "wordmeaning" as const, icon: IslamicWordIcon, labelBn: "শব্দার্থ", labelEn: "Word Meaning", labelAr: "معاني الكلمات", active: true },
@@ -107,7 +106,7 @@ export default function QuranPage() {
   const [searchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState<ActiveSection>(() => {
     const s = searchParams.get("surah");
-    return s ? "reading" : null;
+    return s ? "translation" : null;
   });
   const [selectedSurah, setSelectedSurah] = useState(() => {
     const s = searchParams.get("surah");
@@ -116,9 +115,6 @@ export default function QuranPage() {
 
   const onBack = () => setActiveSection(null);
 
-  if (activeSection === "reading") {
-    return <ReadingView selectedSurah={selectedSurah} setSelectedSurah={setSelectedSurah} onBack={onBack} />;
-  }
   if (activeSection === "translation") {
     return <TranslationView selectedSurah={selectedSurah} setSelectedSurah={setSelectedSurah} onBack={onBack} />;
   }
@@ -137,7 +133,7 @@ export default function QuranPage() {
         selectedSurah={selectedSurah}
         setSelectedSurah={setSelectedSurah}
         onBack={onBack}
-        onNavigateToReading={(surah) => { setSelectedSurah(surah); setActiveSection("reading"); }}
+        onNavigateToReading={(surah) => { setSelectedSurah(surah); setActiveSection("translation"); }}
       />
     );
   }
@@ -145,7 +141,7 @@ export default function QuranPage() {
     return (
       <TopicBrowser
         onBack={onBack}
-        onNavigateToSurah={(surah) => { setSelectedSurah(surah); setActiveSection("reading"); }}
+        onNavigateToSurah={(surah) => { setSelectedSurah(surah); setActiveSection("translation"); }}
       />
     );
   }
@@ -153,7 +149,7 @@ export default function QuranPage() {
     return (
       <JuzBrowser
         onBack={onBack}
-        onNavigateToSurah={(surah) => { setSelectedSurah(surah); setActiveSection("reading"); }}
+        onNavigateToSurah={(surah) => { setSelectedSurah(surah); setActiveSection("translation"); }}
       />
     );
   }
