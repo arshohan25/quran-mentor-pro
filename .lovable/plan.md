@@ -1,77 +1,32 @@
 
-## লক্ষ্য
-মাইক্রোফোন যেন আলাদা বড় বক্সে না এসে **আয়াত লাইনের ইনলাইন mic আইকন** থেকে চালু/বন্ধ হয়, এবং একই লাইনে শব্দ-শব্দ রিভিল + ভুল হলে রেড মার্ক + সতর্ক সাউন্ড কাজ করে। সাথে আরবি ট্র্যাকিংকে বেশি tolerant ও dynamic করা।
 
-## সমস্যা নির্ণয়
-- `HifzView.tsx` এখন hidden ayah ক্লিক করলে পুরো row বদলে বড় `LiveRecitationCheck` কার্ড দেখায় (এটাই আপনি চান না)।
-- `LiveRecitationCheck.tsx` এ final transcript processing এখনও repeat/duplicate token case-এ mismatch তৈরি করে।
-- matching এখনো যথেষ্ট robust না (accent/weak voice/fuzzy উচ্চারণে fail করছে)।
-- **Do I know what the issue is?** হ্যাঁ।
+# ইনলাইন রেসিটেশন ফিক্স — শুধু মাইক আইকন + ওয়ার্ড রিভিল
 
-## ইমপ্লিমেন্টেশন প্ল্যান
-1. **Inline Recitation UX (No separate card)**
-   - `HifzView.tsx` এ hidden ayah row-এর inline `Mic` আইকনকে primary trigger করা হবে।
-   - mic চাপলে একই লাইনে recitation mode চালু হবে; বড় centered mic/cancel UI সরিয়ে ফেলা হবে।
-   - word reveal, current target, error state সব একই ayah row-এর ভিতরে render হবে।
+## সমস্যা
+এখন hidden ayah ক্লিক করলে পুরো row বদলে যায় — আলাদা mic button, progress bar, cancel button, error message সব আসে। ইউজার চান **কোনো বাড়তি UI না আসুক** — শুধু existing mic আইকনে ট্যাপ করলে recording শুরু হবে এবং **ব্লার্ড টেক্সট যেখানে আছে সেখানেই** word-by-word reveal হবে।
 
-2. **Advanced Arabic Tracking Engine**
-   - `arabicUtils.ts` এ matcher upgrade:
-     - stronger normalization (existing + consistency pass),
-     - phonetic confusion mapping,
-     - light affix handling,
-     - edit-distance similarity scoring।
-   - `isArabicWordMatch` কে score-based করা হবে (strict boolean না), dynamic threshold সহ।
+## কী করা হবে
 
-3. **Dynamic/Assist Matching Mode**
-   - তিনটি sensitivity mode যোগ: `Strict / Balanced / Assist` (default: Balanced)।
-   - Assist mode weak/unclear voice এর জন্য বেশি tolerant threshold ব্যবহার করবে।
-   - ছোট শব্দে strict, বড় শব্দে lenient threshold — dynamic scaling।
+### 1. `HifzView.tsx` — row layout অপরিবর্তিত রাখা
+- `isReciting` হলেও row-এর layout হুবহু একই থাকবে (mic icon + blurred text)।
+- `LiveRecitationCheck` component কে আলাদা card/block হিসেবে render করা বন্ধ।
+- পরিবর্তে `useArabicRecitationEngine` hook সরাসরি HifzView-এ ব্যবহার করা হবে।
+- Mic আইকনে ক্লিক = `toggleListening()` call।
+- Recording চলাকালীন mic আইকন pulse/red হবে (শুধু icon color change)।
+- Blurred text-এর জায়গায় word-by-word reveal render হবে — revealed words normal, current word highlighted, বাকি blurred। **কোনো progress bar, cancel button, error text block নেই।**
+- ভুল হলে শুধু current word red হবে + beep sound।
 
-4. **Speech Result Processing Fix**
-   - final results থেকে only new tokens process করার জন্য dedupe strategy (result index + token history)।
-   - `maxAlternatives` ব্যবহার করে best candidate বাছাই।
-   - duplicate/previously matched token হলে ignore (false error কমাতে)।
-   - beep only confirmed mismatch এ (rapid ভুল beep loop বন্ধ)।
+### 2. `LiveRecitationCheck.tsx` — অপ্রয়োজনীয় হবে
+- এই component আর ব্যবহার হবে না; logic সরাসরি HifzView-এ inline হবে `useArabicRecitationEngine` hook দিয়ে।
 
-5. **Inline Feedback & Flow**
-   - same line-এ:
-     - revealed words normal,
-     - current word highlight,
-     - wrong target red mark,
-     - micro progress indicator।
-   - correct word বললে সঙ্গে সঙ্গে reveal advance; ভুল হলে সামনে যাবে না।
+### 3. কোনো বাড়তি UI element নেই
+- No progress bar
+- No cancel button  
+- No error text below
+- No "last spoken" text
+- শুধু: mic icon (existing) + word reveal (existing text position) + error word red color + beep sound
 
-6. **Hifz Integration Stability**
-   - এক সময়ে একটিই active recitation row।
-   - stop/cancel/restart এ clean state reset।
-   - complete হলে auto unhide + memorized mark (current behavior রেখে stable করা)।
+## ফাইল পরিবর্তন
+1. **EDIT** `src/components/quran/HifzView.tsx` — `isReciting` branch-এ LiveRecitationCheck সরিয়ে inline word-by-word render; `useArabicRecitationEngine` hook import ও ব্যবহার
+2. `src/components/quran/LiveRecitationCheck.tsx` — আর import হবে না (ফাইল রাখা যেতে পারে future use-এ)
 
-## টেকনিক্যাল ডিটেইলস
-```text
-Mic click (inline row)
- -> start speech session
- -> on each NEW final token:
-    bestScore = max(score(token, expectedWord), alternatives)
-    if bestScore >= threshold(mode, wordLength):
-       reveal++
-       clear error
-    else if not duplicate/old token:
-       set errorIndex(current)
-       play warning beep (cooldown + confirmation)
- -> when reveal == totalWords:
-    stop session
-    complete callback
-```
-
-## ফাইল পরিবর্তন (পরবর্তী ইমপ্লিমেন্টে)
-- `src/components/quran/HifzView.tsx` (inline mic trigger + row-level recitation rendering)
-- `src/components/quran/LiveRecitationCheck.tsx` (card থেকে inline engine/UI refactor)
-- `src/utils/arabicUtils.ts` (advanced dynamic Arabic matcher)
-- (প্রয়োজনে) `src/hooks/useArabicRecitationEngine.ts` (logic আলাদা করে maintainable করা)
-
-## ভেরিফিকেশন প্ল্যান
-- mobile viewport (384x655) এ inline mic থেকে শুরু হচ্ছে কিনা।
-- large popup/card না এসে একই লাইনে reveal হচ্ছে কিনা।
-- ভুল শব্দে red + beep + block, সঠিক বললে unblock।
-- weak voice test এ Assist mode এ recognition উন্নত হচ্ছে কিনা।
-- Surah Al-Fatiha full pass: no random beep loop, no stalled progress।
