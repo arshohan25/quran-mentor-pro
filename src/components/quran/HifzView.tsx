@@ -213,7 +213,7 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
                                 toggleMemorized(selectedSurah, ayah.numberInSurah);
                               }
                             }}
-                            onCancel={() => setActiveRecitationAyah(null)}
+                            onCancel={cancelRecitation}
                           />
                         </div>
                       );
