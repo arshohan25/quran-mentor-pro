@@ -25,9 +25,7 @@ function compareTexts(original: string, recognized: string): ComparisonResult {
   return { original, recognized, matches };
 }
 
-function normalizeArabic(text: string): string {
-  return text.replace(/[\u064B-\u065F\u0670]/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").trim();
-}
+import { normalizeArabic } from "@/utils/arabicUtils";
 
 export default function PracticePage() {
   const { t } = useLanguage();

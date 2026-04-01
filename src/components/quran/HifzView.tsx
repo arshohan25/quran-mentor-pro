@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Eye, EyeOff, BarChart3, CheckCircle, Circle, GraduationCap } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, BarChart3, CheckCircle, Circle, GraduationCap, Mic } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
