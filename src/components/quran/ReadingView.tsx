@@ -1,20 +1,15 @@
-import { useState, useMemo, useEffect, useRef } from "react";
-import { ArrowLeft, Search } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import { ArrowLeft, Search, BookOpen, AlignJustify } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { juzList } from "@/data/juzData";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import TajweedText from "@/components/TajweedText";
 import SurahSelector from "./SurahSelector";
 import ReadingSettings from "./ReadingSettings";
-import AyahActions from "./AyahActions";
+import VerseByVerseMode from "./VerseByVerseMode";
+import MushafReadingMode from "./MushafReadingMode";
 import { useBookmark } from "@/hooks/useBookmark";
-
-function toArabicNum(n: number): string {
-  const arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
-  return String(n).replace(/\d/g, (d) => arabicDigits[parseInt(d)]);
-}
 
 function getJuzNumber(surahNumber: number, ayahNumber: number): number {
   for (let i = juzList.length - 1; i >= 0; i--) {
@@ -24,6 +19,8 @@ function getJuzNumber(surahNumber: number, ayahNumber: number): number {
   return 1;
 }
 
+type ViewMode = "verse" | "mushaf";
+
 interface QuranSectionProps {
   selectedSurah: number;
   setSelectedSurah: (n: number) => void;
@@ -31,10 +28,12 @@ interface QuranSectionProps {
 }
 
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
-  const { saveLastRead, isFavorite, toggleFavorite } = useBookmark();
+  const { saveLastRead } = useBookmark();
   const { t } = useLanguage();
-  const scrollRef = useRef<HTMLDivElement>(null);
 
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try { return (localStorage.getItem("quranViewMode") as ViewMode) || "verse"; } catch { return "verse"; }
+  });
   const [tajweedEnabled, setTajweedEnabled] = useState(() => {
     try { return localStorage.getItem("tajweedEnabled") !== "false"; } catch { return true; }
   });
@@ -43,6 +42,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   });
   const [showPageJump, setShowPageJump] = useState(false);
   const [pageJumpInput, setPageJumpInput] = useState("");
+  const [readProgress, setReadProgress] = useState(0);
 
   const handleFontSizeChange = (n: number) => {
     setArabicFontSize(n);
@@ -52,6 +52,10 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     const next = !tajweedEnabled;
     setTajweedEnabled(next);
     try { localStorage.setItem("tajweedEnabled", String(next)); } catch {}
+  };
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    try { localStorage.setItem("quranViewMode", mode); } catch {}
   };
 
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
@@ -66,53 +70,31 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     }));
   }, [data]);
 
-  // Reading progress
-  const [readProgress, setReadProgress] = useState(0);
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const handleScroll = () => {
-      const pct = el.scrollHeight <= el.clientHeight ? 100 : Math.round((el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100);
-      setReadProgress(pct);
-    };
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, [ayahs]);
-
-  // Save last read on scroll
-  useEffect(() => {
-    if (ayahs.length > 0) {
-      saveLastRead(selectedSurah, 1, ayahs[0]?.page || 1, "reading");
-    }
-  }, [selectedSurah, ayahs, saveLastRead]);
-
-  const handleSurahChange = (n: number) => {
-    setSelectedSurah(n);
-    scrollRef.current?.scrollTo({ top: 0 });
-  };
+  const handleSurahChange = (n: number) => { setSelectedSurah(n); };
 
   const handlePageJump = () => {
     const num = parseInt(pageJumpInput, 10);
     if (isNaN(num) || num < 1 || num > 604) return;
     setShowPageJump(false);
     setPageJumpInput("");
-    // Find surah containing this page
-    const targetSurah = surahList.find((s, i) => {
-      const nextStart = surahList[i + 1];
-      if (!nextStart) return true;
-      return num >= 1; // simplified - just navigate
-    });
-    if (targetSurah) setSelectedSurah(targetSurah.number);
   };
 
   const firstAyah = ayahs[0];
   const currentJuz = firstAyah ? getJuzNumber(selectedSurah, 1) : 1;
   const currentPage = firstAyah?.page || 1;
 
+  const onProgressChange = useCallback((pct: number) => setReadProgress(pct), []);
+
+  // Save last read
+  const handleProgressForSave = useCallback((pct: number) => {
+    setReadProgress(pct);
+    if (firstAyah) saveLastRead(selectedSurah, 1, firstAyah.page || 1, "reading");
+  }, [firstAyah, selectedSurah, saveLastRead]);
+
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className={`h-screen flex flex-col overflow-hidden ${viewMode === "mushaf" ? "bg-[#F5EFE0] dark:bg-[#1a1510]" : "bg-background"}`}>
       {/* Header */}
-      <header className="bg-[#008374] dark:bg-[#006B5F] text-white">
+      <header className={viewMode === "mushaf" ? "bg-[#2D5016] dark:bg-[#1a3009] text-white" : "bg-[#008374] dark:bg-[#006B5F] text-white"}>
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             <button onClick={onBack} className="hover:opacity-80 p-1">
@@ -129,12 +111,31 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
               </button>
             </div>
           </div>
-          <ReadingSettings
-            fontSize={arabicFontSize}
-            setFontSize={handleFontSizeChange}
-            tajweedEnabled={tajweedEnabled}
-            onTajweedToggle={handleTajweedToggle}
-          />
+          <div className="flex items-center gap-1">
+            {/* Mode toggle */}
+            <div className="flex bg-white/15 rounded-md p-0.5">
+              <button
+                onClick={() => handleViewModeChange("verse")}
+                className={`p-1.5 rounded transition-colors ${viewMode === "verse" ? "bg-white/25 shadow-sm" : "hover:bg-white/10"}`}
+                title={t("আয়াত ভিউ", "Verse by Verse", "آية بآية")}
+              >
+                <AlignJustify className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => handleViewModeChange("mushaf")}
+                className={`p-1.5 rounded transition-colors ${viewMode === "mushaf" ? "bg-white/25 shadow-sm" : "hover:bg-white/10"}`}
+                title={t("মুসহাফ", "Reading", "مصحف")}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <ReadingSettings
+              fontSize={arabicFontSize}
+              setFontSize={handleFontSizeChange}
+              tajweedEnabled={tajweedEnabled}
+              onTajweedToggle={handleTajweedToggle}
+            />
+          </div>
         </div>
         {/* Progress bar */}
         <div className="h-0.5 bg-white/20">
@@ -144,7 +145,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
 
       {/* Page jump */}
       {showPageJump && (
-        <div className="bg-[#008374]/90 dark:bg-[#006B5F]/95 px-4 py-2.5 flex items-center gap-2">
+        <div className={`${viewMode === "mushaf" ? "bg-[#2D5016]/90 dark:bg-[#1a3009]/95" : "bg-[#008374]/90 dark:bg-[#006B5F]/95"} px-4 py-2.5 flex items-center gap-2`}>
           <input
             type="number" min={1} max={604}
             value={pageJumpInput}
@@ -161,111 +162,29 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
       )}
 
       {/* Content */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
-        {isLoading ? (
-          <div className="space-y-4 p-4">
-            {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
-          </div>
-        ) : (
-          <>
-            {/* Surah intro header */}
-            <div className="bg-gradient-to-b from-[#008374]/5 to-transparent dark:from-[#008374]/10 py-6 px-4 text-center border-b border-border">
-              <div className="inline-block px-6 py-3 rounded-2xl bg-[#008374]/5 dark:bg-[#008374]/10 mb-3">
-                <p className="font-arabic text-2xl md:text-3xl font-bold text-foreground">
-                  {surah?.name}
-                </p>
-              </div>
-              <p className="text-sm font-semibold text-foreground">
-                {selectedSurah}. {surah?.englishName}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {surah?.englishNameTranslation} · {surah?.numberOfAyahs} {t("আয়াত", "Verses", "آيات")} · {surah?.revelationType === "Meccan" ? t("মক্কী", "Meccan", "مكية") : t("মাদানী", "Medinan", "مدنية")}
-              </p>
-
-              {/* Bismillah */}
-              {selectedSurah !== 9 && (
-                <div className="mt-4 pt-4 border-t border-border/50">
-                  <p className="font-arabic text-xl md:text-2xl text-foreground font-bold leading-relaxed">
-                    بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t(
-                      "পরম করুণাময় অতি দয়ালু আল্লাহর নামে",
-                      "In the Name of Allah, the Most Compassionate, Most Merciful",
-                      "بسم الله الرحمن الرحيم"
-                    )}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Ayah list */}
-            <div className="divide-y divide-border">
-              {ayahs.map((ayah) => {
-                const bookmarkKey = `${selectedSurah}:${ayah.numberInSurah}`;
-                const bookmarked = isFavorite(selectedSurah, ayah.numberInSurah);
-                return (
-                  <div key={ayah.number} className="px-4 py-3 hover:bg-accent/5 transition-colors">
-                    {/* Action bar */}
-                    <AyahActions
-                      arabicText={ayah.text}
-                      translation={ayah.bengaliText || ayah.englishText}
-                      surahName={surah?.englishName}
-                      surahNumber={selectedSurah}
-                      ayahNumber={ayah.numberInSurah}
-                      onBookmark={() => toggleFavorite(selectedSurah, ayah.numberInSurah)}
-                      isBookmarked={bookmarked}
-                    />
-
-                    {/* Arabic text */}
-                    <div className="mt-3 text-right" dir="rtl">
-                      <p className="font-arabic font-bold text-foreground leading-[2.2]" style={{ fontSize: `${arabicFontSize}px` }}>
-                        {tajweedEnabled ? (
-                          <TajweedText text={ayah.text} enabled={true} className="inline" />
-                        ) : (
-                          <span>{ayah.text}</span>
-                        )}
-                        <span className="inline-flex items-center justify-center mx-1 text-[#008374] dark:text-[#4ECDC4] font-bold select-none align-middle"
-                              style={{ fontSize: `${Math.max(12, arabicFontSize - 6)}px`, fontFamily: 'serif' }}>
-                          ﴿{toArabicNum(ayah.numberInSurah)}﴾
-                        </span>
-                      </p>
-                    </div>
-
-                    {/* Translation */}
-                    {(ayah.bengaliText || ayah.englishText) && (
-                      <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                        {ayah.bengaliText || ayah.englishText}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Surah navigation */}
-            <div className="flex items-center justify-between px-4 py-4 border-t border-border bg-muted/30">
-              {selectedSurah > 1 && (
-                <button
-                  onClick={() => handleSurahChange(selectedSurah - 1)}
-                  className="text-xs text-[#008374] dark:text-[#4ECDC4] font-medium hover:underline"
-                >
-                  ← {surahList.find(s => s.number === selectedSurah - 1)?.englishName}
-                </button>
-              )}
-              <div className="flex-1" />
-              {selectedSurah < 114 && (
-                <button
-                  onClick={() => handleSurahChange(selectedSurah + 1)}
-                  className="text-xs text-[#008374] dark:text-[#4ECDC4] font-medium hover:underline"
-                >
-                  {surahList.find(s => s.number === selectedSurah + 1)?.englishName} →
-                </button>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+      {isLoading ? (
+        <div className="space-y-4 p-4 flex-1">
+          {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
+        </div>
+      ) : viewMode === "verse" ? (
+        <VerseByVerseMode
+          selectedSurah={selectedSurah}
+          setSelectedSurah={setSelectedSurah}
+          ayahs={ayahs}
+          tajweedEnabled={tajweedEnabled}
+          arabicFontSize={arabicFontSize}
+          onProgressChange={handleProgressForSave}
+        />
+      ) : (
+        <MushafReadingMode
+          selectedSurah={selectedSurah}
+          setSelectedSurah={setSelectedSurah}
+          arabicAyahs={data?.arabic.ayahs || []}
+          tajweedEnabled={tajweedEnabled}
+          arabicFontSize={arabicFontSize}
+          onProgressChange={handleProgressForSave}
+        />
+      )}
     </div>
   );
 }
