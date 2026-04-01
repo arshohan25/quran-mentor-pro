@@ -140,6 +140,20 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
               </button>
               {!showDashboard && (
                 <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="p-1.5 rounded-lg text-primary-foreground/60 hover:text-primary-foreground transition-colors" title={t("সেনসিটিভিটি", "Sensitivity", "الحساسية")}>
+                        <Settings2 className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-[140px]">
+                      <DropdownMenuRadioGroup value={sensitivityMode} onValueChange={handleSensitivityChange}>
+                        <DropdownMenuRadioItem value="strict">{t("কড়া", "Strict", "صارم")}</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="balanced">{t("মাঝামাঝি", "Balanced", "متوازن")}</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="assist">{t("সহজ", "Assist", "مساعد")}</DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <button onClick={() => {
                     if (allHidden) setHiddenAyahs(prev => { const n = new Set(prev); currentAyahs.forEach(a => n.delete(a.number)); return n; });
                     else setHiddenAyahs(prev => { const n = new Set(prev); currentAyahs.forEach(a => n.add(a.number)); return n; });
