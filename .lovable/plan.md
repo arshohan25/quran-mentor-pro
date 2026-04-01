@@ -1,60 +1,69 @@
 
+# Live Recitation কাজ না করার ফিক্স প্ল্যান
 
-# Real-Time Voice-Guided Hifz Practice — Word-by-Word Live Feedback
+## সমস্যা (কেন এখন fail করছে)
+1. `normalizeArabic()` খুব basic — Quran text-এর `ٱ`, extended tashkeel/waqf marks remove হচ্ছে না, তাই correct recitation-ও mismatch ধরা হচ্ছে।
+2. `processedLengthRef` + `interimResults` লজিক transcript drift করছে; ভুল হলে index/flow নষ্ট হয়ে শুধু beep loop হয়।
+3. ভুল detect হলে recovery weak — user correct করলেও matcher পুরোনো transcript state-এ আটকে যায়।
+4. UI-তে current word খুব faint (`text-muted-foreground/20`), mobile-এ “দেখা যাচ্ছে না” মনে হয়।
 
-## Overview
-When a user hides an ayah in HifzView and starts reciting, the system will reveal words one-by-one in real-time as they speak. If a word is wrong, it shows red, plays an error sound, and blocks progress until corrected.
+## কী কী বদলানো হবে
 
-## How It Works
+### 1) Arabic matching engine hardening (`src/utils/arabicUtils.ts`)
+- `normalizeArabic()` Quran-text friendly করা:
+  - সব harakat + extended Quran marks remove (`\u0610-\u061A`, `\u064B-\u065F`, `\u0670`, `\u06D6-\u06ED`)
+  - `ٱ/أ/إ/آ` → `ا`, `ى` → `ي`, `ة` → `ه`, `ؤ` → `و`, `ئ` → `ي`
+  - tatweel/punctuation/extra spaces clean
+- নতুন helper add:
+  - `tokenizeArabicWords(text)`
+  - `isArabicWordMatch(expected, spoken)` (normalized exact match + common form fallback)
 
+### 2) Live recognition flow rewrite (`src/components/quran/LiveRecitationCheck.tsx`)
+- `processedLengthRef` বাদ দিয়ে stable sequential matcher:
+  - expected words list
+  - recognized final tokens queue
+  - সবসময় next expected word-এর সাথে compare
+- `onresult` এ শুধু নতুন `final` results score হবে (interim শুধু display)।
+- ভুল হলে:
+  - `errorIndex` set
+  - beep cooldown (rapid continuous beep বন্ধ)
+  - index এগোবে না
+- সঠিক বললে:
+  - error clear
+  - same point থেকে reveal continue
+- completion: সব শব্দ match হলে success beep + `onComplete()`।
+
+### 3) Visibility/UX fix (`src/components/quran/LiveRecitationCheck.tsx`)
+- current target word readable highlight করা (faint pulse নয়)।
+- unrevealed অংশ stronger placeholder style।
+- ভুল শব্দে স্পষ্ট red mark + warning text persist until correction।
+- speech error/permisson fallback inline message যোগ করা।
+
+### 4) Hifz integration polish (`src/components/quran/HifzView.tsx`)
+- active recitation block mobile-এ auto-scroll into view।
+- recitation start/cancel এ state reset clean করা (error/transcript leak না থাকে)।
+- hidden ayah practice trigger flow unchanged, কিন্তু restart behavior stable করা।
+
+### 5) Regression compatibility (`src/pages/PracticePage.tsx`)
+- updated normalization utility ব্যবহার করে existing practice compare flow consistent রাখা।
+
+## টেকনিক্যাল ডিটেইলস
 ```text
-Hidden Ayah: [████████████████████████]
-User recites "بسم" → [بِسْمِ] ████████████████
-User recites "الله" → [بِسْمِ ٱللَّهِ] ██████████████
-User says wrong word → [بِسْمِ ٱللَّهِ] [الرحيم] ← RED + beep
-User corrects "الرحمن" → [بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ] ████
-...continues until complete
+Before:
+fullTranscript + processedLength + interim rewrites
+=> false mismatch + drift + beep loop
+
+After:
+onresult(new final segment only)
+  -> tokenize
+  -> compare token with expected[current]
+     - match: reveal++, clear error
+     - mismatch: set error, beep (cooldown), hold current
 ```
 
-## Changes
-
-### 1. New Component: `src/components/quran/LiveRecitationCheck.tsx`
-A self-contained component that takes an ayah's Arabic text and handles the entire live recitation flow:
-
-- **Props**: `ayahText: string`, `onComplete: () => void`, `onCancel: () => void`
-- **State**: `revealedWordIndex` (how many words revealed), `currentError: number | null` (index of wrong word), `isListening: boolean`
-- **Logic**:
-  - Splits ayah text into words array
-  - Uses Web Speech API (`continuous: true`, `interimResults: true`, `lang: "ar-SA"`)
-  - On each speech result, compares the latest recognized word against `words[revealedWordIndex]` using `normalizeArabic()` (reuse from PracticePage)
-  - **Correct**: Increment `revealedWordIndex`, word appears in green briefly then normal
-  - **Wrong**: Set `currentError` to that index, word appears in red with underline, play error beep sound (Web Audio API — short 400Hz tone), do NOT increment index
-  - When next correct word is spoken, clear error and proceed
-  - When all words revealed: auto-stop, call `onComplete()`
-- **UI**: 
-  - Row of words: revealed words shown normally, current position has a pulsing cursor, unrevealed words are blurred/hidden
-  - Mic button at bottom (same style as PracticePage)
-  - Progress indicator: "3/7 words"
-
-### 2. Error Sound Effect
-- Use Web Audio API (`AudioContext`) to generate a short beep (no external file needed)
-- ~200ms, 400Hz sine wave, volume 0.3
-- Play on wrong word detection
-
-### 3. Integrate into `src/components/quran/HifzView.tsx`
-- Add state: `activeRecitationAyah: number | null`
-- When user taps a **hidden** ayah, instead of just toggling visibility, start `LiveRecitationCheck` for that ayah
-- Replace the blurred ayah row with the `LiveRecitationCheck` component inline
-- On complete: mark as memorized (optional prompt), clear `activeRecitationAyah`
-- On cancel: return to blurred state
-- Add a small mic icon indicator on hidden ayahs to hint "tap to practice"
-
-### 4. Reuse Utilities
-- Move `normalizeArabic()` from `PracticePage.tsx` to a shared util (e.g., `src/utils/arabicUtils.ts`) so both components can use it
-
-## Files Changed
-1. **NEW** `src/utils/arabicUtils.ts` — shared `normalizeArabic()` function
-2. **NEW** `src/components/quran/LiveRecitationCheck.tsx` — word-by-word live recitation component
-3. **EDIT** `src/components/quran/HifzView.tsx` — integrate LiveRecitationCheck on hidden ayah tap
-4. **EDIT** `src/pages/PracticePage.tsx` — import `normalizeArabic` from shared util
-
+## টেস্ট প্ল্যান (implementation শেষে)
+1. Surah 1 ayah 1 (`ٱللَّهِ` সহ) এ false mismatch না হওয়া।
+2. ভুল হলে red mark + single warning beep + no forward progress।
+3. সাথে সাথে correct করলে same point থেকে progress।
+4. long ayah-এ continuous reveal stuck না হওয়া।
+5. mobile viewport (384x655) এ recitation UI clearly visible থাকা।
