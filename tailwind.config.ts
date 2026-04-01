@@ -15,8 +15,9 @@ export default {
     extend: {
       fontFamily: {
         arabic: ["Amiri", "serif"],
-        bengali: ["Hind Siliguri", "Noto Sans Bengali", "sans-serif"],
+        bengali: ["Atma", "Hind Siliguri", "Noto Sans Bengali", "sans-serif"],
         bengaliDisplay: ["Galada", "cursive"],
+        bengaliSerif: ["Tiro Bangla", "Noto Serif Bengali", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",
