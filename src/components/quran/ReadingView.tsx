@@ -177,7 +177,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
           {surahInfo?.englishName} — {surahInfo?.englishNameTranslation}
         </p>
         <p className="text-xs text-white/30">
-          {surahInfo?.numberOfAyahs} {t("আয়াত", "Ayahs", "آيات")} · {surahInfo?.revealType === "Meccan" ? t("মাক্কী", "Meccan", "مكية") : t("মাদানী", "Medinan", "مدنية")}
+          {surahInfo?.numberOfAyahs} {t("আয়াত", "Ayahs", "آيات")} · {surahInfo?.revelationType === "Meccan" ? t("মাক্কী", "Meccan", "مكية") : t("মাদানী", "Medinan", "مدنية")}
         </p>
 
         {/* Bismillah */}
