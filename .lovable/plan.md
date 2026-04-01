@@ -1,32 +1,30 @@
 
 
-# ইনলাইন রেসিটেশন ফিক্স — শুধু মাইক আইকন + ওয়ার্ড রিভিল
+# ইনলাইন রেসিটেশন ফিক্স — এক ট্যাপে শুরু + সেনসিটিভিটি সেটিংস
 
 ## সমস্যা
-এখন hidden ayah ক্লিক করলে পুরো row বদলে যায় — আলাদা mic button, progress bar, cancel button, error message সব আসে। ইউজার চান **কোনো বাড়তি UI না আসুক** — শুধু existing mic আইকনে ট্যাপ করলে recording শুরু হবে এবং **ব্লার্ড টেক্সট যেখানে আছে সেখানেই** word-by-word reveal হবে।
+1. **দুইবার ট্যাপ লাগছে**: Hidden ayah-এ mic ক্লিক করলে `startRecitation()` শুধু `activeRecitationAyah` সেট করে, কিন্তু listening শুরু করে না। তারপর আবার mic চাপতে হয় `toggleListening()` call করতে — এটাই "দুই বার চাপ" সমস্যা।
+2. **সেনসিটিভিটি সেটিংস নেই**: mode হার্ডকোডেড `"balanced"` — ইউজার বদলাতে পারে না।
 
-## কী করা হবে
+## সমাধান
 
-### 1. `HifzView.tsx` — row layout অপরিবর্তিত রাখা
-- `isReciting` হলেও row-এর layout হুবহু একই থাকবে (mic icon + blurred text)।
-- `LiveRecitationCheck` component কে আলাদা card/block হিসেবে render করা বন্ধ।
-- পরিবর্তে `useArabicRecitationEngine` hook সরাসরি HifzView-এ ব্যবহার করা হবে।
-- Mic আইকনে ক্লিক = `toggleListening()` call।
-- Recording চলাকালীন mic আইকন pulse/red হবে (শুধু icon color change)।
-- Blurred text-এর জায়গায় word-by-word reveal render হবে — revealed words normal, current word highlighted, বাকি blurred। **কোনো progress bar, cancel button, error text block নেই।**
-- ভুল হলে শুধু current word red হবে + beep sound।
+### 1. এক ট্যাপে listening শুরু (`HifzView.tsx`)
+- `startRecitation()` এ `setActiveRecitationAyah()` সেট করার পর, `useEffect` দিয়ে যখন `activeRecitationAyah` বদলায় এবং `recitationAyahText` পাওয়া যায়, তখন auto `startListening()` call করা হবে।
+- ফলে hidden ayah-এ একবার ট্যাপ = সরাসরি recording শুরু।
 
-### 2. `LiveRecitationCheck.tsx` — অপ্রয়োজনীয় হবে
-- এই component আর ব্যবহার হবে না; logic সরাসরি HifzView-এ inline হবে `useArabicRecitationEngine` hook দিয়ে।
+### 2. সেনসিটিভিটি সেটিংস (`HifzView.tsx`)
+- Header-এ একটি ছোট settings icon যোগ করা হবে (existing `ReadingSettings` pattern follow করে)।
+- তিনটি mode: **Strict** (কড়া), **Balanced** (মাঝামাঝি), **Assist** (সহজ)।
+- `localStorage` এ সেভ থাকবে, default `"balanced"`।
+- এই mode `useArabicRecitationEngine` hook-এ pass হবে।
 
-### 3. কোনো বাড়তি UI element নেই
-- No progress bar
-- No cancel button  
-- No error text below
-- No "last spoken" text
-- শুধু: mic icon (existing) + word reveal (existing text position) + error word red color + beep sound
+### 3. Recitation engine-এ mode পরিবর্তন সাপোর্ট
+- `useArabicRecitationEngine` already `mode` parameter নেয় — শুধু HifzView থেকে dynamic value pass করলেই হবে।
 
 ## ফাইল পরিবর্তন
-1. **EDIT** `src/components/quran/HifzView.tsx` — `isReciting` branch-এ LiveRecitationCheck সরিয়ে inline word-by-word render; `useArabicRecitationEngine` hook import ও ব্যবহার
-2. `src/components/quran/LiveRecitationCheck.tsx` — আর import হবে না (ফাইল রাখা যেতে পারে future use-এ)
+1. **EDIT** `src/components/quran/HifzView.tsx`
+   - `startRecitation` → auto-start listening via useEffect
+   - Sensitivity mode state + localStorage persist
+   - Header-এ mode selector (ToggleGroup বা DropdownMenu)
+   - `useArabicRecitationEngine(recitationAyahText, selectedMode, handleRecitationComplete)`
 
