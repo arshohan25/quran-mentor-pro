@@ -115,9 +115,6 @@ export default function QuranPage() {
 
   const onBack = () => setActiveSection(null);
 
-  if (activeSection === "reading") {
-    return <ReadingView selectedSurah={selectedSurah} setSelectedSurah={setSelectedSurah} onBack={onBack} />;
-  }
   if (activeSection === "translation") {
     return <TranslationView selectedSurah={selectedSurah} setSelectedSurah={setSelectedSurah} onBack={onBack} />;
   }
