@@ -29,7 +29,7 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
   const currentSurah = surahList.find((s) => s.number === selectedSurah);
 
-  useEffect(() => { setPage(0); setHiddenAyahs(new Set()); }, [selectedSurah]);
+  useEffect(() => { setPage(0); setHiddenAyahs(new Set()); setActiveRecitationAyah(null); }, [selectedSurah]);
 
   const isMemorized = (surah: number, ayahNum: number) => (hifzProgress[surah] || []).includes(ayahNum);
 
