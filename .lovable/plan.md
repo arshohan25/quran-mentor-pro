@@ -1,23 +1,24 @@
 
 
-# দৈনিক আমলে নতুন আমল যোগ করা
+# দৈনিক আমল — সাপ্তাহিক/মাসিক পরিসংখ্যান চার্ট
 
 ## কী যোগ হবে
-বর্তমানে ১৭টি আমল আছে। নতুন ৮টি আমল যোগ হবে (id 18-25):
+Progress card-এর নিচে একটি **Statistics** সেকশন — সাপ্তাহিক/মাসিক toggle সহ:
 
-| # | আমল | ক্যাটাগরি | রেফারেন্স |
-|---|------|-----------|-----------|
-| 18 | তাহাজ্জুদ নামাজ | night | সহীহ মুসলিম ১১৬৩ |
-| 19 | সালাতুল ইস্তিখারা | sunnah | সহীহ বুখারী ১১৬২ |
-| 20 | নফল রোজা (সোম-বৃহস্পতি) | sunnah | তিরমিযী ৭৪৫ |
-| 21 | দান/সাদাকাহ জারিয়া | sunnah | সহীহ মুসলিম ১৬৩১ |
-| 22 | সূরা ইখলাস ৩ বার | morning | সহীহ মুসলিম ৮১১ |
-| 23 | ঘুমের আগে ৩ কুল পড়া | night | সহীহ বুখারী ৫০১৭ |
-| 24 | সালাতুদ দুহা (চাশত) | salah | সহীহ মুসলিম ৭২০ |
-| 25 | ইলম শিক্ষা/অন্যকে শেখানো | sunnah | তিরমিযী ২৬৮২ |
+1. **Bar chart**: গত ৭/৩০ দিনে প্রতিদিন কতটি আমল সম্পন্ন হয়েছে (recharts BarChart ব্যবহার করে, HifzProgressChart-এর প্যাটার্ন অনুসরণ)
+2. **Summary stats**: মোট সম্পন্ন আমল, গড় প্রতিদিন, সর্বোচ্চ দিন
+3. **Top amals list**: কোন আমল সবচেয়ে বেশি দিন করা হয়েছে (top 5)
 
-প্রতিটিতে আরবি টেক্সট, bn/en/ar অনুবাদ, হাদিস রেফারেন্স, ফযিলত (benefit), এবং targetCount থাকবে।
+## ডেটা সোর্স
+localStorage-এ ইতোমধ্যে `daily-amal-YYYY-MM-DD` কী দিয়ে completed amal IDs সেভ আছে। গত ৭/৩০ দিনের কী scan করে চার্ট ডেটা তৈরি হবে।
+
+## UI ডিজাইন
+- Week/Month toggle (দুইটি pill button)
+- Bar chart: X-axis = দিন, Y-axis = completed count, max line = 25
+- Summary row: ৩টি stat card (মোট, গড়, সেরা দিন)
+- Top amals: ছোট list — আমলের নাম + কতদিন করা হয়েছে
 
 ## ফাইল পরিবর্তন
-1. **EDIT** `src/data/dailyAmalData.ts` — ৮টি নতুন আমল array-তে যোগ
+1. **NEW** `src/components/DailyAmalStats.tsx` — চার্ট + stats কম্পোনেন্ট (recharts BarChart, localStorage read)
+2. **EDIT** `src/pages/DailyAmalPage.tsx` — Progress card-এর পরে `<DailyAmalStats />` import ও render
 
