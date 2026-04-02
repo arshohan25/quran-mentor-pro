@@ -45,6 +45,7 @@ function AnimatedRoutes() {
         <Route path="/tasbih" element={<PageTransition><TasbihPage /></PageTransition>} />
         <Route path="/dua" element={<PageTransition><DuaPage /></PageTransition>} />
         <Route path="/hijri" element={<PageTransition><HijriCalendarPage /></PageTransition>} />
+        <Route path="/daily-amal" element={<PageTransition><DailyAmalPage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

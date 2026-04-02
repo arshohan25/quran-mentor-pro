@@ -47,6 +47,12 @@ const Index = () => {
       path: "/hijri",
     },
     {
+      icon: ListChecks,
+      title: t("দৈনিক আমল", "Daily Amal", "الأعمال اليومية"),
+      desc: t("রেফারেন্সসহ দৈনিক আমল ও ফযিলত", "Daily deeds with references & rewards", "الأعمال اليومية مع المراجع"),
+      path: "/daily-amal",
+    },
+    {
       icon: BookOpen,
       title: t("নামাজ শিক্ষা", "Prayer Guide", "دليل الصلاة"),
       desc: t("চার মাযহাব অনুযায়ী নামাজ", "Prayer rules by 4 Madhabs", "أحكام الصلاة"),
