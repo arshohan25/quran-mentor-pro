@@ -1,4 +1,4 @@
-import { Book, Mic, Headphones, BookOpen, Clock, BookMarked, Brain, Heart, Calendar, ChevronRight, Compass, Hash, BookHeart, CalendarDays, Bell, BellOff } from "lucide-react";
+import { Book, Mic, Headphones, BookOpen, Clock, BookMarked, Brain, Heart, Calendar, ChevronRight, Compass, Hash, BookHeart, CalendarDays, Bell, BellOff, ListChecks } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
@@ -45,6 +45,12 @@ const Index = () => {
       title: t("হিজরি ক্যালেন্ডার", "Hijri Calendar", "التقويم الهجري"),
       desc: t("ইসলামিক তারিখ ও দিন", "Islamic dates & events", "التواريخ الإسلامية"),
       path: "/hijri",
+    },
+    {
+      icon: ListChecks,
+      title: t("দৈনিক আমল", "Daily Amal", "الأعمال اليومية"),
+      desc: t("রেফারেন্সসহ দৈনিক আমল ও ফযিলত", "Daily deeds with references & rewards", "الأعمال اليومية مع المراجع"),
+      path: "/daily-amal",
     },
     {
       icon: BookOpen,
