@@ -1,30 +1,52 @@
 
 
-# ইনলাইন রেসিটেশন ফিক্স — এক ট্যাপে শুরু + সেনসিটিভিটি সেটিংস
+# Daily Amal (দৈনিক আমল) Feature
 
-## সমস্যা
-1. **দুইবার ট্যাপ লাগছে**: Hidden ayah-এ mic ক্লিক করলে `startRecitation()` শুধু `activeRecitationAyah` সেট করে, কিন্তু listening শুরু করে না। তারপর আবার mic চাপতে হয় `toggleListening()` call করতে — এটাই "দুই বার চাপ" সমস্যা।
-2. **সেনসিটিভিটি সেটিংস নেই**: mode হার্ডকোডেড `"balanced"` — ইউজার বদলাতে পারে না।
+## Overview
+A new "Daily Amal" page showing recommended daily Islamic deeds/practices with Quran/Hadith references, their benefits (ফযিলত/profit), and a completion tracker with feedback.
 
-## সমাধান
+## What It Includes
 
-### 1. এক ট্যাপে listening শুরু (`HifzView.tsx`)
-- `startRecitation()` এ `setActiveRecitationAyah()` সেট করার পর, `useEffect` দিয়ে যখন `activeRecitationAyah` বদলায় এবং `recitationAyahText` পাওয়া যায়, তখন auto `startListening()` call করা হবে।
-- ফলে hidden ayah-এ একবার ট্যাপ = সরাসরি recording শুরু।
+Each amal entry will have:
+- **Arabic text** of the amal
+- **Trilingual description** (bn/en/ar)
+- **Reference** — Quran ayah or Hadith source
+- **Benefit/Profit (ফযিলত)** — what reward you get for doing it
+- **Completion checkbox** — track daily, resets each day
+- **Feedback** — congratulatory message + progress stats when you mark items done
 
-### 2. সেনসিটিভিটি সেটিংস (`HifzView.tsx`)
-- Header-এ একটি ছোট settings icon যোগ করা হবে (existing `ReadingSettings` pattern follow করে)।
-- তিনটি mode: **Strict** (কড়া), **Balanced** (মাঝামাঝি), **Assist** (সহজ)।
-- `localStorage` এ সেভ থাকবে, default `"balanced"`।
-- এই mode `useArabicRecitationEngine` hook-এ pass হবে।
+## Data Structure
+A static data file (`src/data/dailyAmalData.ts`) with ~15-20 daily amals across categories:
+- Morning/Evening azkar
+- After Salah deeds
+- Sunnah acts (miswak, salaam, sadaqah, etc.)
+- Quran recitation targets
+- Night deeds (tahajjud, witr, istighfar)
 
-### 3. Recitation engine-এ mode পরিবর্তন সাপোর্ট
-- `useArabicRecitationEngine` already `mode` parameter নেয় — শুধু HifzView থেকে dynamic value pass করলেই হবে।
+Each item: `{ id, category, arabic, bn, en, ar, reference, benefitBn, benefitEn, benefitAr, targetCount }`
 
-## ফাইল পরিবর্তন
-1. **EDIT** `src/components/quran/HifzView.tsx`
-   - `startRecitation` → auto-start listening via useEffect
-   - Sensitivity mode state + localStorage persist
-   - Header-এ mode selector (ToggleGroup বা DropdownMenu)
-   - `useArabicRecitationEngine(recitationAyahText, selectedMode, handleRecitationComplete)`
+## UI Design
+- Header with back arrow + language switcher (same pattern as DuaPage)
+- Daily progress bar at top showing X/Y amals completed today
+- Category filter pills (scrollable)
+- Card list — each card shows:
+  - Category badge
+  - Arabic text
+  - Translation
+  - Reference (📖 icon)
+  - Benefit/profit section (🌟 icon, highlighted in accent color)
+  - Checkbox/counter to mark completion
+- Completion feedback: toast + streak counter persisted in localStorage
+
+## Completion Tracking
+- `localStorage` key `daily-amal-{YYYY-MM-DD}` stores completed amal IDs
+- Shows today's completion percentage at top
+- Streak tracking: consecutive days with 50%+ completion
+
+## Files to Create/Edit
+
+1. **NEW** `src/data/dailyAmalData.ts` — amal data array + categories
+2. **NEW** `src/pages/DailyAmalPage.tsx` — full page component
+3. **EDIT** `src/App.tsx` — add route `/daily-amal`
+4. **EDIT** `src/pages/Index.tsx` — add Daily Amal to sections list with link
 
