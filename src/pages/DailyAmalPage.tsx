@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import DailyAmalStats from "@/components/DailyAmalStats";
 
 function getToday() {
   return new Date().toISOString().slice(0, 10);
@@ -115,6 +116,9 @@ export default function DailyAmalPage() {
             {completed.length}/{DAILY_AMALS.length} {t("সম্পন্ন", "completed", "مكتمل")} — {progressPercent}%
           </p>
         </div>
+
+        {/* Stats Chart */}
+        <DailyAmalStats />
 
         {/* Category Pills */}
         <ScrollArea className="w-full whitespace-nowrap">
