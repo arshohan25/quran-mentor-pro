@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import DailyAmalStats from "@/components/DailyAmalStats";
 
 function getToday() {
   return new Date().toISOString().slice(0, 10);
