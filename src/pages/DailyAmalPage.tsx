@@ -118,7 +118,7 @@ export default function DailyAmalPage() {
         </div>
 
         {/* Stats Chart */}
-        <DailyAmalStats />
+        <DailyAmalStats key={completed.length} />
 
         {/* Category Pills */}
         <ScrollArea className="w-full whitespace-nowrap">
