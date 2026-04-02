@@ -21,6 +21,7 @@ import QiblaPage from "./pages/QiblaPage.tsx";
 import TasbihPage from "./pages/TasbihPage.tsx";
 import DuaPage from "./pages/DuaPage.tsx";
 import HijriCalendarPage from "./pages/HijriCalendarPage.tsx";
+import DailyAmalPage from "./pages/DailyAmalPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
