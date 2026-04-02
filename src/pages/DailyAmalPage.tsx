@@ -117,6 +117,9 @@ export default function DailyAmalPage() {
           </p>
         </div>
 
+        {/* Stats Chart */}
+        <DailyAmalStats />
+
         {/* Category Pills */}
         <ScrollArea className="w-full whitespace-nowrap">
           <div className="flex gap-2 pb-2">
