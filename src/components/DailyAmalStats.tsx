@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DAILY_AMALS } from "@/data/dailyAmalData";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { BarChart3, TrendingUp, Star, Calendar } from "lucide-react";
+import { BarChart3, TrendingUp, Star, Calendar, Grid3X3 } from "lucide-react";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 type Period = "week" | "month";
 
