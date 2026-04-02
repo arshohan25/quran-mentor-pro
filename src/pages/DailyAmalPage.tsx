@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import DailyAmalStats from "@/components/DailyAmalStats";
+import DailyAmalDataSync from "@/components/DailyAmalDataSync";
 
 function getToday() {
   return new Date().toISOString().slice(0, 10);
@@ -91,7 +92,10 @@ export default function DailyAmalPage() {
                 {t("দৈনিক আমল", "Daily Amal", "الأعمال اليومية")}
               </h1>
             </div>
-            <LanguageSwitcher />
+            <div className="flex items-center gap-2">
+              <DailyAmalDataSync onImport={() => setCompleted(loadCompleted())} />
+              <LanguageSwitcher />
+            </div>
           </div>
         </div>
       </header>
