@@ -393,7 +393,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                               background: isSelected ? `${TEAL}22` : undefined,
                               borderRadius: "4px",
                             }}
-                            onClick={() => handleVerseClick(word.chapter_id, word.verse_number, word.text_uthmani)}
+                            onClick={(e) => handleVerseClick(word.chapter_id, word.verse_number, word.text_uthmani, e)}
                           >
                             <span>{word.text_uthmani}</span>
                             {word.isEndOfVerse && (
