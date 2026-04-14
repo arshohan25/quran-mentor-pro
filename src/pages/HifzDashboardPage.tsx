@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Brain, BookOpen, Search, Trophy, Flame, TrendingUp, Calendar, Clock, Zap, Target, Settings2, Check } from "lucide-react";
+import { ArrowLeft, GraduationCap, BookOpen, Search, Trophy, Flame, TrendingUp, Calendar, Clock, Zap, Target, Settings2, Check } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
@@ -221,13 +221,16 @@ export default function HifzDashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="islamic-header">
-        <div className="container flex items-center justify-between">
+        <div className="container flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
-            <Link to="/" className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></Link>
-            <h1 className="text-xl font-bold flex items-center gap-2">
-              <Brain className="w-5 h-5" />
-              {t("হিফজ ড্যাশবোর্ড", "Hifz Dashboard", "لوحة الحفظ")}
-            </h1>
+            <Link to="/" className="hover:opacity-80 p-1"><ArrowLeft className="w-5 h-5" strokeWidth={1.8} /></Link>
+            <div>
+              <h1 className="text-lg font-bold flex items-center gap-2 leading-tight">
+                <GraduationCap className="w-5 h-5" strokeWidth={1.6} />
+                {t("হিফজ ড্যাশবোর্ড", "Hifz Dashboard", "لوحة الحفظ")}
+              </h1>
+              <p className="text-primary-foreground/50 text-[10px]">{t("মুখস্থ অগ্রগতি", "Track memorization", "تتبع الحفظ")}</p>
+            </div>
           </div>
           <LanguageSwitcher />
         </div>

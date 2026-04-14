@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Play, Pause, SkipForward, SkipBack } from "lucide-react";
+import { ArrowLeft, Play, Pause, SkipForward, SkipBack, Volume2 } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { qariList } from "@/data/prayerData";
 import { useSurahWithTranslations, useSurahAudio } from "@/hooks/useQuranApi";
@@ -53,19 +53,22 @@ export default function AudioPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="islamic-header">
-        <div className="container flex items-center justify-between">
+        <div className="container flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
-            <Link to="/" className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></Link>
-            <h1 className="text-xl font-bold">{t("অডিও তেলাওয়াত", "Audio Recitation", "الاستماع")}</h1>
+            <Link to="/" className="hover:opacity-80 p-1"><ArrowLeft className="w-5 h-5" strokeWidth={1.8} /></Link>
+            <div>
+              <h1 className="text-lg font-bold leading-tight">{t("অডিও তেলাওয়াত", "Audio Recitation", "الاستماع")}</h1>
+              <p className="text-primary-foreground/50 text-[10px]">{t("কুরআন শুনুন", "Listen to Quran", "استمع إلى القرآن")}</p>
+            </div>
           </div>
           <LanguageSwitcher />
         </div>
       </header>
 
-      <div className="container py-6 max-w-2xl">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+      <div className="container py-5 max-w-2xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-5">
           <Select value={selectedSurah.toString()} onValueChange={(v) => { setSelectedSurah(Number(v)); setCurrentAyah(0); setIsPlaying(false); if (audioRef.current) audioRef.current.pause(); }}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger className="bg-card"><SelectValue /></SelectTrigger>
             <SelectContent>
               {surahList.map((s) => (
                 <SelectItem key={s.number} value={s.number.toString()}>
@@ -75,7 +78,7 @@ export default function AudioPage() {
             </SelectContent>
           </Select>
           <Select value={selectedQari} onValueChange={(v) => { setSelectedQari(v); setIsPlaying(false); if (audioRef.current) audioRef.current.pause(); }}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger className="bg-card"><SelectValue /></SelectTrigger>
             <SelectContent>
               {qariList.map((q) => (
                 <SelectItem key={q.id} value={q.id}>
@@ -86,49 +89,52 @@ export default function AudioPage() {
           </Select>
         </div>
 
-        {/* Player controls */}
-        <div className="islamic-card p-4 sm:p-6 mb-6 text-center relative overflow-hidden">
-          <span className="corner-ornament top-0 right-0 border-t-2 border-r-2 rounded-tr-lg" />
-          <span className="corner-ornament top-0 left-0 border-t-2 border-l-2 rounded-tl-lg" />
+        {/* Player */}
+        <div className="premium-card p-5 mb-5 text-center">
           {currentSurahInfo && (
             <div className="mb-4">
+              <div className="icon-container-gold p-3 mx-auto w-fit mb-3">
+                <Volume2 className="w-6 h-6 text-accent" strokeWidth={1.6} />
+              </div>
               <h2 className="font-arabic text-2xl text-primary">{currentSurahInfo.name}</h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1">
                 {t("আয়াত", "Ayah", "آية")} {currentAyah + 1} / {currentSurahInfo.numberOfAyahs}
               </p>
             </div>
           )}
           <div className="flex items-center justify-center gap-4">
-            <Button variant="outline" size="icon" disabled={currentAyah === 0} onClick={() => { setCurrentAyah((p) => p - 1); if (isPlaying) playAyah(currentAyah - 1); }}>
-              <SkipBack className="w-4 h-4" />
+            <Button variant="outline" size="icon" className="rounded-full" disabled={currentAyah === 0} onClick={() => { setCurrentAyah((p) => p - 1); if (isPlaying) playAyah(currentAyah - 1); }}>
+              <SkipBack className="w-4 h-4" strokeWidth={1.8} />
             </Button>
             <button
               onClick={togglePlay}
               disabled={loadingAudio}
-              className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center ring-4 ring-accent/30 hover:ring-accent/50 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+              className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+              style={{ boxShadow: '0 4px 20px hsl(var(--primary) / 0.3)' }}
             >
               {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
             </button>
-            <Button variant="outline" size="icon" disabled={currentAyah >= (surahData?.arabic.ayahs.length || 1) - 1} onClick={() => { setCurrentAyah((p) => p + 1); if (isPlaying) playAyah(currentAyah + 1); }}>
-              <SkipForward className="w-4 h-4" />
+            <Button variant="outline" size="icon" className="rounded-full" disabled={currentAyah >= (surahData?.arabic.ayahs.length || 1) - 1} onClick={() => { setCurrentAyah((p) => p + 1); if (isPlaying) playAyah(currentAyah + 1); }}>
+              <SkipForward className="w-4 h-4" strokeWidth={1.8} />
             </Button>
           </div>
         </div>
 
         {loadingSurah ? (
-          <div className="space-y-3">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>
+          <div className="space-y-3">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20 rounded-2xl" />)}</div>
         ) : surahData ? (
-          <ScrollArea className="h-[calc(100vh-380px)] min-h-[200px]">
-            <div className="space-y-3">
+          <ScrollArea className="h-[calc(100vh-420px)] min-h-[200px]">
+            <div className="space-y-2.5">
               {surahData.arabic.ayahs.map((ayah, idx) => (
                 <button
                   key={ayah.number}
                   onClick={() => playAyah(idx)}
-                  className={`w-full text-left rounded-xl border p-4 transition-all ${
+                  className={`w-full text-left rounded-2xl border p-4 transition-all ${
                     currentAyah === idx
-                      ? "islamic-card border-l-4 !border-l-accent shadow-md"
-                      : "border-border bg-card hover:bg-muted"
+                      ? "premium-card border-l-4 shadow-md"
+                      : "border-border bg-card hover:bg-muted/50"
                   }`}
+                  style={currentAyah === idx ? { borderLeftColor: 'hsl(var(--accent))' } : undefined}
                 >
                   <div className="flex items-start gap-3">
                     <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${

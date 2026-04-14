@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookText, ScrollText, Sparkles } from "lucide-react";
 import { prayers, madhabs, tashahhud, durood, type Madhab } from "@/data/prayerData";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,22 +17,25 @@ export default function PrayerPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="islamic-header">
-        <div className="container flex items-center justify-between">
+        <div className="container flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
-            <Link to="/" className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></Link>
-            <h1 className="text-xl font-bold">{t("নামাজ শিক্ষা", "Prayer Guide", "دليل الصلاة")}</h1>
+            <Link to="/" className="hover:opacity-80 p-1"><ArrowLeft className="w-5 h-5" strokeWidth={1.8} /></Link>
+            <div>
+              <h1 className="text-lg font-bold leading-tight">{t("নামাজ শিক্ষা", "Prayer Guide", "دليل الصلاة")}</h1>
+              <p className="text-primary-foreground/50 text-[10px]">{t("সঠিকভাবে নামাজ শিখুন", "Learn prayer correctly", "تعلم الصلاة")}</p>
+            </div>
           </div>
           <LanguageSwitcher />
         </div>
       </header>
 
-      <div className="container py-6 max-w-2xl">
-        <div className="mb-6">
-          <label className="text-sm text-muted-foreground mb-2 block">
+      <div className="container py-5 max-w-2xl">
+        <div className="mb-5">
+          <label className="text-xs text-muted-foreground mb-1.5 block font-medium">
             {t("মাযহাব নির্বাচন করুন", "Select Madhab", "اختر المذهب")}
           </label>
           <Select value={selectedMadhab} onValueChange={(v) => setSelectedMadhab(v as Madhab)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger className="bg-card"><SelectValue /></SelectTrigger>
             <SelectContent>
               {madhabs.map((m) => (
                 <SelectItem key={m.id} value={m.id}>
@@ -46,7 +49,7 @@ export default function PrayerPage() {
         <Tabs defaultValue="Fajr">
           <TabsList className="w-full flex overflow-x-auto mb-4 scrollbar-hide bg-muted/50">
             {prayers.map((p) => (
-              <TabsTrigger key={p.name} value={p.name} className="flex-1 min-w-0 text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger key={p.name} value={p.name} className="flex-1 min-w-0 text-[10px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 {language === "bn" ? p.nameBn : p.name}
               </TabsTrigger>
             ))}
@@ -54,15 +57,16 @@ export default function PrayerPage() {
 
           {prayers.map((prayer) => (
             <TabsContent key={prayer.name} value={prayer.name}>
-              <div className="islamic-card p-4 mb-4 relative overflow-hidden">
-                <span className="corner-ornament top-0 right-0 border-t-2 border-r-2 rounded-tr-lg" />
-                <span className="corner-ornament top-0 left-0 border-t-2 border-l-2 rounded-tl-lg" />
-                <div className="flex items-center justify-between mb-2">
+              <div className="premium-card p-4 mb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="icon-container p-2">
+                    <BookText className="w-5 h-5 text-primary" strokeWidth={1.6} />
+                  </div>
                   <div>
                     <h2 className="text-lg font-bold text-foreground">
                       {language === "bn" ? prayer.nameBn : prayer.name}
                     </h2>
-                    <span className="font-arabic text-primary text-lg">{prayer.nameAr}</span>
+                    <span className="font-arabic text-primary text-base">{prayer.nameAr}</span>
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -74,15 +78,16 @@ export default function PrayerPage() {
               <ScrollArea className="h-[calc(100vh-350px)] min-h-[200px]">
                 <Accordion type="multiple" className="space-y-2">
                   {prayer.steps.map((step, idx) => (
-                    <AccordionItem key={idx} value={`step-${idx}`} className="islamic-card px-4">
+                    <AccordionItem key={idx} value={`step-${idx}`} className="premium-card px-4">
                       <AccordionTrigger className="text-sm font-medium">
-                        {idx + 1}. {language === "bn" ? step.stepBn : step.step}
+                        <span className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-[11px] font-bold text-primary shrink-0">{idx + 1}</span>
+                          {language === "bn" ? step.stepBn : step.step}
+                        </span>
                       </AccordionTrigger>
                       <AccordionContent>
                         <div className="space-y-3">
-                          <div className="bg-primary/5 rounded-lg p-3 border border-primary/10 relative overflow-hidden">
-                            <span className="corner-ornament top-0 right-0 border-t border-r rounded-tr-md !w-3 !h-3" />
-                            <span className="corner-ornament bottom-0 left-0 border-b border-l rounded-bl-md !w-3 !h-3" />
+                          <div className="bg-primary/5 rounded-xl p-3.5 border border-primary/10">
                             <p className="font-arabic text-xl leading-loose text-foreground text-right">
                               {step.content.arabic}
                             </p>
@@ -92,8 +97,9 @@ export default function PrayerPage() {
                             <p className="text-xs text-muted-foreground italic">{step.content.transliteration}</p>
                           )}
                           {step.notes?.[selectedMadhab] && (
-                            <div className="bg-accent/10 rounded-lg p-3 border border-accent/20">
-                              <p className="text-xs font-semibold text-accent mb-1">
+                            <div className="bg-accent/8 rounded-xl p-3 border border-accent/15">
+                              <p className="text-xs font-bold text-accent mb-1 flex items-center gap-1.5">
+                                <Sparkles className="w-3 h-3" />
                                 {language === "bn" ? `${currentMadhab.nameBn} মাযহাবের নিয়ম:` : `${currentMadhab.name} ruling:`}
                               </p>
                               <p className="text-sm text-foreground">{step.notes[selectedMadhab]}</p>
@@ -104,12 +110,15 @@ export default function PrayerPage() {
                     </AccordionItem>
                   ))}
 
-                  <AccordionItem value="tashahhud" className="islamic-card px-4">
+                  <AccordionItem value="tashahhud" className="premium-card px-4">
                     <AccordionTrigger className="text-sm font-medium">
-                      {t("তাশাহুদ (আত্তাহিয়্যাতু)", "Tashahhud", "التشهد")}
+                      <span className="flex items-center gap-2">
+                        <ScrollText className="w-4 h-4 text-primary" strokeWidth={1.6} />
+                        {t("তাশাহুদ (আত্তাহিয়্যাতু)", "Tashahhud", "التشهد")}
+                      </span>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <div className="bg-primary/5 rounded-lg p-3 mb-2 border border-primary/10">
+                      <div className="bg-primary/5 rounded-xl p-3 mb-2 border border-primary/10">
                         <p className="font-arabic text-lg leading-loose text-foreground text-right">{tashahhud.arabic}</p>
                       </div>
                       <p className="text-sm text-foreground whitespace-pre-line">{tashahhud.bengali}</p>
@@ -117,12 +126,15 @@ export default function PrayerPage() {
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="durood" className="islamic-card px-4">
+                  <AccordionItem value="durood" className="premium-card px-4">
                     <AccordionTrigger className="text-sm font-medium">
-                      {t("দরূদ শরীফ", "Durood Shareef", "الصلاة على النبي")}
+                      <span className="flex items-center gap-2">
+                        <ScrollText className="w-4 h-4 text-accent" strokeWidth={1.6} />
+                        {t("দরূদ শরীফ", "Durood Shareef", "الصلاة على النبي")}
+                      </span>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <div className="bg-primary/5 rounded-lg p-3 mb-2 border border-primary/10">
+                      <div className="bg-primary/5 rounded-xl p-3 mb-2 border border-primary/10">
                         <p className="font-arabic text-lg leading-loose text-foreground text-right">{durood.arabic}</p>
                       </div>
                       <p className="text-sm text-foreground whitespace-pre-line">{durood.bengali}</p>
