@@ -374,6 +374,17 @@ export default function TasbihPage() {
         if (soundEnabled) playTapSound();
       }
 
+      // Snapshot ETA: calculate remaining time based on current rate
+      const totalDone = next.reduce((a, b) => a + b, 0);
+      const remaining = dhikrList.reduce((sum, d, i) => sum + Math.max(0, d.target - (next[i] || 0)), 0);
+      if (remaining === 0) {
+        setEtaEndTime(null);
+      } else if (totalDone > 0 && sessionSeconds > 0) {
+        const rate = totalDone / sessionSeconds;
+        const estSecsLeft = Math.ceil(remaining / rate);
+        setEtaEndTime(Date.now() + estSecsLeft * 1000);
+      }
+
       return next;
     });
   }, [activeIndex, dhikrList, soundEnabled, spawnRipple, sessionStarted, vibrationLevel]);
