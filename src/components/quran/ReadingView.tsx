@@ -71,7 +71,9 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const [selectedVerse, setSelectedVerse] = useState<{ surah: number; ayah: number; text: string } | null>(null);
   const [translation, setTranslation] = useState<{ bn?: string; en?: string } | null>(null);
   const [translationLoading, setTranslationLoading] = useState(false);
+  const [popupY, setPopupY] = useState<number>(200);
   const contentRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   // Swipe gesture handling
   const touchStartX = useRef<number | null>(null);
@@ -101,11 +103,19 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     }
   }, [mushafPage]);
 
-  const handleVerseClick = useCallback(async (surah: number, ayah: number, arabicText: string) => {
+  const handleVerseClick = useCallback(async (surah: number, ayah: number, arabicText: string, e?: React.MouseEvent) => {
     if (selectedVerse?.surah === surah && selectedVerse?.ayah === ayah) {
       setSelectedVerse(null);
       return;
     }
+
+    // Get the Y position of the click to position popup above
+    if (e) {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      // Place popup so its bottom edge is just above the clicked verse
+      setPopupY(Math.max(60, rect.top - 8));
+    }
+
     setSelectedVerse({ surah, ayah, text: arabicText });
     setTranslation(null);
     setTranslationLoading(true);
@@ -376,7 +386,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                               background: isSelected ? `${TEAL}22` : undefined,
                               borderRadius: "4px",
                             }}
-                            onClick={() => handleVerseClick(word.chapter_id, word.verse_number, word.text_uthmani)}
+                            onClick={(e) => handleVerseClick(word.chapter_id, word.verse_number, word.text_uthmani, e)}
                           >
                             <span>{word.text_uthmani}</span>
                             {word.isEndOfVerse && (
@@ -460,102 +470,120 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
         )}
       </div>
 
-      {/* Translation Popup */}
+      {/* Translation Popup - appears above the verse */}
       <AnimatePresence>
         {selectedVerse && (
-          <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-[60] max-h-[55vh] overflow-y-auto rounded-t-2xl shadow-2xl"
-            style={{ background: DARK_HEADER, borderTop: `2px solid ${TEAL}` }}
-          >
-            <div className="sticky top-0 flex items-center justify-between px-4 py-2.5" style={{ background: DARK_HEADER, borderBottom: `1px solid ${DARK_BORDER}` }}>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: TEAL, color: "#fff" }}>
-                  {selectedVerse.surah}:{selectedVerse.ayah}
-                </span>
-                <span className="text-xs" style={{ color: TEXT_DIM }}>
-                  {surahList.find(s => s.number === selectedVerse.surah)?.englishName}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => {
-                    toggleFavorite(selectedVerse.surah, selectedVerse.ayah, selectedVerse.text);
-                  }}
-                  className="p-1.5 rounded-full transition-colors"
-                  style={{ color: isFavorite(selectedVerse.surah, selectedVerse.ayah) ? "#F6C344" : TEXT_DIM }}
-                >
-                  <Star className={`w-4 h-4 ${isFavorite(selectedVerse.surah, selectedVerse.ayah) ? "fill-current" : ""}`} />
-                </button>
-                <button
-                  onClick={async () => {
-                    const surahName = surahList.find(s => s.number === selectedVerse.surah)?.englishName || "";
-                    const text = `${selectedVerse.text}\n\n${translation?.bn ? translation.bn + "\n\n" : ""}${translation?.en || ""}\n\n— ${surahName} ${selectedVerse.surah}:${selectedVerse.ayah}`;
-                    if (navigator.share) {
-                      try { await navigator.share({ text }); } catch {}
-                    } else {
-                      await navigator.clipboard.writeText(text);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
-                    }
-                  }}
-                  className="p-1.5 rounded-full transition-colors"
-                  style={{ color: copied ? TEAL : TEXT_DIM }}
-                >
-                  {copied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
-                </button>
-                <button
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(selectedVerse.text);
-                    setCopiedArabic(true);
-                    setTimeout(() => setCopiedArabic(false), 2000);
-                  }}
-                  className="p-1.5 rounded-full transition-colors"
-                  style={{ color: copiedArabic ? TEAL : TEXT_DIM }}
-                  title={t("আরবি কপি", "Copy Arabic", "نسخ العربية")}
-                >
-                  {copiedArabic ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                </button>
-                <button onClick={() => setSelectedVerse(null)} className="p-1.5 rounded-full" style={{ color: TEXT_DIM }}>
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 z-[55]"
+              onClick={() => { setSelectedVerse(null); }}
+            />
+            <motion.div
+              ref={popupRef}
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={{ type: "spring", damping: 25, stiffness: 400 }}
+              className="fixed z-[60] w-[calc(100%-2rem)] max-w-md max-h-[45vh] overflow-y-auto rounded-xl shadow-2xl left-4 right-4 mx-auto"
+              style={{
+                background: DARK_HEADER,
+                border: `1px solid ${DARK_BORDER}`,
+                bottom: `calc(100vh - ${popupY}px)`,
+              }}
+            >
+              {/* Arrow indicator */}
+              <div
+                className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45"
+                style={{ background: DARK_HEADER, borderRight: `1px solid ${DARK_BORDER}`, borderBottom: `1px solid ${DARK_BORDER}` }}
+              />
 
-            <div className="px-4 py-3 space-y-3">
-              {translationLoading ? (
-                <div className="flex items-center justify-center py-6">
-                  <Loader2 className="w-5 h-5 animate-spin" style={{ color: TEAL }} />
+              <div className="sticky top-0 flex items-center justify-between px-3 py-2" style={{ background: DARK_HEADER, borderBottom: `1px solid ${DARK_BORDER}`, borderRadius: '0.75rem 0.75rem 0 0' }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: TEAL, color: "#fff" }}>
+                    {selectedVerse.surah}:{selectedVerse.ayah}
+                  </span>
+                  <span className="text-[10px]" style={{ color: TEXT_DIM }}>
+                    {surahList.find(s => s.number === selectedVerse.surah)?.englishName}
+                  </span>
                 </div>
-              ) : translation ? (
-                <>
-                  {translation.bn && (
-                    <div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: TEAL }}>
-                        {t("বাংলা", "Bengali", "بنغالي")}
-                      </span>
-                      <p className="text-sm leading-relaxed mt-1" style={{ color: TEXT_WHITE }}>
-                        {translation.bn}
-                      </p>
-                    </div>
-                  )}
-                  {translation.en && (
-                    <div style={{ borderTop: translation.bn ? `1px solid ${DARK_BORDER}` : undefined, paddingTop: translation.bn ? "0.75rem" : undefined }}>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: TEAL }}>
-                        {t("ইংরেজি", "English", "إنجليزي")}
-                      </span>
-                      <p className="text-sm leading-relaxed mt-1" style={{ color: TEXT_DIM }}>
-                        {translation.en}
-                      </p>
-                    </div>
-                  )}
-                </>
-              ) : null}
-            </div>
-          </motion.div>
+                <div className="flex items-center gap-0.5">
+                  <button
+                    onClick={() => {
+                      toggleFavorite(selectedVerse.surah, selectedVerse.ayah, selectedVerse.text);
+                    }}
+                    className="p-1 rounded-full transition-colors"
+                    style={{ color: isFavorite(selectedVerse.surah, selectedVerse.ayah) ? "#F6C344" : TEXT_DIM }}
+                  >
+                    <Star className={`w-3.5 h-3.5 ${isFavorite(selectedVerse.surah, selectedVerse.ayah) ? "fill-current" : ""}`} />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const surahName = surahList.find(s => s.number === selectedVerse.surah)?.englishName || "";
+                      const text = `${selectedVerse.text}\n\n${translation?.bn ? translation.bn + "\n\n" : ""}${translation?.en || ""}\n\n— ${surahName} ${selectedVerse.surah}:${selectedVerse.ayah}`;
+                      if (navigator.share) {
+                        try { await navigator.share({ text }); } catch {}
+                      } else {
+                        await navigator.clipboard.writeText(text);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }
+                    }}
+                    className="p-1 rounded-full transition-colors"
+                    style={{ color: copied ? TEAL : TEXT_DIM }}
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(selectedVerse.text);
+                      setCopiedArabic(true);
+                      setTimeout(() => setCopiedArabic(false), 2000);
+                    }}
+                    className="p-1 rounded-full transition-colors"
+                    style={{ color: copiedArabic ? TEAL : TEXT_DIM }}
+                    title={t("আরবি কপি", "Copy Arabic", "نسخ العربية")}
+                  >
+                    {copiedArabic ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                  <button onClick={() => { setSelectedVerse(null); }} className="p-1 rounded-full" style={{ color: TEXT_DIM }}>
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="px-3 py-2.5 space-y-2">
+                {translationLoading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="w-4 h-4 animate-spin" style={{ color: TEAL }} />
+                  </div>
+                ) : translation ? (
+                  <>
+                    {translation.bn && (
+                      <div>
+                        <span className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: TEAL }}>
+                          {t("বাংলা", "Bengali", "بنغالي")}
+                        </span>
+                        <p className="text-xs leading-relaxed mt-0.5" style={{ color: TEXT_WHITE }}>
+                          {translation.bn}
+                        </p>
+                      </div>
+                    )}
+                    {translation.en && (
+                      <div style={{ borderTop: translation.bn ? `1px solid ${DARK_BORDER}` : undefined, paddingTop: translation.bn ? "0.5rem" : undefined }}>
+                        <span className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: TEAL }}>
+                          {t("ইংরেজি", "English", "إنجليزي")}
+                        </span>
+                        <p className="text-xs leading-relaxed mt-0.5" style={{ color: TEXT_DIM }}>
+                          {translation.en}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : null}
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>
