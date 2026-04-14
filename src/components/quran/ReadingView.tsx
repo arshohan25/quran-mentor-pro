@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ChevronDown, X, Loader2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, X, Loader2, Star, Share2, Copy, Check } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuranPage, type MushafLine } from "@/hooks/useQuranPage";
 import { surahList } from "@/data/surahList";
