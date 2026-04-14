@@ -455,6 +455,65 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
           </div>
         )}
       </div>
+
+      {/* Translation Popup */}
+      <AnimatePresence>
+        {selectedVerse && (
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed bottom-0 left-0 right-0 z-[60] max-h-[55vh] overflow-y-auto rounded-t-2xl shadow-2xl"
+            style={{ background: DARK_HEADER, borderTop: `2px solid ${TEAL}` }}
+          >
+            <div className="sticky top-0 flex items-center justify-between px-4 py-2.5" style={{ background: DARK_HEADER, borderBottom: `1px solid ${DARK_BORDER}` }}>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: TEAL, color: "#fff" }}>
+                  {selectedVerse.surah}:{selectedVerse.ayah}
+                </span>
+                <span className="text-xs" style={{ color: TEXT_DIM }}>
+                  {surahList.find(s => s.number === selectedVerse.surah)?.englishName}
+                </span>
+              </div>
+              <button onClick={() => setSelectedVerse(null)} className="p-1 rounded-full" style={{ color: TEXT_DIM }}>
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="px-4 py-3 space-y-3">
+              {translationLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="w-5 h-5 animate-spin" style={{ color: TEAL }} />
+                </div>
+              ) : translation ? (
+                <>
+                  {translation.bn && (
+                    <div>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: TEAL }}>
+                        {t("বাংলা", "Bengali", "بنغالي")}
+                      </span>
+                      <p className="text-sm leading-relaxed mt-1" style={{ color: TEXT_WHITE }}>
+                        {translation.bn}
+                      </p>
+                    </div>
+                  )}
+                  {translation.en && (
+                    <div style={{ borderTop: translation.bn ? `1px solid ${DARK_BORDER}` : undefined, paddingTop: translation.bn ? "0.75rem" : undefined }}>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: TEAL }}>
+                        {t("ইংরেজি", "English", "إنجليزي")}
+                      </span>
+                      <p className="text-sm leading-relaxed mt-1" style={{ color: TEXT_DIM }}>
+                        {translation.en}
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
