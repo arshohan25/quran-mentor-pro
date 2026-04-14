@@ -1,4 +1,8 @@
-import { Book, Mic, Headphones, BookOpen, Clock, BookMarked, Brain, Heart, Calendar, ChevronRight, Compass, Hash, BookHeart, CalendarDays, Bell, BellOff, ListChecks } from "lucide-react";
+import {
+  BookOpen, Mic, Headphones, Clock, BookMarked, Brain, Heart, Calendar,
+  ChevronRight, Hash, CalendarDays, Bell, BellOff, ListChecks, Sparkles,
+  Moon, Star, BookText, Volume2, GraduationCap, MapPin, Compass, HandHeart
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
@@ -15,10 +19,10 @@ const Index = () => {
   const { enabled: duaNotifEnabled, toggleEnabled: toggleDuaNotif, todaysDua, permission: duaPerm, requestPermission: requestDuaPerm } = useDailyDuaNotification();
 
   const quickActions = [
-    { icon: Book, label: t("কুরআন", "Quran", "القرآن"), path: "/quran", color: "text-primary" },
-    { icon: Headphones, label: t("অডিও", "Audio", "صوتي"), path: "/audio", color: "text-primary" },
-    { icon: Mic, label: t("প্র্যাকটিস", "Practice", "تدرب"), path: "/practice", color: "text-primary" },
-    { icon: Calendar, label: t("প্ল্যানার", "Planner", "مخطط"), path: "/planner", color: "text-primary" },
+    { icon: BookOpen, label: t("কুরআন", "Quran", "القرآن"), path: "/quran", gradient: "from-primary/15 to-primary/5" },
+    { icon: Volume2, label: t("অডিও", "Audio", "صوتي"), path: "/audio", gradient: "from-accent/15 to-accent/5" },
+    { icon: Mic, label: t("প্র্যাকটিস", "Practice", "تدرب"), path: "/practice", gradient: "from-primary/15 to-primary/5" },
+    { icon: Calendar, label: t("প্ল্যানার", "Planner", "مخطط"), path: "/planner", gradient: "from-accent/15 to-accent/5" },
   ];
 
   const sections = [
@@ -35,7 +39,7 @@ const Index = () => {
       path: "/tasbih",
     },
     {
-      icon: BookHeart,
+      icon: HandHeart,
       title: t("দোয়া ও যিকর", "Duas & Azkar", "الأدعية والأذكار"),
       desc: t("দৈনন্দিন দোয়া সংগ্রহ", "Daily dua collection", "مجموعة الأدعية"),
       path: "/dua",
@@ -49,13 +53,13 @@ const Index = () => {
     {
       icon: ListChecks,
       title: t("দৈনিক আমল", "Daily Amal", "الأعمال اليومية"),
-      desc: t("রেফারেন্সসহ দৈনিক আমল ও ফযিলত", "Daily deeds with references & rewards", "الأعمال اليومية مع المراجع"),
+      desc: t("রেফারেন্সসহ দৈনিক আমল ও ফযিলত", "Daily deeds with references", "الأعمال اليومية مع المراجع"),
       path: "/daily-amal",
     },
     {
-      icon: BookOpen,
+      icon: BookText,
       title: t("নামাজ শিক্ষা", "Prayer Guide", "دليل الصلاة"),
-      desc: t("চার মাযহাব অনুযায়ী নামাজ", "Prayer rules by 4 Madhabs", "أحكام الصلاة"),
+      desc: t("চার মাযহাব অনুযায়ী নামাজ", "Prayer by 4 Madhabs", "أحكام الصلاة"),
       path: "/prayer",
     },
     {
@@ -65,7 +69,7 @@ const Index = () => {
       path: "/prayer-times",
     },
     {
-      icon: Brain,
+      icon: GraduationCap,
       title: t("হিফজ", "Hifz Dashboard", "لوحة الحفظ"),
       desc: t("মুখস্থ অগ্রগতি দেখুন", "Track memorization", "تتبع الحفظ"),
       path: "/hifz",
@@ -84,40 +88,44 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Compact Header */}
-      <header className="islamic-header relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.04]">
-          <div className="font-arabic text-[120px] leading-none text-center pt-4 select-none">﷽</div>
+      {/* Premium Header */}
+      <header className="islamic-header relative">
+        <div className="absolute inset-0 opacity-[0.03]">
+          <div className="font-arabic text-[100px] leading-none text-center pt-2 select-none">﷽</div>
         </div>
         <div className="relative z-10 container py-5 sm:py-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-accent text-xl">☪</span>
-              <h1 className="text-lg sm:text-xl font-bold font-bengaliDisplay">
-                {t("কুরআন ও নামাজ", "Quran & Prayer", "القرآن والصلاة")}
-              </h1>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-primary-foreground/10 flex items-center justify-center backdrop-blur-sm">
+                <Moon className="w-4.5 h-4.5 text-accent" />
+              </div>
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold font-bengaliDisplay leading-tight">
+                  {t("কুরআন ও নামাজ", "Quran & Prayer", "القرآن والصلاة")}
+                </h1>
+                <p className="text-primary-foreground/60 text-[11px] sm:text-xs">
+                  {t("পড়ুন, শিখুন, অনুশীলন করুন", "Read, Learn, Practice", "اقرأ، تعلم، تدرب")}
+                </p>
+              </div>
             </div>
             <LanguageSwitcher />
           </div>
-          <p className="text-primary-foreground/70 text-sm">
-            {t("পড়ুন, শিখুন, অনুশীলন করুন", "Read, Learn, Practice", "اقرأ، تعلم، تدرب")}
-          </p>
         </div>
       </header>
 
-      <main className="container py-5 space-y-5">
+      <main className="container py-5 space-y-4">
         {/* Quick Actions */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-2.5">
           {quickActions.map((action) => (
             <Link
               key={action.path}
               to={action.path}
-              className="islamic-card flex flex-col items-center justify-center p-3 sm:p-4 gap-1.5 hover:scale-[1.03] active:scale-[0.97] transition-all"
+              className="premium-card flex flex-col items-center justify-center p-3.5 gap-2 hover:scale-[1.04] active:scale-[0.97] transition-all"
             >
-              <div className="p-2 rounded-xl bg-primary/8">
-                <action.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${action.color}`} />
+              <div className={`p-2.5 rounded-xl bg-gradient-to-br ${action.gradient}`}>
+                <action.icon className="w-5 h-5 text-primary" strokeWidth={1.8} />
               </div>
-              <span className="text-[11px] sm:text-xs font-medium text-foreground">{action.label}</span>
+              <span className="text-[11px] font-semibold text-foreground">{action.label}</span>
             </Link>
           ))}
         </div>
@@ -126,20 +134,23 @@ const Index = () => {
         {lastReadSurah && (
           <Link
             to={`/quran?surah=${bookmarks.lastRead!.surah}&ayah=${bookmarks.lastRead!.ayah}`}
-            className="block islamic-card p-3.5 relative overflow-hidden group"
+            className="block premium-card p-4 relative overflow-hidden group"
           >
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-accent rounded-l-xl" />
-            <div className="flex items-center justify-between pl-2">
+            <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: 'linear-gradient(to bottom, hsl(var(--accent)), hsl(var(--primary)))' }} />
+            <div className="flex items-center justify-between pl-3">
               <div className="flex items-center gap-3">
-                <BookMarked className="w-4 h-4 text-accent shrink-0" />
+                <div className="icon-container-gold p-2">
+                  <BookMarked className="w-4 h-4 text-accent" strokeWidth={1.8} />
+                </div>
                 <div>
-                  <p className="text-xs font-semibold text-accent">
+                  <p className="text-xs font-bold text-accent flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3" />
                     {t("পড়া চালিয়ে যান", "Continue Reading", "أكمل القراءة")}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
                     {language === "bn" ? lastReadSurah.bengaliName : lastReadSurah.englishName} — {t("আয়াত", "Ayah", "آية")} {bookmarks.lastRead!.ayah}
                     {bookmarks.lastRead!.timestamp && (
-                      <span className="ml-1 opacity-60">• {new Date(bookmarks.lastRead!.timestamp).toLocaleDateString()}</span>
+                      <span className="ml-1 opacity-50">• {new Date(bookmarks.lastRead!.timestamp).toLocaleDateString()}</span>
                     )}
                   </p>
                 </div>
@@ -149,69 +160,71 @@ const Index = () => {
           </Link>
         )}
 
-        {/* Reading Progress Widget */}
+        {/* Reading Progress */}
         <ReadingProgress />
 
         {/* Daily Ayah */}
         <DailyAyah />
 
-        {/* Daily Dua Reminder */}
-        <div className="islamic-card p-4 space-y-3">
+        {/* Daily Dua */}
+        <div className="premium-card p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {duaNotifEnabled ? <Bell className="w-4 h-4 text-accent" /> : <BellOff className="w-4 h-4 text-muted-foreground" />}
-              <h3 className="text-sm font-semibold text-foreground">
+            <div className="flex items-center gap-2.5">
+              <div className={`icon-container p-1.5 ${duaNotifEnabled ? '' : 'opacity-50'}`}>
+                {duaNotifEnabled ? <Bell className="w-4 h-4 text-accent" strokeWidth={1.8} /> : <BellOff className="w-4 h-4 text-muted-foreground" strokeWidth={1.8} />}
+              </div>
+              <h3 className="text-sm font-bold text-foreground">
                 {t("আজকের দোয়া", "Today's Dua", "دعاء اليوم")}
               </h3>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-[10px] text-muted-foreground font-medium">
                 {t("নোটিফিকেশন", "Notify", "تنبيه")}
               </span>
               <Switch
                 checked={duaNotifEnabled}
                 onCheckedChange={() => {
-                  if (duaPerm !== "granted") {
-                    requestDuaPerm();
-                  }
+                  if (duaPerm !== "granted") requestDuaPerm();
                   toggleDuaNotif();
                 }}
               />
             </div>
           </div>
           {todaysDua && (
-            <div className="space-y-2">
-              <p className="font-arabic text-base leading-[2] text-foreground">{todaysDua.arabic}</p>
+            <div className="space-y-2 pt-1">
+              <p className="font-arabic text-base leading-[2.2] text-foreground">{todaysDua.arabic}</p>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {language === "bn" ? todaysDua.bn : todaysDua.en}
               </p>
-              <p className="text-[10px] text-muted-foreground/60">📖 {todaysDua.reference}</p>
+              <p className="text-[10px] text-muted-foreground/50 flex items-center gap-1">
+                <BookOpen className="w-3 h-3" /> {todaysDua.reference}
+              </p>
             </div>
           )}
         </div>
 
         {/* More Features */}
         <div>
-          <h3 className="text-sm font-semibold text-foreground mb-3">
-            {t("আরও ফিচার", "More Features", "المزيد")}
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="flex items-center gap-2 mb-3">
+            <Star className="w-3.5 h-3.5 text-accent" strokeWidth={2} />
+            <h3 className="text-sm font-bold text-foreground">
+              {t("আরও ফিচার", "More Features", "المزيد")}
+            </h3>
+          </div>
+          <div className="grid grid-cols-2 gap-2.5">
             {sections.map((section) => (
               <Link
                 key={section.path}
                 to={section.path}
-                className="group islamic-card p-3.5 sm:p-4 relative overflow-hidden hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="group premium-card p-3.5 relative overflow-hidden hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
-                <span className="corner-ornament top-0 right-0 border-t-2 border-r-2 rounded-tr-lg" />
-                <span className="corner-ornament bottom-0 left-0 border-b-2 border-l-2 rounded-bl-lg" />
-
-                <div className="inline-flex p-2 rounded-lg bg-primary/8 text-primary mb-2 group-hover:scale-110 transition-transform">
-                  <section.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                <div className="icon-container p-2 mb-2.5 w-fit group-hover:scale-110 transition-transform">
+                  <section.icon className="w-4.5 h-4.5 text-primary" strokeWidth={1.8} />
                 </div>
-                <h4 className="text-sm font-semibold text-card-foreground mb-0.5">
+                <h4 className="text-[13px] font-bold text-card-foreground mb-0.5 leading-tight">
                   {section.title}
                 </h4>
-                <p className="text-muted-foreground text-[11px] leading-tight">
+                <p className="text-muted-foreground text-[11px] leading-snug">
                   {section.desc}
                 </p>
               </Link>
@@ -219,10 +232,10 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Footer decoration */}
-        <div className="text-center pt-2 pb-4">
+        {/* Footer */}
+        <div className="text-center pt-3 pb-5">
           <div className="gold-divider">
-            <span className="text-accent/40 text-sm">✦</span>
+            <span className="text-accent/30 text-sm">✦</span>
           </div>
         </div>
       </main>
