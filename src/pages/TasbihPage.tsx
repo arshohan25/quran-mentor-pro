@@ -775,6 +775,7 @@ export default function TasbihPage() {
           <div>
             <p className="text-2xl font-bold text-foreground">
               {(() => {
+                const totalTarget = dhikrList.reduce((sum, d) => sum + d.target, 0);
                 const remaining = dhikrList.reduce((sum, d, i) => sum + Math.max(0, d.target - (counts[i] || 0)), 0);
                 if (remaining === 0) return "✓";
                 if (totalToday <= 0 || sessionSeconds <= 2) return "—";
@@ -786,7 +787,7 @@ export default function TasbihPage() {
                 return `${m}:${s.toString().padStart(2, "0")}`;
               })()}
             </p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t("বাকি", "ETA", "المتبقي")}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t("আনু. সময়", "EST.", "الوقت")}</p>
           </div>
         </div>
 
