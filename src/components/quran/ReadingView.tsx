@@ -97,6 +97,30 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     }
   }, [mushafPage]);
 
+  const handleVerseClick = useCallback(async (surah: number, ayah: number, arabicText: string) => {
+    if (selectedVerse?.surah === surah && selectedVerse?.ayah === ayah) {
+      setSelectedVerse(null);
+      return;
+    }
+    setSelectedVerse({ surah, ayah, text: arabicText });
+    setTranslation(null);
+    setTranslationLoading(true);
+    try {
+      const [bnRes, enRes] = await Promise.all([
+        fetch(`https://api.alquran.cloud/v1/ayah/${surah}:${ayah}/bn.bengali`).then(r => r.json()),
+        fetch(`https://api.alquran.cloud/v1/ayah/${surah}:${ayah}/en.asad`).then(r => r.json()),
+      ]);
+      setTranslation({
+        bn: bnRes?.data?.text,
+        en: enRes?.data?.text,
+      });
+    } catch {
+      setTranslation({ en: "Translation unavailable" });
+    } finally {
+      setTranslationLoading(false);
+    }
+  }, [selectedVerse]);
+
   const { data, isLoading, error } = useQuranPage(mushafPage);
 
   useEffect(() => {
