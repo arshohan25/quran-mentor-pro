@@ -472,7 +472,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
 
       {/* Translation Popup - appears above the verse */}
       <AnimatePresence>
-        {selectedVerse && popupPosition && (
+        {selectedVerse && (
           <>
             {/* Backdrop */}
             <div
