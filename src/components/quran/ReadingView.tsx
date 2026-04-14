@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuranPage } from "@/hooks/useQuranPage";
@@ -10,35 +10,30 @@ import { Input } from "@/components/ui/input";
 import type { QuranSectionProps } from "@/components/quran/types";
 
 function toArabicNum(n: number): string {
-  return n.toString().replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[parseInt(d)]);
+  return n.toString().replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[parseInt(d, 10)]);
 }
 
 function getJuzForPage(page: number): number {
-  const juzPages = [1,22,42,62,82,102,121,142,162,182,201,222,242,262,282,302,322,342,362,382,402,422,442,462,482,502,522,542,562,582,591,604];
+  const juzPages = [1, 22, 42, 62, 82, 102, 121, 142, 162, 182, 201, 222, 242, 262, 282, 302, 322, 342, 362, 382, 402, 422, 442, 462, 482, 502, 522, 542, 562, 582, 591, 604];
   for (let i = juzPages.length - 1; i >= 0; i--) {
     if (page >= juzPages[i]) return i + 1;
   }
   return 1;
 }
 
-function getHizbForPage(page: number): number {
-  return Math.ceil(getJuzForPage(page) * 2 - 1);
-}
-
 function groupBySurah(verses: { chapter_id: number; verse_number: number; text_uthmani: string; verse_key: string }[]) {
   const groups: { surahNumber: number; verses: typeof verses }[] = [];
-  for (const v of verses) {
+  for (const verse of verses) {
     const last = groups[groups.length - 1];
-    if (last && last.surahNumber === v.chapter_id) {
-      last.verses.push(v);
+    if (last && last.surahNumber === verse.chapter_id) {
+      last.verses.push(verse);
     } else {
-      groups.push({ surahNumber: v.chapter_id, verses: [v] });
+      groups.push({ surahNumber: verse.chapter_id, verses: [verse] });
     }
   }
   return groups;
 }
 
-// quran.com exact colors
 const TEAL = "#2CA4AB";
 const DARK_BG = "#1B1F27";
 const DARK_HEADER = "#1F2937";
@@ -47,13 +42,14 @@ const DARK_BORDER = "#2D3748";
 const TEXT_WHITE = "#FFFFFF";
 const TEXT_DIM = "#8B9DB5";
 const TEXT_MUTED = "#5C7080";
+const QURAN_COM_FONT_SIZE = 22;
+const QURAN_COM_LINE_HEIGHT = 1.82;
+const QURAN_COM_WORD_SPACING = "2px";
 
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
   const { t } = useLanguage();
-  const quranComReadingFontSize = 22;
 
   const [mushafPage, setMushafPage] = useState(() => SURAH_START_PAGES[selectedSurah] || 1);
-  const fontSize = quranComReadingFontSize;
   const [pageInput, setPageInput] = useState("");
   const [showPageInput, setShowPageInput] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -62,9 +58,9 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const { data, isLoading, error } = useQuranPage(mushafPage);
 
   useEffect(() => {
-    const s = surahForPage(mushafPage);
-    if (s !== selectedSurah) setSelectedSurah(s);
-  }, [mushafPage]);
+    const surah = surahForPage(mushafPage);
+    if (surah !== selectedSurah) setSelectedSurah(surah);
+  }, [mushafPage, selectedSurah, setSelectedSurah]);
 
   const prevSurahRef = useRef(selectedSurah);
   useEffect(() => {
@@ -78,69 +74,131 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     contentRef.current?.scrollTo({ top: 0 });
     setScrolled(false);
   }, [mushafPage]);
-...
+
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+
+    const onScroll = () => setScrolled(el.scrollTop > 80);
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const currentJuz = getJuzForPage(mushafPage);
+  const currentHizb = Math.ceil(currentJuz * 2 - 1);
+  const currentSurahNum = surahForPage(mushafPage);
+  const currentSurahInfo = surahList.find((surah) => surah.number === currentSurahNum);
+
+  const goNext = () => {
+    if (mushafPage < 604) setMushafPage((page) => page + 1);
+  };
+
+  const goPrev = () => {
+    if (mushafPage > 1) setMushafPage((page) => page - 1);
+  };
+
+  const handlePageJump = () => {
+    const nextPage = parseInt(pageInput, 10);
+    if (nextPage >= 1 && nextPage <= 604) {
+      setMushafPage(nextPage);
+      setShowPageInput(false);
+      setPageInput("");
+    }
+  };
+
+  const groups = data ? groupBySurah(data.verses) : [];
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: DARK_BG }}>
+        <div className="text-center space-y-3">
+          <p className="text-lg" style={{ color: "#E85D5D" }}>
+            ⚠️ {t("লোড করা যায়নি", "Failed to load", "فشل التحميل")}
+          </p>
+          <button onClick={onBack} className="text-sm underline" style={{ color: TEXT_DIM }}>
+            {t("ফিরে যান", "Go back", "عودة")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col" style={{ background: DARK_BG }}>
+      <header className="sticky top-0 z-50" style={{ background: DARK_HEADER }}>
+        <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: `1px solid ${DARK_BORDER}` }}>
+          <div className="flex items-center gap-2">
+            <button onClick={onBack} className="p-1" style={{ color: TEXT_DIM }}>
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            {scrolled ? (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs" style={{ color: TEXT_DIM }}>📑</span>
+                <span className="text-xs font-medium" style={{ color: TEXT_WHITE }}>
+                  Page {mushafPage}
+                </span>
+              </div>
+            ) : (
+              <button className="flex items-center gap-1 text-sm font-medium" style={{ color: TEXT_WHITE }}>
+                {currentSurahInfo ? `${currentSurahInfo.number}. ${currentSurahInfo.englishName}` : ""}
+                <ChevronDown className="w-3 h-3" style={{ color: TEXT_DIM }} />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
             {scrolled && (
               <span className="text-xs" style={{ color: TEXT_DIM }}>
                 Juz {currentJuz} / Hizb {currentHizb}
               </span>
             )}
-            <ReadingSettings fontSize={fontSize} hideFontSize />
+            <ReadingSettings fontSize={QURAN_COM_FONT_SIZE} hideFontSize />
           </div>
         </div>
 
-        {/* Row 2: Tab bar — Verse by Verse | Reading */}
         {!scrolled && (
-          <div className="flex items-center px-4" style={{ borderBottom: `1px solid ${DARK_BORDER}` }}>
-            <button
-              className="px-3 py-2.5 text-xs font-medium"
-              style={{ color: TEXT_DIM }}
-              onClick={onBack}
+          <>
+            <div className="flex items-center px-4" style={{ borderBottom: `1px solid ${DARK_BORDER}` }}>
+              <button className="px-3 py-2.5 text-xs font-medium" style={{ color: TEXT_DIM }} onClick={onBack}>
+                Verse by Verse
+              </button>
+              <button className="px-3 py-2.5 text-xs font-medium relative" style={{ color: TEAL }}>
+                Reading
+                <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full" style={{ background: TEAL }} />
+              </button>
+            </div>
+
+            <div
+              className="flex items-center gap-2 px-4 py-2"
+              style={{ background: DARK_CONTENT, borderBottom: `1px solid ${DARK_BORDER}` }}
             >
-              Verse by Verse
-            </button>
-            <button
-              className="px-3 py-2.5 text-xs font-medium relative"
-              style={{ color: TEAL }}
-            >
-              Reading
-              <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full" style={{ background: TEAL }} />
-            </button>
-          </div>
+              <button
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full"
+                style={{ color: TEAL, border: `1px solid ${DARK_BORDER}` }}
+              >
+                ▶ Listen
+              </button>
+              <button
+                className="text-xs font-medium px-3 py-1.5 rounded-full"
+                style={{ color: TEXT_WHITE, border: `1.5px solid ${TEXT_WHITE}`, background: "transparent" }}
+              >
+                Arabic
+              </button>
+              <button
+                className="text-xs font-medium px-3 py-1.5 rounded-full"
+                style={{ color: TEXT_DIM, border: `1px solid ${DARK_BORDER}` }}
+              >
+                Translation
+              </button>
+            </div>
+          </>
         )}
 
-        {/* Row 3: Sub-controls — Listen | Arabic | Translation (only when scrolled show compact icons) */}
-        {!scrolled && (
-          <div className="flex items-center gap-2 px-4 py-2" style={{
-            background: DARK_CONTENT,
-            borderBottom: `1px solid ${DARK_BORDER}`
-          }}>
-            <button
-              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full"
-              style={{ color: TEAL, border: `1px solid ${DARK_BORDER}` }}
-            >
-              ▶ Listen
-            </button>
-            <button
-              className="text-xs font-medium px-3 py-1.5 rounded-full"
-              style={{ color: TEXT_WHITE, border: `1.5px solid ${TEXT_WHITE}`, background: "transparent" }}
-            >
-              Arabic
-            </button>
-            <button
-              className="text-xs font-medium px-3 py-1.5 rounded-full"
-              style={{ color: TEXT_DIM, border: `1px solid ${DARK_BORDER}` }}
-            >
-              Translation
-            </button>
-          </div>
-        )}
-
-        {/* Scrolled: compact surah + icons row */}
         {scrolled && (
-          <div className="flex items-center justify-between px-3 py-1.5" style={{
-            background: DARK_CONTENT,
-            borderBottom: `1px solid ${DARK_BORDER}`
-          }}>
+          <div
+            className="flex items-center justify-between px-3 py-1.5"
+            style={{ background: DARK_CONTENT, borderBottom: `1px solid ${DARK_BORDER}` }}
+          >
             <button className="flex items-center gap-1 text-xs font-medium" style={{ color: TEXT_WHITE }}>
               {currentSurahInfo?.number}. {currentSurahInfo?.englishName}
               <ChevronDown className="w-3 h-3" style={{ color: TEXT_DIM }} />
@@ -154,7 +212,6 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
         )}
       </header>
 
-      {/* ===== CONTENT ===== */}
       <div ref={contentRef} className="flex-1 overflow-y-auto" style={{ background: DARK_CONTENT }}>
         {isLoading ? (
           <div className="max-w-2xl mx-auto p-6 space-y-5">
@@ -164,13 +221,12 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
           </div>
         ) : (
           <div className="max-w-2xl mx-auto px-4 py-3">
-            {groups.map((group, gi) => {
-              const surahInfo = surahList.find((s) => s.number === group.surahNumber);
+            {groups.map((group, groupIndex) => {
+              const surahInfo = surahList.find((surah) => surah.number === group.surahNumber);
               const isFirstAyah = group.verses[0]?.verse_number === 1;
 
               return (
-                <div key={gi}>
-                  {/* ===== SURAH HEADER — quran.com style ===== */}
+                <div key={groupIndex}>
                   {isFirstAyah && surahInfo && (
                     <div className="text-center my-5">
                       <div className="flex items-center justify-center gap-4 mb-2">
@@ -203,7 +259,6 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                         </div>
                       </div>
 
-                      {/* Bismillah */}
                       {group.surahNumber !== 9 && group.surahNumber !== 1 && (
                         <div className="mt-4 mb-3">
                           <p
@@ -225,32 +280,30 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                     </div>
                   )}
 
-                  {/* ===== FLOWING ARABIC TEXT — quran.com exact ===== */}
                   <div
                     className="text-center"
                     dir="rtl"
                     style={{
                       fontFamily: "'UthmanicHafs', 'Amiri', serif",
-                      fontSize: `${fontSize}px`,
+                      fontSize: `${QURAN_COM_FONT_SIZE}px`,
                       color: TEXT_WHITE,
-                      wordSpacing: "2px",
-                      lineHeight: "1.82",
+                      wordSpacing: QURAN_COM_WORD_SPACING,
+                      lineHeight: QURAN_COM_LINE_HEIGHT,
                       letterSpacing: "0px",
                     }}
                   >
                     {group.verses.map((verse) => (
                       <span key={verse.verse_key} className="inline">
                         {verse.text_uthmani}{" "}
-                        {/* Verse end marker — quran.com circle style */}
                         <span
                           className="inline-flex items-center justify-center select-none align-middle"
                           style={{
-                            width: `${Math.max(22, fontSize * 0.75)}px`,
-                            height: `${Math.max(22, fontSize * 0.75)}px`,
+                            width: `${Math.max(22, QURAN_COM_FONT_SIZE * 0.75)}px`,
+                            height: `${Math.max(22, QURAN_COM_FONT_SIZE * 0.75)}px`,
                             borderRadius: "50%",
                             border: `1.5px solid ${TEAL}`,
                             color: TEAL,
-                            fontSize: `${Math.max(10, fontSize * 0.36)}px`,
+                            fontSize: `${Math.max(10, QURAN_COM_FONT_SIZE * 0.36)}px`,
                             fontFamily: "sans-serif",
                             fontWeight: 600,
                             lineHeight: 1,
@@ -266,17 +319,13 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
               );
             })}
 
-            {/* Page number — centered like quran.com */}
             <div className="text-center mt-8 mb-3">
               <span className="text-sm font-medium" style={{ color: TEXT_MUTED }}>
                 {mushafPage}
               </span>
             </div>
 
-            {/* Navigation */}
-            <div className="flex items-center justify-center gap-8 py-4" style={{
-              borderTop: `1px solid ${DARK_BORDER}`
-            }}>
+            <div className="flex items-center justify-center gap-8 py-4" style={{ borderTop: `1px solid ${DARK_BORDER}` }}>
               {mushafPage > 1 && (
                 <button onClick={goPrev} className="text-xs font-medium" style={{ color: TEXT_DIM }}>
                   {t("আগের পৃষ্ঠা", "Previous Page", "الصفحة السابقة")}
@@ -289,13 +338,9 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
               )}
             </div>
 
-            {/* Page jump */}
             <div className="flex items-center justify-center py-3">
               {showPageInput ? (
-                <form
-                  onSubmit={(e) => { e.preventDefault(); handlePageJump(); }}
-                  className="flex items-center gap-2"
-                >
+                <form onSubmit={(e) => { e.preventDefault(); handlePageJump(); }} className="flex items-center gap-2">
                   <Input
                     type="number"
                     min={1}
@@ -306,13 +351,11 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                     className="w-20 h-8 text-xs text-center border-none"
                     style={{ background: DARK_HEADER, color: TEXT_WHITE }}
                     autoFocus
-                    onBlur={() => { if (!pageInput) setShowPageInput(false); }}
+                    onBlur={() => {
+                      if (!pageInput) setShowPageInput(false);
+                    }}
                   />
-                  <button
-                    type="submit"
-                    className="text-xs px-3 py-1.5 rounded-md font-medium"
-                    style={{ background: TEAL, color: "#fff" }}
-                  >
+                  <button type="submit" className="text-xs px-3 py-1.5 rounded-md font-medium" style={{ background: TEAL, color: "#fff" }}>
                     Go
                   </button>
                 </form>
@@ -322,11 +365,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                   className="text-[11px] px-4 py-1.5 rounded-full"
                   style={{ color: TEXT_MUTED, border: `1px solid ${DARK_BORDER}` }}
                 >
-                  {t(
-                    `পৃষ্ঠা ${mushafPage} / ৬০৪`,
-                    `Page ${mushafPage} of 604`,
-                    `صفحة ${toArabicNum(mushafPage)} من ٦٠٤`
-                  )}
+                  {t(`পৃষ্ঠা ${mushafPage} / ৬০৪`, `Page ${mushafPage} of 604`, `صفحة ${toArabicNum(mushafPage)} من ٦٠٤`)}
                 </button>
               )}
             </div>
