@@ -109,6 +109,7 @@ function loadCounts(total: number): number[] {
 interface HistoryEntry {
   date: string;
   total: number;
+  sessionTime?: number; // seconds
   details: { name: string; count: number; target: number }[];
 }
 
@@ -242,6 +243,7 @@ export default function TasbihPage() {
       const entry: HistoryEntry = {
         date: today,
         total,
+        sessionTime: sessionSeconds,
         details: dhikrList.map((d, i) => ({
           name: language === "bn" ? d.bn : language === "ar" ? d.ar : d.en,
           count: counts[i] || 0,
@@ -254,7 +256,7 @@ export default function TasbihPage() {
       saveHistory(next);
       return next;
     });
-  }, [counts, dhikrList, language]);
+  }, [counts, dhikrList, language, sessionSeconds]);
 
   const increment = useCallback(() => {
     setCounts((prev) => {
@@ -450,10 +452,18 @@ export default function TasbihPage() {
                         <div className="space-y-3">
                           {history.slice(0, 30).map((h, idx) => (
                             <div key={idx} className="islamic-card p-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs font-semibold">{formatDate(h.date)}</span>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-semibold">{formatDate(h.date)}</span>
+                              <div className="flex items-center gap-2">
+                                {h.sessionTime != null && h.sessionTime > 0 && (
+                                  <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                                    <Timer className="w-2.5 h-2.5" />
+                                    {formatTimer(h.sessionTime)}
+                                  </span>
+                                )}
                                 <span className="text-xs font-bold text-primary">{h.total} {t("বার", "times", "مرة")}</span>
                               </div>
+                            </div>
                               <div className="space-y-1">
                                 {h.details.filter(d => d.count > 0).map((d, di) => (
                                   <div key={di} className="flex items-center justify-between">
