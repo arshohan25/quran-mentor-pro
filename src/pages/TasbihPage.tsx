@@ -709,7 +709,7 @@ export default function TasbihPage() {
         )}
 
         {/* Stats strip */}
-        <div className="flex items-center justify-center gap-6 text-center">
+        <div className="flex items-center justify-center gap-5 text-center">
           <div>
             <p className="text-2xl font-bold text-primary">{totalToday}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t("মোট", "Total", "الكل")}</p>
@@ -718,6 +718,23 @@ export default function TasbihPage() {
           <div>
             <p className="text-2xl font-bold text-accent">{completedCount}<span className="text-sm text-muted-foreground font-normal">/{dhikrList.length}</span></p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t("সম্পন্ন", "Done", "مكتمل")}</p>
+          </div>
+          <div className="w-px h-8 bg-border" />
+          <div>
+            <p className="text-2xl font-bold text-foreground">
+              {(() => {
+                const remaining = dhikrList.reduce((sum, d, i) => sum + Math.max(0, d.target - (counts[i] || 0)), 0);
+                if (remaining === 0) return "✓";
+                if (totalToday <= 0 || sessionSeconds <= 2) return "—";
+                const rate = totalToday / sessionSeconds;
+                const estSecs = Math.ceil(remaining / rate);
+                const m = Math.floor(estSecs / 60);
+                const s = estSecs % 60;
+                if (m >= 60) return `${Math.floor(m / 60)}h${m % 60 > 0 ? (m % 60) + "m" : ""}`;
+                return `${m}:${s.toString().padStart(2, "0")}`;
+              })()}
+            </p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t("বাকি", "ETA", "المتبقي")}</p>
           </div>
         </div>
 
