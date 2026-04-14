@@ -3,6 +3,7 @@ import { ArrowLeft, ChevronDown, X, Loader2, Star, Share2, Copy, Check } from "l
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuranPage, type MushafLine } from "@/hooks/useQuranPage";
 import { surahList } from "@/data/surahList";
+import { useBookmark } from "@/hooks/useBookmark";
 import { SURAH_START_PAGES, surahForPage } from "@/data/mushafPages";
 import ReadingSettings from "@/components/quran/ReadingSettings";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -58,7 +59,8 @@ const QURAN_COM_FONT_SIZE = 22;
 const QURAN_COM_LINE_HEIGHT = 2.05;
 
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
-  const { t, language } = useLanguage();
+  const { toggleFavorite, isFavorite } = useBookmark();
+  const [copied, setCopied] = useState(false);
 
   const [mushafPage, setMushafPage] = useState(() => SURAH_START_PAGES[selectedSurah] || 1);
   const [pageInput, setPageInput] = useState("");
@@ -477,9 +479,37 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                   {surahList.find(s => s.number === selectedVerse.surah)?.englishName}
                 </span>
               </div>
-              <button onClick={() => setSelectedVerse(null)} className="p-1 rounded-full" style={{ color: TEXT_DIM }}>
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    toggleFavorite(selectedVerse.surah, selectedVerse.ayah, selectedVerse.text);
+                  }}
+                  className="p-1.5 rounded-full transition-colors"
+                  style={{ color: isFavorite(selectedVerse.surah, selectedVerse.ayah) ? "#F6C344" : TEXT_DIM }}
+                >
+                  <Star className={`w-4 h-4 ${isFavorite(selectedVerse.surah, selectedVerse.ayah) ? "fill-current" : ""}`} />
+                </button>
+                <button
+                  onClick={async () => {
+                    const surahName = surahList.find(s => s.number === selectedVerse.surah)?.englishName || "";
+                    const text = `${selectedVerse.text}\n\n${translation?.bn ? translation.bn + "\n\n" : ""}${translation?.en || ""}\n\n— ${surahName} ${selectedVerse.surah}:${selectedVerse.ayah}`;
+                    if (navigator.share) {
+                      try { await navigator.share({ text }); } catch {}
+                    } else {
+                      await navigator.clipboard.writeText(text);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }
+                  }}
+                  className="p-1.5 rounded-full transition-colors"
+                  style={{ color: copied ? TEAL : TEXT_DIM }}
+                >
+                  {copied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+                </button>
+                <button onClick={() => setSelectedVerse(null)} className="p-1.5 rounded-full" style={{ color: TEXT_DIM }}>
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             <div className="px-4 py-3 space-y-3">
