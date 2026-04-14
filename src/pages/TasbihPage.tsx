@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, History, Plus, Trash2, Volume2, VolumeX, Timer, Play, Pause, Globe, Target } from "lucide-react";
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, History, Plus, Trash2, Volume2, VolumeX, Timer, Play, Pause, Globe, Target, Vibrate } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,15 @@ const CUSTOM_DHIKR_KEY = "tasbih-custom-dhikr";
 const HISTORY_KEY = "tasbih-history";
 const SOUND_KEY = "tasbih-sound-enabled";
 const DAILY_TARGET_KEY = "tasbih-daily-target";
+const VIBRATION_KEY = "tasbih-vibration";
+
+type VibrationLevel = "off" | "light" | "medium" | "strong";
+const VIBRATION_PATTERNS: Record<VibrationLevel, { tap: number | number[]; complete: number | number[] }> = {
+  off: { tap: 0, complete: 0 },
+  light: { tap: 8, complete: [15, 30, 15] },
+  medium: { tap: 15, complete: [30, 50, 30] },
+  strong: { tap: 30, complete: [50, 80, 50] },
+};
 
 function createAudioContext() {
   return new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -201,6 +210,9 @@ export default function TasbihPage() {
   const [soundEnabled, setSoundEnabled] = useState(() => {
     try { return localStorage.getItem(SOUND_KEY) !== "false"; } catch { return true; }
   });
+  const [vibrationLevel, setVibrationLevel] = useState<VibrationLevel>(() => {
+    try { return (localStorage.getItem(VIBRATION_KEY) as VibrationLevel) || "medium"; } catch { return "medium"; }
+  });
 
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const [sessionActive, setSessionActive] = useState(false);
@@ -330,7 +342,7 @@ export default function TasbihPage() {
         if (advanceTo !== -1) {
           setTimeout(() => setActiveIndex(advanceTo), 100);
         }
-        if (navigator.vibrate) navigator.vibrate(15);
+        if (navigator.vibrate && vibrationLevel !== "off") navigator.vibrate(VIBRATION_PATTERNS[vibrationLevel].tap);
         if (soundEnabled) playTapSound();
         return prev; // no change
       }
@@ -341,7 +353,7 @@ export default function TasbihPage() {
       if (!sessionStarted) { setSessionStarted(true); setSessionActive(true); }
 
       if (next[activeIndex] >= currentTarget) {
-        if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+        if (navigator.vibrate && vibrationLevel !== "off") navigator.vibrate(VIBRATION_PATTERNS[vibrationLevel].complete);
         if (soundEnabled) playCompleteSound();
         // Show celebration
         setShowCelebration(true);
@@ -355,13 +367,13 @@ export default function TasbihPage() {
           setTimeout(() => setActiveIndex(advanceTo), 800);
         }
       } else {
-        if (navigator.vibrate) navigator.vibrate(15);
+        if (navigator.vibrate && vibrationLevel !== "off") navigator.vibrate(VIBRATION_PATTERNS[vibrationLevel].tap);
         if (soundEnabled) playTapSound();
       }
 
       return next;
     });
-  }, [activeIndex, dhikrList, soundEnabled, spawnRipple, sessionStarted]);
+  }, [activeIndex, dhikrList, soundEnabled, spawnRipple, sessionStarted, vibrationLevel]);
 
   const reset = useCallback(() => {
     setCounts((prev) => {
@@ -552,7 +564,26 @@ export default function TasbihPage() {
               {t("সাউন্ড", "Sound", "صوت")}
             </button>
 
-            {/* Timer */}
+            {/* Vibration */}
+            <button
+              onClick={() => {
+                const levels: VibrationLevel[] = ["off", "light", "medium", "strong"];
+                const next = levels[(levels.indexOf(vibrationLevel) + 1) % levels.length];
+                setVibrationLevel(next);
+                localStorage.setItem(VIBRATION_KEY, next);
+                if (navigator.vibrate && next !== "off") navigator.vibrate(VIBRATION_PATTERNS[next].tap);
+              }}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-[10px] font-medium transition-all min-w-[52px] ${
+                vibrationLevel !== "off" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Vibrate className="w-4 h-4" />
+              {vibrationLevel === "off" ? t("বন্ধ", "Off", "إيقاف")
+                : vibrationLevel === "light" ? t("হালকা", "Light", "خفيف")
+                : vibrationLevel === "medium" ? t("মাঝারি", "Medium", "متوسط")
+                : t("শক্তিশালী", "Strong", "قوي")}
+            </button>
+
             <button
               onClick={() => {
                 if (!sessionStarted) { setSessionStarted(true); setSessionActive(true); }
