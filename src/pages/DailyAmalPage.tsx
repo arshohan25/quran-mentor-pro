@@ -85,13 +85,16 @@ export default function DailyAmalPage() {
       <header className="islamic-header relative overflow-hidden">
         <div className="relative z-10 container py-4">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Link to="/" className="text-primary-foreground/80 hover:text-primary-foreground">
-                <ArrowLeft className="w-5 h-5" />
+            <div className="flex items-center gap-2.5">
+              <Link to="/" className="text-primary-foreground/80 hover:text-primary-foreground p-1">
+                <ArrowLeft className="w-5 h-5" strokeWidth={1.8} />
               </Link>
-              <h1 className="text-lg font-bold font-bengaliDisplay">
-                {t("দৈনিক আমল", "Daily Amal", "الأعمال اليومية")}
-              </h1>
+              <div>
+                <h1 className="text-lg font-bold font-bengaliDisplay leading-tight">
+                  {t("দৈনিক আমল", "Daily Amal", "الأعمال اليومية")}
+                </h1>
+                <p className="text-primary-foreground/50 text-[10px]">{t("রেফারেন্সসহ আমল", "Deeds with references", "الأعمال مع المراجع")}</p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <DailyAmalReminder />
@@ -104,7 +107,7 @@ export default function DailyAmalPage() {
 
       <main className="container py-4 space-y-4">
         {/* Progress + Streak */}
-        <div className="islamic-card p-4 space-y-3">
+        <div className="premium-card p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy className="w-4 h-4 text-accent" />
