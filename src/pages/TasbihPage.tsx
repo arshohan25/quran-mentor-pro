@@ -373,7 +373,7 @@ export default function TasbihPage() {
 
       return next;
     });
-  }, [activeIndex, dhikrList, soundEnabled, spawnRipple, sessionStarted]);
+  }, [activeIndex, dhikrList, soundEnabled, spawnRipple, sessionStarted, vibrationLevel]);
 
   const reset = useCallback(() => {
     setCounts((prev) => {
