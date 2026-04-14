@@ -103,11 +103,26 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     }
   }, [mushafPage]);
 
-  const handleVerseClick = useCallback(async (surah: number, ayah: number, arabicText: string) => {
+  const handleVerseClick = useCallback(async (surah: number, ayah: number, arabicText: string, e?: React.MouseEvent) => {
     if (selectedVerse?.surah === surah && selectedVerse?.ayah === ayah) {
       setSelectedVerse(null);
+      setPopupPosition(null);
       return;
     }
+
+    // Calculate position above the clicked element
+    if (e) {
+      const target = e.currentTarget as HTMLElement;
+      const rect = target.getBoundingClientRect();
+      const containerRect = contentRef.current?.getBoundingClientRect();
+      const scrollTop = contentRef.current?.scrollTop || 0;
+
+      // Position above the verse, centered horizontally
+      const top = rect.top - (containerRect?.top || 0) + scrollTop - 8;
+      const left = rect.left - (containerRect?.left || 0) + rect.width / 2;
+      setPopupPosition({ top, left });
+    }
+
     setSelectedVerse({ surah, ayah, text: arabicText });
     setTranslation(null);
     setTranslationLoading(true);
