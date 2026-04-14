@@ -394,10 +394,9 @@ export default function TasbihPage() {
               </DialogContent>
             </Dialog>
 
-            {/* History */}
             <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-foreground/70 hover:text-foreground hover:bg-muted/60">
                   <History className="w-4 h-4" />
                 </Button>
               </DialogTrigger>
@@ -441,7 +440,7 @@ export default function TasbihPage() {
                             contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
                             labelStyle={{ color: "hsl(var(--foreground))" }}
                           />
-                          <Bar dataKey="total" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} name={t("তাসবিহ", "Tasbih", "تسبيح")} />
+                          <Bar dataKey="total" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} name={t("তাসবিহ", "Tasbih", "تسبিح")} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
