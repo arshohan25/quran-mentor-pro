@@ -352,7 +352,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                     )}
 
                     <div
-                      className="w-full flex items-center justify-between"
+                      className={`w-full flex items-center ${mushafPage === 1 || mushafPage === 2 || mushafPage === 604 ? "justify-center gap-3" : "justify-between"}`}
                       dir="rtl"
                       style={{
                         fontFamily: "'UthmanicHafs', 'Amiri', serif",
