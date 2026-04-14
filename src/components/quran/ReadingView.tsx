@@ -55,7 +55,7 @@ const DARK_BORDER = "#2D3748";
 const TEXT_WHITE = "#FFFFFF";
 const TEXT_DIM = "#8B9DB5";
 const TEXT_MUTED = "#5C7080";
-const QURAN_COM_FONT_SIZE = 22;
+const QURAN_COM_FONT_SIZE = 18;
 const QURAN_COM_LINE_HEIGHT = 2.05;
 
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
