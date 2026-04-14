@@ -94,6 +94,7 @@ export default function DailyAmalPage() {
               </h1>
             </div>
             <div className="flex items-center gap-2">
+              <DailyAmalReminder />
               <DailyAmalDataSync onImport={() => setCompleted(loadCompleted())} />
               <LanguageSwitcher />
             </div>
