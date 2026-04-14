@@ -1,13 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
-import { BookOpen, Compass, Hash, Clock, LayoutGrid } from "lucide-react";
+import { BookOpen, Compass, CircleDot, Home, HandHeart } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const NAV_ITEMS = [
-  { icon: LayoutGrid, path: "/", labelBn: "হোম", labelEn: "Home", labelAr: "الرئيسية" },
+  { icon: Home, path: "/", labelBn: "হোম", labelEn: "Home", labelAr: "الرئيسية" },
   { icon: BookOpen, path: "/quran", labelBn: "কুরআন", labelEn: "Quran", labelAr: "القرآن" },
   { icon: Compass, path: "/qibla", labelBn: "কিবলা", labelEn: "Qibla", labelAr: "القبلة" },
-  { icon: Hash, path: "/tasbih", labelBn: "তাসবিহ", labelEn: "Tasbih", labelAr: "تسبيح" },
-  { icon: Clock, path: "/prayer-times", labelBn: "নামাজ", labelEn: "Prayer", labelAr: "الصلاة" },
+  { icon: CircleDot, path: "/tasbih", labelBn: "তাসবিহ", labelEn: "Tasbih", labelAr: "تسبيح" },
+  { icon: HandHeart, path: "/prayer-times", labelBn: "নামাজ", labelEn: "Prayer", labelAr: "الصلاة" },
 ];
 
 export default function BottomNav() {
