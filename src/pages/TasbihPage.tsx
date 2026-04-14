@@ -37,6 +37,15 @@ const CUSTOM_DHIKR_KEY = "tasbih-custom-dhikr";
 const HISTORY_KEY = "tasbih-history";
 const SOUND_KEY = "tasbih-sound-enabled";
 const DAILY_TARGET_KEY = "tasbih-daily-target";
+const VIBRATION_KEY = "tasbih-vibration";
+
+type VibrationLevel = "off" | "light" | "medium" | "strong";
+const VIBRATION_PATTERNS: Record<VibrationLevel, { tap: number | number[]; complete: number | number[] }> = {
+  off: { tap: 0, complete: 0 },
+  light: { tap: 8, complete: [15, 30, 15] },
+  medium: { tap: 15, complete: [30, 50, 30] },
+  strong: { tap: 30, complete: [50, 80, 50] },
+};
 
 function createAudioContext() {
   return new (window.AudioContext || (window as any).webkitAudioContext)();
