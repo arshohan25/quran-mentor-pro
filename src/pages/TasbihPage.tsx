@@ -237,6 +237,8 @@ export default function TasbihPage() {
 
   // ETA countdown: snapshot estimated end time on each tap
   const [etaEndTime, setEtaEndTime] = useState<number | null>(null);
+  const sessionSecondsRef = useRef(sessionSeconds);
+  sessionSecondsRef.current = sessionSeconds;
 
   useEffect(() => {
     if (sessionActive) {
