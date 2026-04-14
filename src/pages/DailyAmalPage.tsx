@@ -11,6 +11,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import DailyAmalStats from "@/components/DailyAmalStats";
 import DailyAmalDataSync from "@/components/DailyAmalDataSync";
+import DailyAmalReminder from "@/components/DailyAmalReminder";
 
 function getToday() {
   return new Date().toISOString().slice(0, 10);
@@ -93,6 +94,7 @@ export default function DailyAmalPage() {
               </h1>
             </div>
             <div className="flex items-center gap-2">
+              <DailyAmalReminder />
               <DailyAmalDataSync onImport={() => setCompleted(loadCompleted())} />
               <LanguageSwitcher />
             </div>
