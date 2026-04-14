@@ -120,14 +120,17 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     setSelectedVerse({ surah, ayah, text: arabicText });
     setTranslation(null);
     setTranslationLoading(true);
+    setShowTafsir(false);
     try {
-      const [bnRes, enRes] = await Promise.all([
+      const [bnRes, enRes, tafsirRes] = await Promise.all([
         fetch(`https://api.alquran.cloud/v1/ayah/${surah}:${ayah}/bn.bengali`).then(r => r.json()),
         fetch(`https://api.alquran.cloud/v1/ayah/${surah}:${ayah}/en.asad`).then(r => r.json()),
+        fetch(`https://api.quran.com/api/v4/tafsirs/169/by_ayah/${surah}:${ayah}`).then(r => r.json()).catch(() => null),
       ]);
       setTranslation({
         bn: bnRes?.data?.text,
         en: enRes?.data?.text,
+        tafsir: tafsirRes?.tafsir?.text?.replace(/<[^>]*>/g, '') || undefined,
       });
     } catch {
       setTranslation({ en: "Translation unavailable" });
