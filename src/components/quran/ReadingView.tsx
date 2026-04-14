@@ -310,8 +310,8 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                       fontFamily: "'UthmanicHafs', 'Amiri', serif",
                       fontSize: `${fontSize}px`,
                       color: TEXT_WHITE,
-                      wordSpacing: "3px",
-                      lineHeight: "1.85",
+                      wordSpacing: "2px",
+                      lineHeight: "1.7",
                       letterSpacing: "0px",
                     }}
                   >
