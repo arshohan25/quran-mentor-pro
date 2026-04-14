@@ -363,39 +363,40 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {line.words.map((word, wordIndex) => (
-                        <span
-                          key={`${word.verse_key}-${word.position}-${wordIndex}`}
-                          className="inline-flex items-center shrink-0"
-                          style={{
-                            cursor: word.isEndOfVerse ? "pointer" : undefined,
-                            background: selectedVerse?.surah === word.chapter_id && selectedVerse?.ayah === word.verse_number
-                              ? `${TEAL}22` : undefined,
-                            borderRadius: "4px",
-                          }}
-                          onClick={word.isEndOfVerse ? () => handleVerseClick(word.chapter_id, word.verse_number, word.text_uthmani) : undefined}
-                        >
-                          <span>{word.text_uthmani}</span>
-                          {word.isEndOfVerse && (
-                            <span
-                              className="inline-flex items-center justify-center select-none align-middle mx-0.5"
-                              style={{
-                                width: `${Math.max(18, QURAN_COM_FONT_SIZE * 0.9)}px`,
-                                height: `${Math.max(18, QURAN_COM_FONT_SIZE * 0.9)}px`,
-                                borderRadius: "50%",
-                                border: `1.25px solid ${TEAL}`,
-                                color: TEAL,
-                                fontSize: `${Math.max(9, QURAN_COM_FONT_SIZE * 0.42)}px`,
-                                fontFamily: "sans-serif",
-                                fontWeight: 600,
-                                lineHeight: 1,
-                              }}
-                            >
-                              {toArabicNum(word.verse_number)}
-                            </span>
-                          )}
-                        </span>
-                      ))}
+                      {line.words.map((word, wordIndex) => {
+                        const isSelected = selectedVerse?.surah === word.chapter_id && selectedVerse?.ayah === word.verse_number;
+                        return (
+                          <span
+                            key={`${word.verse_key}-${word.position}-${wordIndex}`}
+                            className="inline-flex items-center shrink-0 cursor-pointer transition-colors duration-150"
+                            style={{
+                              background: isSelected ? `${TEAL}22` : undefined,
+                              borderRadius: "4px",
+                            }}
+                            onClick={() => handleVerseClick(word.chapter_id, word.verse_number, word.text_uthmani)}
+                          >
+                            <span>{word.text_uthmani}</span>
+                            {word.isEndOfVerse && (
+                              <span
+                                className="inline-flex items-center justify-center select-none align-middle mx-0.5"
+                                style={{
+                                  width: `${Math.max(18, QURAN_COM_FONT_SIZE * 0.9)}px`,
+                                  height: `${Math.max(18, QURAN_COM_FONT_SIZE * 0.9)}px`,
+                                  borderRadius: "50%",
+                                  border: `1.25px solid ${isSelected ? TEXT_WHITE : TEAL}`,
+                                  color: isSelected ? TEXT_WHITE : TEAL,
+                                  fontSize: `${Math.max(9, QURAN_COM_FONT_SIZE * 0.42)}px`,
+                                  fontFamily: "sans-serif",
+                                  fontWeight: 600,
+                                  lineHeight: 1,
+                                }}
+                              >
+                                {toArabicNum(word.verse_number)}
+                              </span>
+                            )}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 );
