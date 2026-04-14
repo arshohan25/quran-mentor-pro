@@ -50,12 +50,10 @@ const TEXT_MUTED = "#5C7080";
 
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
   const { t } = useLanguage();
+  const quranComReadingFontSize = 22;
 
   const [mushafPage, setMushafPage] = useState(() => SURAH_START_PAGES[selectedSurah] || 1);
-  const [fontSize, setFontSize] = useState(() => {
-    const saved = localStorage.getItem("mushaf-font-size");
-    return saved ? Number(saved) : 22;
-  });
+  const fontSize = quranComReadingFontSize;
   const [pageInput, setPageInput] = useState("");
   const [showPageInput, setShowPageInput] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -77,91 +75,16 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   }, [selectedSurah]);
 
   useEffect(() => {
-    localStorage.setItem("mushaf-font-size", String(fontSize));
-  }, [fontSize]);
-
-  useEffect(() => {
     contentRef.current?.scrollTo({ top: 0 });
     setScrolled(false);
   }, [mushafPage]);
-
-  // Track scroll for sticky header change
-  useEffect(() => {
-    const el = contentRef.current;
-    if (!el) return;
-    const onScroll = () => setScrolled(el.scrollTop > 80);
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const currentJuz = getJuzForPage(mushafPage);
-  const currentHizb = Math.ceil(currentJuz * 2 - 1);
-  const currentSurahNum = surahForPage(mushafPage);
-  const currentSurahInfo = surahList.find((s) => s.number === currentSurahNum);
-
-  const goNext = () => { if (mushafPage < 604) setMushafPage(mushafPage + 1); };
-  const goPrev = () => { if (mushafPage > 1) setMushafPage(mushafPage - 1); };
-
-  const handlePageJump = () => {
-    const p = parseInt(pageInput);
-    if (p >= 1 && p <= 604) {
-      setMushafPage(p);
-      setShowPageInput(false);
-      setPageInput("");
-    }
-  };
-
-  const groups = data ? groupBySurah(data.verses) : [];
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: DARK_BG }}>
-        <div className="text-center space-y-3">
-          <p className="text-lg" style={{ color: "#E85D5D" }}>⚠️ {t("লোড করা যায়নি", "Failed to load", "فشل التحميل")}</p>
-          <button onClick={onBack} className="text-sm underline" style={{ color: TEXT_DIM }}>
-            {t("ফিরে যান", "Go back", "عودة")}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex flex-col" style={{ background: DARK_BG }}>
-
-      {/* ===== HEADER ===== */}
-      <header className="sticky top-0 z-50" style={{ background: DARK_HEADER }}>
-
-        {/* Row 1: Scrolled = Page X / Juz info, Not scrolled = Surah name */}
-        <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: `1px solid ${DARK_BORDER}` }}>
-          <div className="flex items-center gap-2">
-            <button onClick={onBack} className="p-1" style={{ color: TEXT_DIM }}>
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            {scrolled ? (
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs" style={{ color: TEXT_DIM }}>📑</span>
-                <span className="text-xs font-medium" style={{ color: TEXT_WHITE }}>
-                  Page {mushafPage}
-                </span>
-              </div>
-            ) : (
-              <button className="flex items-center gap-1 text-sm font-medium" style={{ color: TEXT_WHITE }}>
-                {currentSurahInfo
-                  ? `${currentSurahInfo.number}. ${currentSurahInfo.englishName}`
-                  : ""}
-                <ChevronDown className="w-3 h-3" style={{ color: TEXT_DIM }} />
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
+...
             {scrolled && (
               <span className="text-xs" style={{ color: TEXT_DIM }}>
                 Juz {currentJuz} / Hizb {currentHizb}
               </span>
             )}
-            <ReadingSettings fontSize={fontSize} setFontSize={setFontSize} />
+            <ReadingSettings fontSize={fontSize} hideFontSize />
           </div>
         </div>
 
