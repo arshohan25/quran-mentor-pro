@@ -71,7 +71,9 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const [selectedVerse, setSelectedVerse] = useState<{ surah: number; ayah: number; text: string } | null>(null);
   const [translation, setTranslation] = useState<{ bn?: string; en?: string } | null>(null);
   const [translationLoading, setTranslationLoading] = useState(false);
+  const [popupPosition, setPopupPosition] = useState<{ top: number; left: number } | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   // Swipe gesture handling
   const touchStartX = useRef<number | null>(null);
