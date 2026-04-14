@@ -210,6 +210,9 @@ export default function TasbihPage() {
   const [soundEnabled, setSoundEnabled] = useState(() => {
     try { return localStorage.getItem(SOUND_KEY) !== "false"; } catch { return true; }
   });
+  const [vibrationLevel, setVibrationLevel] = useState<VibrationLevel>(() => {
+    try { return (localStorage.getItem(VIBRATION_KEY) as VibrationLevel) || "medium"; } catch { return "medium"; }
+  });
 
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const [sessionActive, setSessionActive] = useState(false);
