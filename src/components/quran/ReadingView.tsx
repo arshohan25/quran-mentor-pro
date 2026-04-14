@@ -367,6 +367,13 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                         <span
                           key={`${word.verse_key}-${word.position}-${wordIndex}`}
                           className="inline-flex items-center shrink-0"
+                          style={{
+                            cursor: word.isEndOfVerse ? "pointer" : undefined,
+                            background: selectedVerse?.surah === word.chapter_id && selectedVerse?.ayah === word.verse_number
+                              ? `${TEAL}22` : undefined,
+                            borderRadius: "4px",
+                          }}
+                          onClick={word.isEndOfVerse ? () => handleVerseClick(word.chapter_id, word.verse_number, word.text_uthmani) : undefined}
                         >
                           <span>{word.text_uthmani}</span>
                           {word.isEndOfVerse && (
