@@ -106,21 +106,14 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const handleVerseClick = useCallback(async (surah: number, ayah: number, arabicText: string, e?: React.MouseEvent) => {
     if (selectedVerse?.surah === surah && selectedVerse?.ayah === ayah) {
       setSelectedVerse(null);
-      setPopupPosition(null);
       return;
     }
 
-    // Calculate position above the clicked element
+    // Get the Y position of the click to position popup above
     if (e) {
-      const target = e.currentTarget as HTMLElement;
-      const rect = target.getBoundingClientRect();
-      const containerRect = contentRef.current?.getBoundingClientRect();
-      const scrollTop = contentRef.current?.scrollTop || 0;
-
-      // Position above the verse, centered horizontally
-      const top = rect.top - (containerRect?.top || 0) + scrollTop - 8;
-      const left = rect.left - (containerRect?.left || 0) + rect.width / 2;
-      setPopupPosition({ top, left });
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      // Place popup so its bottom edge is just above the clicked verse
+      setPopupY(Math.max(60, rect.top - 8));
     }
 
     setSelectedVerse({ surah, ayah, text: arabicText });
