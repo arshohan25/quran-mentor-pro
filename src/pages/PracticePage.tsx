@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Mic, MicOff, RotateCcw } from "lucide-react";
+import { ArrowLeft, Mic, MicOff, RotateCcw, Sparkles } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -76,19 +76,22 @@ export default function PracticePage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="islamic-header">
-        <div className="container flex items-center justify-between">
+        <div className="container flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
-            <Link to="/" className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></Link>
-            <h1 className="text-xl font-bold">{t("প্র্যাকটিস", "Practice", "تدرب")}</h1>
+            <Link to="/" className="hover:opacity-80 p-1"><ArrowLeft className="w-5 h-5" strokeWidth={1.8} /></Link>
+            <div>
+              <h1 className="text-lg font-bold leading-tight">{t("প্র্যাকটিস", "Practice", "تدرب")}</h1>
+              <p className="text-primary-foreground/50 text-[10px]">{t("তেলাওয়াত অনুশীলন", "Recitation practice", "تدريب التلاوة")}</p>
+            </div>
           </div>
           <LanguageSwitcher />
         </div>
       </header>
 
-      <div className="container py-6 max-w-2xl">
-        <div className="flex gap-3 mb-6">
+      <div className="container py-5 max-w-2xl">
+        <div className="flex gap-3 mb-5">
           <Select value={selectedSurah.toString()} onValueChange={(v) => { setSelectedSurah(Number(v)); setCurrentAyah(0); resetPractice(); }}>
-            <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="flex-1 bg-card"><SelectValue /></SelectTrigger>
             <SelectContent>
               {surahList.map((s) => (
                 <SelectItem key={s.number} value={s.number.toString()}>
@@ -101,26 +104,22 @@ export default function PracticePage() {
 
         {totalAyahs > 0 && (
           <div className="flex items-center justify-between mb-4">
-            <Button size="sm" variant="outline" disabled={currentAyah === 0} onClick={() => { setCurrentAyah((p) => p - 1); resetPractice(); }}>
+            <Button size="sm" variant="outline" className="rounded-xl" disabled={currentAyah === 0} onClick={() => { setCurrentAyah((p) => p - 1); resetPractice(); }}>
               {t("পূর্ববর্তী", "Previous", "السابق")}
             </Button>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-xs text-muted-foreground font-medium">
               {t("আয়াত", "Ayah", "آية")} {currentAyah + 1} / {totalAyahs}
             </span>
-            <Button size="sm" variant="outline" disabled={currentAyah >= totalAyahs - 1} onClick={() => { setCurrentAyah((p) => p + 1); resetPractice(); }}>
+            <Button size="sm" variant="outline" className="rounded-xl" disabled={currentAyah >= totalAyahs - 1} onClick={() => { setCurrentAyah((p) => p + 1); resetPractice(); }}>
               {t("পরবর্তী", "Next", "التالي")}
             </Button>
           </div>
         )}
 
         {isLoading ? (
-          <Skeleton className="h-32 rounded-xl" />
+          <Skeleton className="h-32 rounded-2xl" />
         ) : data ? (
-          <div className="islamic-card p-6 mb-6 relative overflow-hidden">
-            <span className="corner-ornament top-0 right-0 border-t-2 border-r-2 rounded-tr-lg" />
-            <span className="corner-ornament top-0 left-0 border-t-2 border-l-2 rounded-tl-lg" />
-            <span className="corner-ornament bottom-0 right-0 border-b-2 border-r-2 rounded-br-lg" />
-            <span className="corner-ornament bottom-0 left-0 border-b-2 border-l-2 rounded-bl-lg" />
+          <div className="premium-card p-6 mb-5">
             <p className="font-arabic text-2xl md:text-3xl leading-loose text-foreground text-right mb-4">
               {result
                 ? result.matches.map((m, i) => (
@@ -131,22 +130,21 @@ export default function PracticePage() {
                 : data.arabic.ayahs[currentAyah]?.text}
             </p>
             <div className="gold-divider my-3">
-              <span className="text-accent/40 text-xs">✦</span>
+              <span className="text-accent/30 text-xs">✦</span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {data.bengali.ayahs[currentAyah]?.text}
-            </p>
+            <p className="text-sm text-muted-foreground">{data.bengali.ayahs[currentAyah]?.text}</p>
           </div>
         ) : null}
 
         <div className="flex flex-col items-center gap-4">
           <button
             onClick={isRecording ? stopRecording : startRecording}
-            className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all ring-4 ${
+            className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all ${
               isRecording
-                ? "bg-destructive text-destructive-foreground animate-pulse-glow ring-destructive/30"
-                : "bg-primary text-primary-foreground hover:scale-105 ring-accent/30 hover:ring-accent/50"
+                ? "bg-destructive text-destructive-foreground animate-pulse-glow"
+                : "bg-primary text-primary-foreground hover:scale-105"
             }`}
+            style={{ boxShadow: isRecording ? '0 0 30px hsl(var(--destructive) / 0.4)' : '0 4px 24px hsl(var(--primary) / 0.3)' }}
           >
             {isRecording ? <MicOff className="w-6 h-6 sm:w-8 sm:h-8" /> : <Mic className="w-6 h-6 sm:w-8 sm:h-8" />}
           </button>
@@ -157,16 +155,19 @@ export default function PracticePage() {
           </p>
 
           {recognizedText && !isRecording && (
-            <div className="w-full islamic-card p-4">
-              <p className="text-xs text-muted-foreground mb-1">{t("আপনি যা পড়েছেন:", "What you recited:", "ما قرأته:")}</p>
+            <div className="w-full premium-card p-4">
+              <p className="text-xs text-muted-foreground mb-1 font-medium">{t("আপনি যা পড়েছেন:", "What you recited:", "ما قرأته:")}</p>
               <p className="font-arabic text-lg text-right text-foreground">{recognizedText}</p>
             </div>
           )}
 
           {result && (
-            <div className="w-full islamic-card p-4">
+            <div className="w-full premium-card p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-foreground">{t("ফলাফল", "Result", "النتيجة")}</span>
+                <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-accent" strokeWidth={1.8} />
+                  {t("ফলাফল", "Result", "النتيجة")}
+                </span>
                 <span className="text-sm text-accent font-bold">
                   {result.matches.filter((m) => m.correct).length}/{result.matches.length} {t("সঠিক", "correct", "صحيح")}
                 </span>
@@ -175,7 +176,7 @@ export default function PracticePage() {
                 <span className="inline-flex items-center gap-1 text-xs"><span className="w-3 h-3 rounded-full bg-success inline-block" /> {t("সঠিক", "Correct", "صحيح")}</span>
                 <span className="inline-flex items-center gap-1 text-xs"><span className="w-3 h-3 rounded-full bg-destructive inline-block" /> {t("ভুল", "Wrong", "خطأ")}</span>
               </div>
-              <Button variant="outline" size="sm" onClick={resetPractice}>
+              <Button variant="outline" size="sm" className="rounded-xl" onClick={resetPractice}>
                 <RotateCcw className="w-4 h-4 mr-1" /> {t("আবার চেষ্টা করুন", "Try Again", "حاول مرة أخرى")}
               </Button>
             </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Navigation, MapPin, AlertCircle } from "lucide-react";
+import { ArrowLeft, Navigation, MapPin, AlertCircle, Compass } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
@@ -49,12 +49,11 @@ export default function QiblaPage() {
 
   const startCompass = useCallback(() => {
     const handleOrientation = (e: DeviceOrientationEvent) => {
-      // @ts-ignore - webkitCompassHeading exists on iOS
+      // @ts-ignore
       const alpha = e.webkitCompassHeading ?? (e.alpha ? 360 - e.alpha : null);
       if (alpha !== null) setHeading(alpha);
     };
-
-    // @ts-ignore - requestPermission exists on iOS 13+
+    // @ts-ignore
     if (typeof DeviceOrientationEvent.requestPermission === "function") {
       // @ts-ignore
       DeviceOrientationEvent.requestPermission().then((r: string) => {
@@ -63,10 +62,7 @@ export default function QiblaPage() {
       });
     } else {
       window.addEventListener("deviceorientation", handleOrientation, true);
-      // If no compass available after 2s, show manual mode
-      setTimeout(() => {
-        setHeading((prev) => (prev === null ? 0 : prev));
-      }, 2000);
+      setTimeout(() => { setHeading((prev) => (prev === null ? 0 : prev)); }, 2000);
     }
   }, [t]);
 
@@ -79,83 +75,76 @@ export default function QiblaPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="islamic-header">
-        <div className="container py-4 flex items-center justify-between">
+        <div className="container flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
-            <Link to="/" className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></Link>
-            <h1 className="text-lg font-bold">{t("কিবলা ফাইন্ডার", "Qibla Finder", "مكتشف القبلة")}</h1>
+            <Link to="/" className="hover:opacity-80 p-1"><ArrowLeft className="w-5 h-5" strokeWidth={1.8} /></Link>
+            <div>
+              <h1 className="text-lg font-bold leading-tight">{t("কিবলা ফাইন্ডার", "Qibla Finder", "مكتشف القبلة")}</h1>
+              <p className="text-primary-foreground/50 text-[10px]">{t("কিবলার দিক জানুন", "Find Qibla direction", "اعرف اتجاه القبلة")}</p>
+            </div>
           </div>
           <LanguageSwitcher />
         </div>
       </header>
 
-      <main className="container py-8 flex flex-col items-center gap-6">
+      <main className="container py-8 flex flex-col items-center gap-5">
         {error ? (
-          <div className="islamic-card p-6 text-center max-w-sm">
-            <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-3" />
+          <div className="premium-card p-6 text-center max-w-sm">
+            <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-3" strokeWidth={1.4} />
             <p className="text-sm text-muted-foreground">{error}</p>
           </div>
         ) : (
           <>
-            {/* Compass */}
             <div className="relative w-72 h-72 sm:w-80 sm:h-80">
-              {/* Outer ring */}
-              <div className="absolute inset-0 rounded-full border-4 border-accent/30 shadow-[0_0_40px_hsl(var(--accent)/0.15)]" />
-              
-              {/* Compass dial */}
+              <div className="absolute inset-0 rounded-full border-4 shadow-xl" style={{ borderColor: 'hsl(var(--accent) / 0.25)', boxShadow: '0 0 40px hsl(var(--accent) / 0.1)' }} />
               <div
                 className="absolute inset-3 rounded-full border-2 border-border bg-card shadow-inner transition-transform duration-300 ease-out"
                 style={{ transform: `rotate(${heading !== null ? -heading : 0}deg)` }}
               >
-                {/* Cardinal marks */}
                 {["N", "E", "S", "W"].map((dir, i) => (
                   <div key={dir} className="absolute inset-0 flex justify-center" style={{ transform: `rotate(${i * 90}deg)` }}>
                     <span className={`text-xs font-bold mt-2 ${dir === "N" ? "text-destructive" : "text-muted-foreground"}`}>{dir}</span>
                   </div>
                 ))}
-                {/* Degree ticks */}
                 {Array.from({ length: 72 }, (_, i) => (
                   <div key={i} className="absolute inset-0 flex justify-center" style={{ transform: `rotate(${i * 5}deg)` }}>
-                    <div className={`mt-1 ${i % 6 === 0 ? "w-0.5 h-3 bg-foreground/40" : "w-px h-2 bg-foreground/20"}`} />
+                    <div className={`mt-1 ${i % 6 === 0 ? "w-0.5 h-3 bg-foreground/40" : "w-px h-2 bg-foreground/15"}`} />
                   </div>
                 ))}
               </div>
-
-              {/* Qibla needle */}
-              <div
-                className="absolute inset-6 flex justify-center transition-transform duration-300 ease-out"
-                style={{ transform: `rotate(${needleRotation}deg)` }}
-              >
+              <div className="absolute inset-6 flex justify-center transition-transform duration-300 ease-out" style={{ transform: `rotate(${needleRotation}deg)` }}>
                 <div className="flex flex-col items-center">
                   <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-b-[28px] border-l-transparent border-r-transparent border-b-primary drop-shadow-md" />
                 </div>
               </div>
-
-              {/* Center Kaaba icon */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-14 h-14 rounded-full bg-card border-2 border-accent shadow-lg flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full bg-card border-2 shadow-lg flex items-center justify-center" style={{ borderColor: 'hsl(var(--accent))' }}>
                   <span className="text-2xl">🕋</span>
                 </div>
               </div>
             </div>
 
-            {/* Qibla angle display */}
-            <div className="islamic-card p-4 text-center w-full max-w-xs">
+            <div className="premium-card p-4 text-center w-full max-w-xs">
+              <div className="icon-container p-2 mx-auto w-fit mb-2">
+                <Compass className="w-5 h-5 text-primary" strokeWidth={1.6} />
+              </div>
               <p className="text-3xl font-bold text-primary">{Math.round(qiblaAngle)}°</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t("কিবলার দিক", "Qibla Direction", "اتجاه القبلة")}
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">{t("কিবলার দিক", "Qibla Direction", "اتجاه القبلة")}</p>
             </div>
 
-            {/* Info cards */}
             <div className="grid grid-cols-2 gap-3 w-full max-w-xs">
-              <div className="islamic-card p-3 text-center">
-                <MapPin className="w-4 h-4 text-accent mx-auto mb-1" />
-                <p className="text-lg font-semibold text-foreground">{distance} km</p>
-                <p className="text-[10px] text-muted-foreground">{t("মক্কা থেকে দূরত্ব", "Distance to Makkah", "المسافة إلى مكة")}</p>
+              <div className="premium-card p-3.5 text-center">
+                <div className="icon-container-gold p-1.5 mx-auto w-fit mb-1.5">
+                  <MapPin className="w-4 h-4 text-accent" strokeWidth={1.8} />
+                </div>
+                <p className="text-lg font-bold text-foreground">{distance} km</p>
+                <p className="text-[10px] text-muted-foreground">{t("মক্কা থেকে দূরত্ব", "To Makkah", "إلى مكة")}</p>
               </div>
-              <div className="islamic-card p-3 text-center">
-                <Navigation className="w-4 h-4 text-accent mx-auto mb-1" />
-                <p className="text-lg font-semibold text-foreground">{heading !== null ? `${Math.round(heading)}°` : "—"}</p>
+              <div className="premium-card p-3.5 text-center">
+                <div className="icon-container p-1.5 mx-auto w-fit mb-1.5">
+                  <Navigation className="w-4 h-4 text-primary" strokeWidth={1.8} />
+                </div>
+                <p className="text-lg font-bold text-foreground">{heading !== null ? `${Math.round(heading)}°` : "—"}</p>
                 <p className="text-[10px] text-muted-foreground">{t("আপনার দিক", "Your Heading", "اتجاهك")}</p>
               </div>
             </div>
