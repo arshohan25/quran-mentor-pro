@@ -419,6 +419,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                         );
                       })}
                     </div>
+                    <div style={{ borderBottom: `0.5px solid ${DARK_BORDER}`, opacity: 0.5 }} />
                   </div>
                 );
               })}
