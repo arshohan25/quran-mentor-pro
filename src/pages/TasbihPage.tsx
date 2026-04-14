@@ -371,6 +371,16 @@ export default function TasbihPage() {
     });
   }, [activeIndex]);
 
+  const resetAll = useCallback(() => {
+    const next = Array(dhikrList.length).fill(0);
+    setCounts(next);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    setActiveIndex(0);
+    setSessionSeconds(0);
+    setSessionActive(false);
+    setSessionStarted(false);
+  }, [dhikrList.length]);
+
   const addCustomDhikr = () => {
     const text = newArabic.trim() || newEn.trim() || newBn.trim();
     if (!text) return;
@@ -558,13 +568,22 @@ export default function TasbihPage() {
               <span className="font-mono text-[10px]">{formatTimer(sessionSeconds)}</span>
             </button>
 
-            {/* Reset */}
+            {/* Reset current */}
             <button
               onClick={reset}
               className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-[10px] font-medium text-muted-foreground hover:bg-muted transition-all min-w-[52px]"
             >
               <RotateCcw className="w-4 h-4" />
               {t("রিসেট", "Reset", "إعادة")}
+            </button>
+
+            {/* Reset all */}
+            <button
+              onClick={resetAll}
+              className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-[10px] font-medium text-destructive/70 hover:bg-destructive/10 transition-all min-w-[52px]"
+            >
+              <RotateCcw className="w-4 h-4" />
+              {t("সব রিসেট", "All Reset", "إعادة الكل")}
             </button>
 
             {/* Daily Target */}
