@@ -342,22 +342,25 @@ export default function TasbihPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="islamic-header">
-        <div className="container py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></Link>
-            <h1 className="text-lg font-bold">{t("তাসবিহ কাউন্টার", "Tasbih Counter", "عداد التسبيح")}</h1>
-          </div>
-          <div className="flex items-center gap-1">
-            {/* Sound toggle */}
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleSound}>
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-muted-foreground" />}
+      {/* Premium minimal header */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border/40">
+        <div className="container max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+          <Link to="/" className="p-1.5 -ml-1.5 rounded-full hover:bg-muted/60 transition-colors">
+            <ArrowLeft className="w-5 h-5 text-foreground/80" />
+          </Link>
+
+          <h1 className="text-base font-semibold tracking-tight text-foreground">
+            {t("তাসবিহ কাউন্টার", "Tasbih Counter", "عداد التسبيح")}
+          </h1>
+
+          <div className="flex items-center gap-0.5">
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-foreground/70 hover:text-foreground hover:bg-muted/60" onClick={toggleSound}>
+              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </Button>
 
-            {/* Add custom dhikr */}
             <Dialog open={addOpen} onOpenChange={setAddOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-foreground/70 hover:text-foreground hover:bg-muted/60">
                   <Plus className="w-4 h-4" />
                 </Button>
               </DialogTrigger>
