@@ -62,6 +62,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const { t, language } = useLanguage();
   const { toggleFavorite, isFavorite } = useBookmark();
   const [copied, setCopied] = useState(false);
+  const [copiedArabic, setCopiedArabic] = useState(false);
 
   const [mushafPage, setMushafPage] = useState(() => SURAH_START_PAGES[selectedSurah] || 1);
   const [pageInput, setPageInput] = useState("");
@@ -506,6 +507,18 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                   style={{ color: copied ? TEAL : TEXT_DIM }}
                 >
                   {copied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+                </button>
+                <button
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(selectedVerse.text);
+                    setCopiedArabic(true);
+                    setTimeout(() => setCopiedArabic(false), 2000);
+                  }}
+                  className="p-1.5 rounded-full transition-colors"
+                  style={{ color: copiedArabic ? TEAL : TEXT_DIM }}
+                  title={t("আরবি কপি", "Copy Arabic", "نسخ العربية")}
+                >
+                  {copiedArabic ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </button>
                 <button onClick={() => setSelectedVerse(null)} className="p-1.5 rounded-full" style={{ color: TEXT_DIM }}>
                   <X className="w-4 h-4" />
