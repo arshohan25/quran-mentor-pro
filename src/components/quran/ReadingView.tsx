@@ -236,7 +236,17 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                 Juz {currentJuz}
               </span>
             )}
-            <ReadingSettings fontSize={QURAN_COM_FONT_SIZE} hideFontSize />
+            <ReadingSettings
+              fontSize={QURAN_COM_FONT_SIZE}
+              hideFontSize
+              tajweedEnabled={tajweedEnabled}
+              onTajweedToggle={() => {
+                setTajweedEnabled(v => {
+                  localStorage.setItem("mushaf-tajweed", String(!v));
+                  return !v;
+                });
+              }}
+            />
           </div>
         </div>
 
