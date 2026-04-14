@@ -58,12 +58,15 @@ const QURAN_COM_FONT_SIZE = 22;
 const QURAN_COM_LINE_HEIGHT = 2.05;
 
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const [mushafPage, setMushafPage] = useState(() => SURAH_START_PAGES[selectedSurah] || 1);
   const [pageInput, setPageInput] = useState("");
   const [showPageInput, setShowPageInput] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [selectedVerse, setSelectedVerse] = useState<{ surah: number; ayah: number; text: string } | null>(null);
+  const [translation, setTranslation] = useState<{ bn?: string; en?: string } | null>(null);
+  const [translationLoading, setTranslationLoading] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Swipe gesture handling
