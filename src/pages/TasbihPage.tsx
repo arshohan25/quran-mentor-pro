@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, History, Plus, Trash2, Volume2, VolumeX, Timer, Play, Pause, Globe, Target } from "lucide-react";
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, History, Plus, Trash2, Volume2, VolumeX, Timer, Play, Pause, Globe, Target, Vibrate } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
