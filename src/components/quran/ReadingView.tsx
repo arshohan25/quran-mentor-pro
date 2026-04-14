@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { applyTajweedColors } from "@/utils/tajweed";
+import { applyTajweedColors, tajweedLegend } from "@/utils/tajweed";
 import { ArrowLeft, ChevronDown, X, Loader2, Star, Share2, Copy, Check } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuranPage, type MushafLine } from "@/hooks/useQuranPage";
@@ -324,6 +324,19 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
           </div>
         ) : (
           <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-4 pb-4">
+            {tajweedEnabled && (
+              <div className="flex flex-wrap gap-x-3 gap-y-1.5 mb-3 p-2.5 rounded-lg" style={{ background: DARK_BORDER }}>
+                <span className="text-[10px] font-semibold w-full mb-0.5" style={{ color: TEXT_DIM }}>
+                  {t("তাজবীদ রঙ:", "Tajweed Colors:", "ألوان التجويد:")}
+                </span>
+                {tajweedLegend.map((item) => (
+                  <div key={item.name} className="flex items-center gap-1">
+                    <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: item.color }} />
+                    <span className="text-[9px]" style={{ color: TEXT_DIM }}>{t(item.nameBn, item.nameEn, item.name)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="space-y-0.5 border rounded-xl p-3 sm:p-4" style={{ borderColor: DARK_BORDER }}>
               {mushafDisplayLines.map((line) => {
                 const surahInfo = line.surahNumber
