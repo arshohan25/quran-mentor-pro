@@ -46,10 +46,23 @@ export default function TasbihPage() {
       const next = [...prev];
       next[activeIndex]++;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+
+      // Auto-advance to next tasbih when target reached
+      if (next[activeIndex] >= DHIKR_LIST[activeIndex].target) {
+        if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+        const nextIncomplete = DHIKR_LIST.findIndex((d, i) => i > activeIndex && next[i] < d.target);
+        const target = nextIncomplete !== -1
+          ? nextIncomplete
+          : DHIKR_LIST.findIndex((d, i) => next[i] < d.target);
+        if (target !== -1) {
+          setTimeout(() => setActiveIndex(target), 600);
+        }
+      } else {
+        if (navigator.vibrate) navigator.vibrate(15);
+      }
+
       return next;
     });
-    // Haptic feedback
-    if (navigator.vibrate) navigator.vibrate(15);
   }, [activeIndex]);
 
   const reset = useCallback(() => {
