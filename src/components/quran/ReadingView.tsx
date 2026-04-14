@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuranPage, type MushafLine } from "@/hooks/useQuranPage";
@@ -64,6 +64,34 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const [showPageInput, setShowPageInput] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  // Swipe gesture handling
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    touchStartX.current = null;
+    touchStartY.current = null;
+
+    // Only trigger if horizontal swipe is dominant and > 60px
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx > 0 && mushafPage < 604) {
+        // Swipe right → next page (RTL: right = forward in Mushaf)
+        setMushafPage((p) => p + 1);
+      } else if (dx < 0 && mushafPage > 1) {
+        // Swipe left → previous page
+        setMushafPage((p) => p - 1);
+      }
+    }
+  }, [mushafPage]);
 
   const { data, isLoading, error } = useQuranPage(mushafPage);
 
@@ -225,7 +253,13 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
         )}
       </header>
 
-      <div ref={contentRef} className="flex-1 overflow-y-auto" style={{ background: DARK_CONTENT }}>
+      <div
+        ref={contentRef}
+        className="flex-1 overflow-y-auto"
+        style={{ background: DARK_CONTENT }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {isLoading ? (
           <div className="max-w-2xl mx-auto p-6 space-y-5">
             {Array.from({ length: 8 }).map((_, i) => (
