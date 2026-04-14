@@ -235,6 +235,9 @@ export default function TasbihPage() {
   // Celebration animation
   const [showCelebration, setShowCelebration] = useState(false);
 
+  // ETA countdown: snapshot estimated end time on each tap
+  const [etaEndTime, setEtaEndTime] = useState<number | null>(null);
+
   useEffect(() => {
     if (sessionActive) {
       timerRef.current = setInterval(() => setSessionSeconds(s => s + 1), 1000);
