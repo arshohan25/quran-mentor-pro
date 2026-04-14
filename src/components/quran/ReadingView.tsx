@@ -356,7 +356,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                     )}
 
                     <div
-                      className={`w-full flex items-center ${mushafPage === 1 || mushafPage === 2 || mushafPage === 604 ? "justify-center gap-3" : "justify-between"}`}
+                      className={`w-full flex flex-wrap items-center ${mushafPage === 1 || mushafPage === 2 || mushafPage === 604 ? "justify-center gap-x-3" : "justify-between"}`}
                       dir="rtl"
                       style={{
                         fontFamily: "'UthmanicHafs', 'Amiri', serif",
@@ -364,7 +364,6 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                         color: TEXT_WHITE,
                         lineHeight: QURAN_COM_LINE_HEIGHT,
                         letterSpacing: "0px",
-                        whiteSpace: "nowrap",
                       }}
                     >
                       {line.words.map((word, wordIndex) => {
