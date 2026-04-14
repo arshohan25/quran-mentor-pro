@@ -339,14 +339,20 @@ export default function TasbihPage() {
       if (next[activeIndex] >= currentTarget) {
         if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
         if (soundEnabled) playCompleteSound();
-        // Auto-advance after a brief pause
-        const nextIncomplete = dhikrList.findIndex((d, i) => i > activeIndex && next[i] < d.target);
-        const advanceTo = nextIncomplete !== -1
-          ? nextIncomplete
-          : dhikrList.findIndex((d, i) => next[i] < d.target);
-        if (advanceTo !== -1) {
-          setTimeout(() => setActiveIndex(advanceTo), 800);
-        }
+        // Auto-reset and advance after a brief pause
+        setTimeout(() => {
+          setCounts(p => {
+            const updated = [...p];
+            updated[activeIndex] = 0;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+            return updated;
+          });
+          const nextIncomplete = dhikrList.findIndex((d, i) => i > activeIndex && next[i] < d.target);
+          const advanceTo = nextIncomplete !== -1
+            ? nextIncomplete
+            : dhikrList.findIndex((d, i) => next[i] < d.target);
+          if (advanceTo !== -1) setActiveIndex(advanceTo);
+        }, 800);
       } else {
         if (navigator.vibrate) navigator.vibrate(15);
         if (soundEnabled) playTapSound();
