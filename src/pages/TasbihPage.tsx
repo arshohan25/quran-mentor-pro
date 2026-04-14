@@ -342,6 +342,9 @@ export default function TasbihPage() {
       if (next[activeIndex] >= currentTarget) {
         if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
         if (soundEnabled) playCompleteSound();
+        // Show celebration
+        setShowCelebration(true);
+        setTimeout(() => setShowCelebration(false), 1500);
         // Keep completed count, auto-advance to next incomplete
         const nextIncomplete = dhikrList.findIndex((d, i) => i > activeIndex && next[i] < d.target);
         const advanceTo = nextIncomplete !== -1
