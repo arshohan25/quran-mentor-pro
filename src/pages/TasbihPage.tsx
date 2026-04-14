@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, History, Plus, Trash2, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, History, Plus, Trash2, Volume2, VolumeX, Timer, Play, Pause } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
@@ -183,6 +183,28 @@ export default function TasbihPage() {
     try { return localStorage.getItem(SOUND_KEY) !== "false"; } catch { return true; }
   });
 
+  // Session timer
+  const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [sessionActive, setSessionActive] = useState(false);
+  const [sessionStarted, setSessionStarted] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (sessionActive) {
+      timerRef.current = setInterval(() => setSessionSeconds(s => s + 1), 1000);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [sessionActive]);
+
+  const formatTimer = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
   // Form state for custom dhikr
   const [newArabic, setNewArabic] = useState("");
   const [newBn, setNewBn] = useState("");
@@ -239,6 +261,9 @@ export default function TasbihPage() {
       const next = [...prev];
       next[activeIndex]++;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+
+      // Auto-start session timer on first tap
+      if (!sessionStarted) { setSessionStarted(true); setSessionActive(true); }
 
       if (next[activeIndex] >= dhikrList[activeIndex].target) {
         if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
@@ -505,15 +530,31 @@ export default function TasbihPage() {
         </Button>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-3 w-full">
+        <div className="grid grid-cols-3 gap-2 w-full">
           <div className="islamic-card p-3 text-center">
-            <p className="text-2xl font-bold text-primary">{totalToday}</p>
-            <p className="text-[10px] text-muted-foreground">{t("মোট গণনা", "Total Count", "العدد الكلي")}</p>
+            <p className="text-xl font-bold text-primary">{totalToday}</p>
+            <p className="text-[10px] text-muted-foreground">{t("মোট", "Total", "الكل")}</p>
           </div>
           <div className="islamic-card p-3 text-center">
-            <p className="text-2xl font-bold text-accent">{counts.filter((c, i) => c >= (dhikrList[i]?.target || 1)).length}/{dhikrList.length}</p>
-            <p className="text-[10px] text-muted-foreground">{t("সম্পন্ন", "Completed", "مكتمل")}</p>
+            <p className="text-xl font-bold text-accent">{counts.filter((c, i) => c >= (dhikrList[i]?.target || 1)).length}/{dhikrList.length}</p>
+            <p className="text-[10px] text-muted-foreground">{t("সম্পন্ন", "Done", "مكتمل")}</p>
           </div>
+          <button
+            onClick={() => {
+              if (!sessionStarted) { setSessionStarted(true); setSessionActive(true); }
+              else setSessionActive(prev => !prev);
+            }}
+            className="islamic-card p-3 text-center hover:bg-accent/5 transition-colors"
+          >
+            <div className="flex items-center justify-center gap-1">
+              <Timer className="w-3.5 h-3.5 text-muted-foreground" />
+              <p className={`text-xl font-bold font-mono ${sessionActive ? "text-primary" : "text-foreground"}`}>{formatTimer(sessionSeconds)}</p>
+            </div>
+            <div className="flex items-center justify-center gap-1">
+              {sessionActive ? <Pause className="w-2.5 h-2.5 text-muted-foreground" /> : <Play className="w-2.5 h-2.5 text-muted-foreground" />}
+              <p className="text-[10px] text-muted-foreground">{t("সময়", "Time", "الوقت")}</p>
+            </div>
+          </button>
         </div>
 
         {/* Quick dhikr pills */}
