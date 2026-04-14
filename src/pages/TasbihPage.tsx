@@ -859,16 +859,15 @@ export default function TasbihPage() {
           </div>
           <div className="w-px h-8 bg-border" />
           <div>
-            <p className="text-2xl font-bold text-foreground">
+            <p className="text-2xl font-bold text-foreground font-mono">
               {(() => {
-                const totalTarget = dhikrList.reduce((sum, d) => sum + d.target, 0);
                 const remaining = dhikrList.reduce((sum, d, i) => sum + Math.max(0, d.target - (counts[i] || 0)), 0);
                 if (remaining === 0) return "✓";
-                if (totalToday <= 0 || sessionSeconds <= 2) return "—";
-                const rate = totalToday / sessionSeconds;
-                const estSecs = Math.ceil(remaining / rate);
-                const m = Math.floor(estSecs / 60);
-                const s = estSecs % 60;
+                if (!etaEndTime || totalToday <= 0) return "—";
+                const secsLeft = Math.max(0, Math.ceil((etaEndTime - Date.now()) / 1000));
+                if (secsLeft === 0 && remaining > 0) return "—";
+                const m = Math.floor(secsLeft / 60);
+                const s = secsLeft % 60;
                 if (m >= 60) return `${Math.floor(m / 60)}h${m % 60 > 0 ? (m % 60) + "m" : ""}`;
                 return `${m}:${s.toString().padStart(2, "0")}`;
               })()}
