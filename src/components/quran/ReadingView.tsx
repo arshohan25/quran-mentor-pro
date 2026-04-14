@@ -53,9 +53,8 @@ const DARK_BORDER = "#2D3748";
 const TEXT_WHITE = "#FFFFFF";
 const TEXT_DIM = "#8B9DB5";
 const TEXT_MUTED = "#5C7080";
-const QURAN_COM_FONT_SIZE = 20;
-const QURAN_COM_LINE_HEIGHT = 1.15;
-const MUSHAF_LINE_MIN_HEIGHT = 36;
+const QURAN_COM_FONT_SIZE = 24;
+const QURAN_COM_LINE_HEIGHT = 2.1;
 
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
   const { t } = useLanguage();
@@ -297,7 +296,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                     )}
 
                     <div
-                      className="w-full flex items-center justify-between whitespace-nowrap"
+                      className="w-full"
                       dir="rtl"
                       style={{
                         fontFamily: "'UthmanicHafs', 'Amiri', serif",
@@ -305,19 +304,20 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                         color: TEXT_WHITE,
                         lineHeight: QURAN_COM_LINE_HEIGHT,
                         letterSpacing: "0px",
-                        minHeight: `${MUSHAF_LINE_MIN_HEIGHT}px`,
+                        textAlign: "justify",
+                        textAlignLast: "justify",
                       }}
                     >
                       {line.words.map((word, wordIndex) => (
                         <span
                           key={`${word.verse_key}-${word.position}-${wordIndex}`}
-                          className="inline-flex items-center shrink-0"
-                          style={{ gap: "4px" }}
+                          className="inline"
                         >
                           <span>{word.text_uthmani}</span>
+                          {" "}
                           {word.isEndOfVerse && (
                             <span
-                              className="inline-flex items-center justify-center select-none align-middle"
+                              className="inline-flex items-center justify-center select-none align-middle mx-0.5"
                               style={{
                                 width: `${Math.max(18, QURAN_COM_FONT_SIZE * 0.9)}px`,
                                 height: `${Math.max(18, QURAN_COM_FONT_SIZE * 0.9)}px`,
