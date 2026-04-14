@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, History, Plus, Trash2, Volume2, VolumeX, Timer, Play, Pause, Globe } from "lucide-react";
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, History, Plus, Trash2, Volume2, VolumeX, Timer, Play, Pause, Globe, Target } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Moon, Sun } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 interface Dhikr {
   arabic: string;
@@ -34,6 +35,7 @@ const STORAGE_KEY = "tasbih-counts";
 const CUSTOM_DHIKR_KEY = "tasbih-custom-dhikr";
 const HISTORY_KEY = "tasbih-history";
 const SOUND_KEY = "tasbih-sound-enabled";
+const DAILY_TARGET_KEY = "tasbih-daily-target";
 
 function createAudioContext() {
   return new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -125,6 +127,14 @@ function saveHistory(history: HistoryEntry[]) {
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 90)));
 }
 
+function loadDailyTarget(): number {
+  try {
+    const raw = localStorage.getItem(DAILY_TARGET_KEY);
+    if (raw) return parseInt(raw) || 0;
+  } catch {}
+  return 0;
+}
+
 function getWeeklyData(history: HistoryEntry[], language: string): { label: string; total: number }[] {
   const now = new Date();
   const days: { label: string; total: number }[] = [];
@@ -169,6 +179,13 @@ function getMonthlyData(history: HistoryEntry[], language: string): { label: str
   return weeks;
 }
 
+// Ripple type
+interface Ripple {
+  id: number;
+  x: number;
+  y: number;
+}
+
 export default function TasbihPage() {
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
@@ -188,6 +205,19 @@ export default function TasbihPage() {
   const [sessionActive, setSessionActive] = useState(false);
   const [sessionStarted, setSessionStarted] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Daily target
+  const [dailyTarget, setDailyTarget] = useState(loadDailyTarget);
+  const [targetOpen, setTargetOpen] = useState(false);
+  const [targetInput, setTargetInput] = useState("");
+
+  // Ripple state
+  const [ripples, setRipples] = useState<Ripple[]>([]);
+  const rippleIdRef = useRef(0);
+  const counterRef = useRef<HTMLButtonElement>(null);
+
+  // Tap scale animation
+  const [tapped, setTapped] = useState(false);
 
   useEffect(() => {
     if (sessionActive) {
@@ -256,7 +286,32 @@ export default function TasbihPage() {
     });
   }, [counts, dhikrList, language, sessionSeconds]);
 
-  const increment = useCallback(() => {
+  const spawnRipple = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    const btn = counterRef.current;
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    let clientX: number, clientY: number;
+    if ("touches" in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    const id = ++rippleIdRef.current;
+    setRipples(prev => [...prev, { id, x, y }]);
+    setTimeout(() => setRipples(prev => prev.filter(r => r.id !== id)), 600);
+  }, []);
+
+  const increment = useCallback((e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) spawnRipple(e);
+
+    // Tap animation
+    setTapped(true);
+    setTimeout(() => setTapped(false), 150);
+
     setCounts((prev) => {
       const next = [...prev];
       next[activeIndex]++;
@@ -281,7 +336,7 @@ export default function TasbihPage() {
 
       return next;
     });
-  }, [activeIndex, dhikrList, soundEnabled]);
+  }, [activeIndex, dhikrList, soundEnabled, spawnRipple, sessionStarted]);
 
   const reset = useCallback(() => {
     setCounts((prev) => {
@@ -323,7 +378,15 @@ export default function TasbihPage() {
     if (activeIndex >= dhikrList.length - 1) setActiveIndex(Math.max(0, dhikrList.length - 2));
   };
 
+  const saveDailyTarget = () => {
+    const val = Math.max(0, parseInt(targetInput) || 0);
+    setDailyTarget(val);
+    localStorage.setItem(DAILY_TARGET_KEY, String(val));
+    setTargetOpen(false);
+  };
+
   const totalToday = counts.reduce((a, b) => a + b, 0);
+  const dailyTargetProgress = dailyTarget > 0 ? Math.min((totalToday / dailyTarget) * 100, 100) : 0;
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr + "T00:00:00");
@@ -347,6 +410,27 @@ export default function TasbihPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Ripple styles */}
+      <style>{`
+        @keyframes ripple-expand {
+          0% { transform: translate(-50%, -50%) scale(0); opacity: 0.5; }
+          100% { transform: translate(-50%, -50%) scale(4); opacity: 0; }
+        }
+        .tasbih-ripple {
+          position: absolute;
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          background: hsl(var(--primary) / 0.25);
+          pointer-events: none;
+          animation: ripple-expand 0.6s ease-out forwards;
+        }
+        @keyframes tap-pulse {
+          0% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.3); }
+          100% { box-shadow: 0 0 0 20px hsl(var(--primary) / 0); }
+        }
+      `}</style>
+
       {/* ── Compact Header ── */}
       <header className="islamic-header">
         <div className="container px-4 py-3 flex items-center justify-between">
@@ -360,12 +444,10 @@ export default function TasbihPage() {
           </div>
 
           <div className="flex items-center gap-1">
-            {/* Theme toggle */}
             <Button variant="ghost" size="icon" className="h-8 w-8 text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10" onClick={toggleTheme}>
               {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
 
-            {/* Language globe */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10">
@@ -432,6 +514,45 @@ export default function TasbihPage() {
               <RotateCcw className="w-4 h-4" />
               {t("রিসেট", "Reset", "إعادة")}
             </button>
+
+            {/* Daily Target */}
+            <Dialog open={targetOpen} onOpenChange={setTargetOpen}>
+              <DialogTrigger asChild>
+                <button
+                  onClick={() => setTargetInput(dailyTarget > 0 ? String(dailyTarget) : "")}
+                  className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-[10px] font-medium transition-all min-w-[52px] ${
+                    dailyTarget > 0 ? "bg-accent/10 text-accent" : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Target className="w-4 h-4" />
+                  {t("লক্ষ্য", "Target", "هدف")}
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-w-[340px] rounded-2xl">
+                <DialogHeader>
+                  <DialogTitle className="text-sm">{t("দৈনিক লক্ষ্য সেট করুন", "Set Daily Target", "حدد الهدف اليومي")}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    {t(
+                      "আজ মোট কতবার তাসবিহ পড়তে চান সেই সংখ্যা দিন। ০ দিলে লক্ষ্য বাতিল হবে।",
+                      "Enter total tasbih count you want to achieve today. Set 0 to disable.",
+                      "أدخل العدد الإجمالي للتسبيح الذي تريد تحقيقه اليوم. اضبط 0 للإلغاء."
+                    )}
+                  </p>
+                  <Input
+                    type="number"
+                    placeholder={t("যেমন: ৫০০", "e.g. 500", "مثال: ٥٠٠")}
+                    value={targetInput}
+                    onChange={e => setTargetInput(e.target.value)}
+                    min={0}
+                  />
+                  <Button onClick={saveDailyTarget} className="w-full" size="sm">
+                    {t("সেভ করুন", "Save", "حفظ")}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             {/* Add */}
             <Dialog open={addOpen} onOpenChange={setAddOpen}>
@@ -565,7 +686,28 @@ export default function TasbihPage() {
       </div>
 
       {/* ── Main Content ── */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 max-w-md mx-auto w-full gap-6">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 max-w-md mx-auto w-full gap-5">
+        {/* Daily target progress bar */}
+        {dailyTarget > 0 && (
+          <div className="w-full space-y-1.5 animate-fade-in">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground flex items-center gap-1">
+                <Target className="w-3 h-3" />
+                {t("দৈনিক লক্ষ্য", "Daily Target", "الهدف اليومي")}
+              </span>
+              <span className={`font-semibold ${totalToday >= dailyTarget ? "text-success" : "text-foreground"}`}>
+                {totalToday}/{dailyTarget}
+              </span>
+            </div>
+            <Progress value={dailyTargetProgress} className="h-2.5" />
+            {totalToday >= dailyTarget && (
+              <p className="text-[10px] text-success font-medium text-center animate-fade-in">
+                🎉 {t("আলহামদুলিল্লাহ! দৈনিক লক্ষ্য পূরণ হয়েছে!", "Alhamdulillah! Daily target achieved!", "الحمد لله! تم تحقيق الهدف اليومي!")}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Stats strip */}
         <div className="flex items-center justify-center gap-6 text-center">
           <div>
@@ -601,7 +743,7 @@ export default function TasbihPage() {
           </button>
         </div>
 
-        {/* Counter circle */}
+        {/* Counter circle with ripple */}
         <div className="relative w-52 h-52 sm:w-60 sm:h-60">
           <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 200 200">
             <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(var(--border))" strokeWidth="5" />
@@ -616,13 +758,25 @@ export default function TasbihPage() {
           </svg>
 
           <button
-            onClick={increment}
-            className="absolute inset-3 rounded-full bg-card border border-border/50 shadow-md flex flex-col items-center justify-center active:scale-[0.97] transition-transform focus:outline-none"
+            ref={counterRef}
+            onClick={(e) => increment(e)}
+            className={`absolute inset-3 rounded-full bg-card border border-border/50 shadow-md flex flex-col items-center justify-center focus:outline-none overflow-hidden transition-transform duration-150 ${
+              tapped ? "scale-[0.95]" : "scale-100"
+            }`}
+            style={tapped ? { animation: "tap-pulse 0.4s ease-out" } : undefined}
           >
-            <span className={`text-5xl font-bold tracking-tight ${completed ? "text-success" : "text-foreground"}`}>{count}</span>
+            {/* Ripples */}
+            {ripples.map(r => (
+              <span
+                key={r.id}
+                className="tasbih-ripple"
+                style={{ left: r.x, top: r.y }}
+              />
+            ))}
+            <span className={`text-5xl font-bold tracking-tight transition-colors duration-200 ${completed ? "text-success" : "text-foreground"}`}>{count}</span>
             <span className="text-[11px] text-muted-foreground mt-0.5">/ {dhikr.target}</span>
             {completed && (
-              <span className="text-[11px] text-success font-medium mt-1 flex items-center gap-0.5">
+              <span className="text-[11px] text-success font-medium mt-1 flex items-center gap-0.5 animate-fade-in">
                 ✓ {t("সম্পূর্ণ", "Done", "تم")}
               </span>
             )}
