@@ -583,6 +583,23 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                         </p>
                       </div>
                     )}
+                    {translation.tafsir && (
+                      <div style={{ borderTop: `1px solid ${DARK_BORDER}`, paddingTop: "0.5rem" }}>
+                        <button
+                          onClick={() => setShowTafsir(!showTafsir)}
+                          className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wide"
+                          style={{ color: "#F6C344" }}
+                        >
+                          {t("তাফসীর ইবনে কাসীর", "Tafsir Ibn Kathir", "تفسير ابن كثير")}
+                          <ChevronDown className={`w-3 h-3 transition-transform ${showTafsir ? "rotate-180" : ""}`} />
+                        </button>
+                        {showTafsir && (
+                          <p className="text-xs leading-relaxed mt-1" style={{ color: TEXT_DIM }}>
+                            {translation.tafsir}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </>
                 ) : null}
               </div>
