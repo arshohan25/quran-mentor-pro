@@ -219,6 +219,9 @@ export default function TasbihPage() {
   // Tap scale animation
   const [tapped, setTapped] = useState(false);
 
+  // Celebration animation
+  const [showCelebration, setShowCelebration] = useState(false);
+
   useEffect(() => {
     if (sessionActive) {
       timerRef.current = setInterval(() => setSessionSeconds(s => s + 1), 1000);
