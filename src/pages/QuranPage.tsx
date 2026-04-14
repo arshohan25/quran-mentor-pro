@@ -74,28 +74,28 @@ export default function QuranPage() {
         </div>
       </header>
 
-      <div className="flex-1 flex items-center justify-center px-5 py-4 pb-20">
-        <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
+      <div className="flex-1 flex items-center justify-center px-4 pb-16">
+        <div className="grid grid-cols-2 gap-2.5 w-full max-w-lg">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             return (
               <div
                 key={cat.id}
                 onClick={() => cat.active && setActiveSection(cat.id)}
-                className={`group premium-card flex flex-col items-center justify-center p-4 text-center transition-all duration-300
+                className={`group premium-card flex flex-col items-center justify-center py-3 px-2 text-center transition-all duration-300
                   ${cat.active
                     ? "cursor-pointer hover:scale-[1.03] active:scale-[0.97]"
                     : "opacity-40 cursor-not-allowed"
                   }`}
               >
-                <div className="icon-container p-2.5 mb-2 group-hover:scale-110 transition-transform">
-                  <Icon className="w-5 h-5 text-primary" strokeWidth={1.6} />
+                <div className="icon-container p-2 mb-1.5 group-hover:scale-110 transition-transform">
+                  <Icon className="w-4.5 h-4.5 text-primary" strokeWidth={1.6} />
                 </div>
-                <span className="text-[11px] font-bold text-foreground leading-tight">
+                <span className="text-[10.5px] font-bold text-foreground leading-tight">
                   {language === "bn" ? cat.labelBn : language === "ar" ? cat.labelAr : cat.labelEn}
                 </span>
                 {!cat.active && (
-                  <span className="premium-badge mt-1">
+                  <span className="premium-badge mt-0.5 text-[8px]">
                     {t("শীঘ্রই আসছে", "Coming soon", "قريباً")}
                   </span>
                 )}
