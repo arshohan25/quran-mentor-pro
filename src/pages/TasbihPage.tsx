@@ -453,6 +453,34 @@ export default function TasbihPage() {
           0% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.3); }
           100% { box-shadow: 0 0 0 20px hsl(var(--primary) / 0); }
         }
+        @keyframes confetti-fall {
+          0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+          100% { transform: translateY(180px) rotate(720deg) scale(0.3); opacity: 0; }
+        }
+        @keyframes checkmark-pop {
+          0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+          50% { transform: scale(1.2) rotate(0deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes celebration-glow {
+          0% { box-shadow: 0 0 0 0 hsl(var(--success) / 0.4); }
+          50% { box-shadow: 0 0 30px 10px hsl(var(--success) / 0.2); }
+          100% { box-shadow: 0 0 0 0 hsl(var(--success) / 0); }
+        }
+        .confetti-particle {
+          position: absolute;
+          width: 8px;
+          height: 8px;
+          border-radius: 2px;
+          animation: confetti-fall 1.2s ease-out forwards;
+          pointer-events: none;
+        }
+        .celebration-check {
+          animation: checkmark-pop 0.5s ease-out forwards;
+        }
+        .celebration-ring {
+          animation: celebration-glow 1.5s ease-out forwards;
+        }
       `}</style>
 
       {/* ── Compact Header ── */}
