@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useQuranPage } from "@/hooks/useQuranPage";
+import { useQuranPage, type MushafLine } from "@/hooks/useQuranPage";
 import { surahList } from "@/data/surahList";
 import { SURAH_START_PAGES, surahForPage } from "@/data/mushafPages";
 import ReadingSettings from "@/components/quran/ReadingSettings";
@@ -21,17 +21,28 @@ function getJuzForPage(page: number): number {
   return 1;
 }
 
-function groupBySurah(verses: { chapter_id: number; verse_number: number; text_uthmani: string; verse_key: string }[]) {
-  const groups: { surahNumber: number; verses: typeof verses }[] = [];
-  for (const verse of verses) {
-    const last = groups[groups.length - 1];
-    if (last && last.surahNumber === verse.chapter_id) {
-      last.verses.push(verse);
-    } else {
-      groups.push({ surahNumber: verse.chapter_id, verses: [verse] });
-    }
-  }
-  return groups;
+interface MushafDisplayLine {
+  lineNumber: number;
+  surahNumber?: number;
+  words: MushafLine["words"];
+}
+
+function buildMushafDisplayLines(lines: MushafLine[]): MushafDisplayLine[] {
+  const startedSurahs = new Set<number>();
+
+  return lines.map((line) => {
+    const surahStartWord = line.words.find(
+      (word) => word.verse_number === 1 && !startedSurahs.has(word.chapter_id)
+    );
+
+    if (surahStartWord) startedSurahs.add(surahStartWord.chapter_id);
+
+    return {
+      lineNumber: line.line_number,
+      surahNumber: surahStartWord?.chapter_id,
+      words: line.words,
+    };
+  });
 }
 
 const TEAL = "#2CA4AB";
@@ -42,9 +53,9 @@ const DARK_BORDER = "#2D3748";
 const TEXT_WHITE = "#FFFFFF";
 const TEXT_DIM = "#8B9DB5";
 const TEXT_MUTED = "#5C7080";
-const QURAN_COM_FONT_SIZE = 22;
-const QURAN_COM_LINE_HEIGHT = 1.82;
-const QURAN_COM_WORD_SPACING = "2px";
+const QURAN_COM_FONT_SIZE = 20;
+const QURAN_COM_LINE_HEIGHT = 1.15;
+const MUSHAF_LINE_MIN_HEIGHT = 36;
 
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
   const { t } = useLanguage();
@@ -106,7 +117,10 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     }
   };
 
-  const groups = data ? groupBySurah(data.verses) : [];
+  const mushafDisplayLines = useMemo(
+    () => buildMushafDisplayLines(data?.lines ?? []),
+    [data?.lines]
+  );
 
   if (error) {
     return (
@@ -220,104 +234,112 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
             ))}
           </div>
         ) : (
-          <div className="max-w-2xl mx-auto px-4 py-3">
-            {groups.map((group, groupIndex) => {
-              const surahInfo = surahList.find((surah) => surah.number === group.surahNumber);
-              const isFirstAyah = group.verses[0]?.verse_number === 1;
+          <div className="max-w-2xl mx-auto px-2.5 pt-2 pb-3">
+            <div className="space-y-0.5">
+              {mushafDisplayLines.map((line) => {
+                const surahInfo = line.surahNumber
+                  ? surahList.find((surah) => surah.number === line.surahNumber)
+                  : undefined;
 
-              return (
-                <div key={groupIndex}>
-                  {isFirstAyah && surahInfo && (
-                    <div className="text-center my-5">
-                      <div className="flex items-center justify-center gap-4 mb-2">
-                        <span
-                          dir="rtl"
-                          style={{
-                            fontFamily: "'UthmanicHafs', 'Amiri', serif",
-                            fontSize: "36px",
-                            color: TEXT_WHITE,
-                            fontWeight: 400,
-                          }}
-                        >
-                          {surahInfo.name}
-                        </span>
-                        <div className="text-left">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-semibold" style={{ color: TEXT_WHITE }}>
-                              {surahInfo.number}. {surahInfo.englishName}
-                            </span>
-                            <span
-                              className="text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wide"
-                              style={{ background: TEAL, color: "#fff" }}
-                            >
-                              info
-                            </span>
-                          </div>
-                          <p className="text-xs mt-0.5" style={{ color: TEXT_DIM }}>
-                            {surahInfo.englishNameTranslation}
-                          </p>
-                        </div>
-                      </div>
-
-                      {group.surahNumber !== 9 && group.surahNumber !== 1 && (
-                        <div className="mt-4 mb-3">
-                          <p
+                return (
+                  <div key={`line-${line.lineNumber}`}>
+                    {surahInfo && (
+                      <div className="text-center my-5">
+                        <div className="flex items-center justify-center gap-4 mb-2">
+                          <span
                             dir="rtl"
                             style={{
                               fontFamily: "'UthmanicHafs', 'Amiri', serif",
-                              fontSize: "22px",
-                              color: TEXT_DIM,
-                              lineHeight: "2",
+                              fontSize: "36px",
+                              color: TEXT_WHITE,
+                              fontWeight: 400,
                             }}
                           >
-                            بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-                          </p>
-                          <p className="text-[11px] mt-1" style={{ color: TEXT_MUTED }}>
-                            In the Name of Allah—the Most Compassionate, Most Merciful
-                          </p>
+                            {surahInfo.name}
+                          </span>
+                          <div className="text-left">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-semibold" style={{ color: TEXT_WHITE }}>
+                                {surahInfo.number}. {surahInfo.englishName}
+                              </span>
+                              <span
+                                className="text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wide"
+                                style={{ background: TEAL, color: "#fff" }}
+                              >
+                                info
+                              </span>
+                            </div>
+                            <p className="text-xs mt-0.5" style={{ color: TEXT_DIM }}>
+                              {surahInfo.englishNameTranslation}
+                            </p>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  )}
 
-                  <div
-                    className="text-center"
-                    dir="rtl"
-                    style={{
-                      fontFamily: "'UthmanicHafs', 'Amiri', serif",
-                      fontSize: `${QURAN_COM_FONT_SIZE}px`,
-                      color: TEXT_WHITE,
-                      wordSpacing: QURAN_COM_WORD_SPACING,
-                      lineHeight: QURAN_COM_LINE_HEIGHT,
-                      letterSpacing: "0px",
-                    }}
-                  >
-                    {group.verses.map((verse) => (
-                      <span key={verse.verse_key} className="inline">
-                        {verse.text_uthmani}{" "}
+                        {line.surahNumber !== 9 && line.surahNumber !== 1 && (
+                          <div className="mt-4 mb-3">
+                            <p
+                              dir="rtl"
+                              style={{
+                                fontFamily: "'UthmanicHafs', 'Amiri', serif",
+                                fontSize: "22px",
+                                color: TEXT_DIM,
+                                lineHeight: "2",
+                              }}
+                            >
+                              بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                            </p>
+                            <p className="text-[11px] mt-1" style={{ color: TEXT_MUTED }}>
+                              In the Name of Allah—the Most Compassionate, Most Merciful
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div
+                      className="w-full flex items-center justify-between whitespace-nowrap"
+                      dir="rtl"
+                      style={{
+                        fontFamily: "'UthmanicHafs', 'Amiri', serif",
+                        fontSize: `${QURAN_COM_FONT_SIZE}px`,
+                        color: TEXT_WHITE,
+                        lineHeight: QURAN_COM_LINE_HEIGHT,
+                        letterSpacing: "0px",
+                        minHeight: `${MUSHAF_LINE_MIN_HEIGHT}px`,
+                      }}
+                    >
+                      {line.words.map((word, wordIndex) => (
                         <span
-                          className="inline-flex items-center justify-center select-none align-middle"
-                          style={{
-                            width: `${Math.max(22, QURAN_COM_FONT_SIZE * 0.75)}px`,
-                            height: `${Math.max(22, QURAN_COM_FONT_SIZE * 0.75)}px`,
-                            borderRadius: "50%",
-                            border: `1.5px solid ${TEAL}`,
-                            color: TEAL,
-                            fontSize: `${Math.max(10, QURAN_COM_FONT_SIZE * 0.36)}px`,
-                            fontFamily: "sans-serif",
-                            fontWeight: 600,
-                            lineHeight: 1,
-                            margin: "0 2px",
-                          }}
+                          key={`${word.verse_key}-${word.position}-${wordIndex}`}
+                          className="inline-flex items-center shrink-0"
+                          style={{ gap: "4px" }}
                         >
-                          {toArabicNum(verse.verse_number)}
-                        </span>{" "}
-                      </span>
-                    ))}
+                          <span>{word.text_uthmani}</span>
+                          {word.isEndOfVerse && (
+                            <span
+                              className="inline-flex items-center justify-center select-none align-middle"
+                              style={{
+                                width: `${Math.max(18, QURAN_COM_FONT_SIZE * 0.9)}px`,
+                                height: `${Math.max(18, QURAN_COM_FONT_SIZE * 0.9)}px`,
+                                borderRadius: "50%",
+                                border: `1.25px solid ${TEAL}`,
+                                color: TEAL,
+                                fontSize: `${Math.max(9, QURAN_COM_FONT_SIZE * 0.42)}px`,
+                                fontFamily: "sans-serif",
+                                fontWeight: 600,
+                                lineHeight: 1,
+                              }}
+                            >
+                              {toArabicNum(word.verse_number)}
+                            </span>
+                          )}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
 
             <div className="text-center mt-8 mb-3">
               <span className="text-sm font-medium" style={{ color: TEXT_MUTED }}>
