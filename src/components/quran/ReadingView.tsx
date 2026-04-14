@@ -128,7 +128,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
         fetch(`https://api.alquran.cloud/v1/ayah/${surah}:${ayah}/bn.bengali`).then(r => r.json()),
         fetch(`https://api.alquran.cloud/v1/ayah/${surah}:${ayah}/en.asad`).then(r => r.json()),
         fetch(`https://api.quran.com/api/v4/tafsirs/169/by_ayah/${surah}:${ayah}`).then(r => r.json()).catch(() => null),
-        fetch(`https://api.quran.com/api/v4/tafsirs/161/by_ayah/${surah}:${ayah}`).then(r => r.json()).catch(() => null),
+        fetch(`https://api.quran.com/api/v4/tafsirs/165/by_ayah/${surah}:${ayah}`).then(r => r.json()).catch(() => null),
       ]);
       setTranslation({
         bn: bnRes?.data?.text,
