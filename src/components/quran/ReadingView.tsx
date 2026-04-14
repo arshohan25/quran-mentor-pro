@@ -69,8 +69,9 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const [showPageInput, setShowPageInput] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [selectedVerse, setSelectedVerse] = useState<{ surah: number; ayah: number; text: string } | null>(null);
-  const [translation, setTranslation] = useState<{ bn?: string; en?: string } | null>(null);
+  const [translation, setTranslation] = useState<{ bn?: string; en?: string; tafsir?: string } | null>(null);
   const [translationLoading, setTranslationLoading] = useState(false);
+  const [showTafsir, setShowTafsir] = useState(false);
   const [popupY, setPopupY] = useState<number>(200);
   const contentRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -119,14 +120,17 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
     setSelectedVerse({ surah, ayah, text: arabicText });
     setTranslation(null);
     setTranslationLoading(true);
+    setShowTafsir(false);
     try {
-      const [bnRes, enRes] = await Promise.all([
+      const [bnRes, enRes, tafsirRes] = await Promise.all([
         fetch(`https://api.alquran.cloud/v1/ayah/${surah}:${ayah}/bn.bengali`).then(r => r.json()),
         fetch(`https://api.alquran.cloud/v1/ayah/${surah}:${ayah}/en.asad`).then(r => r.json()),
+        fetch(`https://api.quran.com/api/v4/tafsirs/169/by_ayah/${surah}:${ayah}`).then(r => r.json()).catch(() => null),
       ]);
       setTranslation({
         bn: bnRes?.data?.text,
         en: enRes?.data?.text,
+        tafsir: tafsirRes?.tafsir?.text?.replace(/<[^>]*>/g, '') || undefined,
       });
     } catch {
       setTranslation({ en: "Translation unavailable" });
@@ -577,6 +581,23 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                         <p className="text-xs leading-relaxed mt-0.5" style={{ color: TEXT_DIM }}>
                           {translation.en}
                         </p>
+                      </div>
+                    )}
+                    {translation.tafsir && (
+                      <div style={{ borderTop: `1px solid ${DARK_BORDER}`, paddingTop: "0.5rem" }}>
+                        <button
+                          onClick={() => setShowTafsir(!showTafsir)}
+                          className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wide"
+                          style={{ color: "#F6C344" }}
+                        >
+                          {t("তাফসীর ইবনে কাসীর", "Tafsir Ibn Kathir", "تفسير ابن كثير")}
+                          <ChevronDown className={`w-3 h-3 transition-transform ${showTafsir ? "rotate-180" : ""}`} />
+                        </button>
+                        {showTafsir && (
+                          <p className="text-xs leading-relaxed mt-1" style={{ color: TEXT_DIM }}>
+                            {translation.tafsir}
+                          </p>
+                        )}
                       </div>
                     )}
                   </>
