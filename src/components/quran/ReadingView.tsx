@@ -69,8 +69,9 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const [showPageInput, setShowPageInput] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [selectedVerse, setSelectedVerse] = useState<{ surah: number; ayah: number; text: string } | null>(null);
-  const [translation, setTranslation] = useState<{ bn?: string; en?: string } | null>(null);
+  const [translation, setTranslation] = useState<{ bn?: string; en?: string; tafsir?: string } | null>(null);
   const [translationLoading, setTranslationLoading] = useState(false);
+  const [showTafsir, setShowTafsir] = useState(false);
   const [popupY, setPopupY] = useState<number>(200);
   const contentRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
