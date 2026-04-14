@@ -381,8 +381,8 @@ export default function TasbihPage() {
       const remaining = dhikrList.reduce((sum, d, i) => sum + Math.max(0, d.target - (next[i] || 0)), 0);
       if (remaining === 0) {
         setEtaEndTime(null);
-      } else if (totalDone > 0 && sessionSeconds > 0) {
-        const rate = totalDone / sessionSeconds;
+      } else if (totalDone > 0 && sessionSecondsRef.current > 0) {
+        const rate = totalDone / sessionSecondsRef.current;
         const estSecsLeft = Math.ceil(remaining / rate);
         setEtaEndTime(Date.now() + estSecsLeft * 1000);
       }
