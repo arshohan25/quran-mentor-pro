@@ -580,14 +580,14 @@ export default function TasbihPage() {
         </div>
 
         {/* Dhikr selector */}
-        <div className="flex items-center gap-2 w-full">
+        <div className="flex items-center justify-center gap-3 w-full">
           <button
             className="shrink-0 w-9 h-9 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors"
             onClick={() => setActiveIndex((i) => (i - 1 + dhikrList.length) % dhikrList.length)}
           >
             <ChevronLeft className="w-4 h-4 text-muted-foreground" />
           </button>
-          <div className="flex-1 text-center py-3">
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-3 min-h-[72px]">
             <p className="font-arabic text-2xl sm:text-3xl text-primary leading-relaxed">{dhikr.arabic}</p>
             <p className="text-xs text-muted-foreground mt-1.5">
               {language === "bn" ? dhikr.bn : language === "ar" ? dhikr.ar : dhikr.en}
