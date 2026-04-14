@@ -59,6 +59,7 @@ const QURAN_COM_FONT_SIZE = 22;
 const QURAN_COM_LINE_HEIGHT = 2.05;
 
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
+  const { t, language } = useLanguage();
   const { toggleFavorite, isFavorite } = useBookmark();
   const [copied, setCopied] = useState(false);
 
