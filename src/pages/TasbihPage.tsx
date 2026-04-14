@@ -342,7 +342,7 @@ export default function TasbihPage() {
         if (advanceTo !== -1) {
           setTimeout(() => setActiveIndex(advanceTo), 100);
         }
-        if (navigator.vibrate) navigator.vibrate(15);
+        if (navigator.vibrate && vibrationLevel !== "off") navigator.vibrate(VIBRATION_PATTERNS[vibrationLevel].tap);
         if (soundEnabled) playTapSound();
         return prev; // no change
       }
@@ -353,7 +353,7 @@ export default function TasbihPage() {
       if (!sessionStarted) { setSessionStarted(true); setSessionActive(true); }
 
       if (next[activeIndex] >= currentTarget) {
-        if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+        if (navigator.vibrate && vibrationLevel !== "off") navigator.vibrate(VIBRATION_PATTERNS[vibrationLevel].complete);
         if (soundEnabled) playCompleteSound();
         // Show celebration
         setShowCelebration(true);
@@ -367,7 +367,7 @@ export default function TasbihPage() {
           setTimeout(() => setActiveIndex(advanceTo), 800);
         }
       } else {
-        if (navigator.vibrate) navigator.vibrate(15);
+        if (navigator.vibrate && vibrationLevel !== "off") navigator.vibrate(VIBRATION_PATTERNS[vibrationLevel].tap);
         if (soundEnabled) playTapSound();
       }
 
