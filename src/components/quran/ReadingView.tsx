@@ -477,7 +477,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
             {/* Backdrop */}
             <div
               className="fixed inset-0 z-[55]"
-              onClick={() => { setSelectedVerse(null); setPopupPosition(null); }}
+              onClick={() => { setSelectedVerse(null); }}
             />
             <motion.div
               ref={popupRef}
@@ -485,13 +485,11 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 10 }}
               transition={{ type: "spring", damping: 25, stiffness: 400 }}
-              className="absolute z-[60] w-[calc(100%-2rem)] max-w-md max-h-[45vh] overflow-y-auto rounded-xl shadow-2xl mx-auto left-4 right-4"
+              className="fixed z-[60] w-[calc(100%-2rem)] max-w-md max-h-[45vh] overflow-y-auto rounded-xl shadow-2xl left-4 right-4 mx-auto"
               style={{
                 background: DARK_HEADER,
                 border: `1px solid ${DARK_BORDER}`,
-                bottom: `calc(100% - ${popupPosition.top}px)`,
-                top: 'auto',
-                transform: 'translateY(-8px)',
+                bottom: `calc(100vh - ${popupY}px)`,
               }}
             >
               {/* Arrow indicator */}
@@ -548,7 +546,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                   >
                     {copiedArabic ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
-                  <button onClick={() => { setSelectedVerse(null); setPopupPosition(null); }} className="p-1 rounded-full" style={{ color: TEXT_DIM }}>
+                  <button onClick={() => { setSelectedVerse(null); }} className="p-1 rounded-full" style={{ color: TEXT_DIM }}>
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
