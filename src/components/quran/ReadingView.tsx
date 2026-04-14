@@ -294,7 +294,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
           </div>
         ) : (
           <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-4 pb-4">
-            <div className="space-y-0.5">
+            <div className="space-y-0.5 border rounded-xl p-3 sm:p-4" style={{ borderColor: DARK_BORDER }}>
               {mushafDisplayLines.map((line) => {
                 const surahInfo = line.surahNumber
                   ? surahList.find((surah) => surah.number === line.surahNumber)
