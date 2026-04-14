@@ -1,12 +1,14 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, History, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, History, Plus, Trash2, Volume2, VolumeX } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 interface Dhikr {
   arabic: string;
@@ -29,6 +31,56 @@ const DEFAULT_DHIKR: Dhikr[] = [
 const STORAGE_KEY = "tasbih-counts";
 const CUSTOM_DHIKR_KEY = "tasbih-custom-dhikr";
 const HISTORY_KEY = "tasbih-history";
+const SOUND_KEY = "tasbih-sound-enabled";
+
+// Web Audio API sound effects
+function createAudioContext() {
+  return new (window.AudioContext || (window as any).webkitAudioContext)();
+}
+
+let audioCtx: AudioContext | null = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = createAudioContext();
+  return audioCtx;
+}
+
+function playTapSound() {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 800;
+    osc.type = "sine";
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.08);
+  } catch {}
+}
+
+function playCompleteSound() {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    // Play a pleasant ascending two-note chime
+    [600, 900].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = "sine";
+      const start = now + i * 0.12;
+      gain.gain.setValueAtTime(0.15, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
+      osc.start(start);
+      osc.stop(start + 0.3);
+    });
+  } catch {}
+}
 
 function getToday(): string {
   return new Date().toISOString().slice(0, 10);
@@ -47,7 +99,6 @@ function loadCounts(total: number): number[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Pad if new dhikr added
       while (parsed.length < total) parsed.push(0);
       return parsed.slice(0, total);
     }
@@ -70,7 +121,52 @@ function loadHistory(): HistoryEntry[] {
 }
 
 function saveHistory(history: HistoryEntry[]) {
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 90))); // keep 90 days
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 90)));
+}
+
+// Chart data helpers
+function getWeeklyData(history: HistoryEntry[], language: string): { label: string; total: number }[] {
+  const now = new Date();
+  const days: { label: string; total: number }[] = [];
+  const dayNames = language === "bn"
+    ? ["রবি", "সোম", "মঙ্গল", "বুধ", "বৃহ", "শুক্র", "শনি"]
+    : language === "ar"
+    ? ["أحد", "إثن", "ثلا", "أرب", "خمي", "جمع", "سبت"]
+    : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const entry = history.find(h => h.date === dateStr);
+    days.push({ label: dayNames[d.getDay()], total: entry?.total || 0 });
+  }
+  return days;
+}
+
+function getMonthlyData(history: HistoryEntry[], language: string): { label: string; total: number }[] {
+  const now = new Date();
+  const weeks: { label: string; total: number }[] = [];
+  
+  for (let w = 3; w >= 0; w--) {
+    let total = 0;
+    const weekStart = new Date(now);
+    weekStart.setDate(weekStart.getDate() - (w * 7 + 6));
+    const weekEnd = new Date(now);
+    weekEnd.setDate(weekEnd.getDate() - w * 7);
+    
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(weekStart);
+      day.setDate(day.getDate() + d);
+      const dateStr = day.toISOString().slice(0, 10);
+      const entry = history.find(h => h.date === dateStr);
+      total += entry?.total || 0;
+    }
+    
+    const weekLabel = language === "bn" ? `সপ্তাহ ${4 - w}` : language === "ar" ? `أسبوع ${4 - w}` : `Week ${4 - w}`;
+    weeks.push({ label: weekLabel, total });
+  }
+  return weeks;
 }
 
 export default function TasbihPage() {
@@ -83,6 +179,9 @@ export default function TasbihPage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>(loadHistory);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    try { return localStorage.getItem(SOUND_KEY) !== "false"; } catch { return true; }
+  });
 
   // Form state for custom dhikr
   const [newArabic, setNewArabic] = useState("");
@@ -95,7 +194,14 @@ export default function TasbihPage() {
   const progress = Math.min((count / dhikr.target) * 100, 100);
   const completed = count >= dhikr.target;
 
-  // Sync counts array length when dhikrList changes
+  const toggleSound = () => {
+    setSoundEnabled(prev => {
+      const next = !prev;
+      localStorage.setItem(SOUND_KEY, String(next));
+      return next;
+    });
+  };
+
   useEffect(() => {
     setCounts(prev => {
       if (prev.length === dhikrList.length) return prev;
@@ -105,7 +211,6 @@ export default function TasbihPage() {
     });
   }, [dhikrList.length]);
 
-  // Save today's history on count change
   useEffect(() => {
     const total = counts.reduce((a, b) => a + b, 0);
     if (total === 0) return;
@@ -137,6 +242,7 @@ export default function TasbihPage() {
 
       if (next[activeIndex] >= dhikrList[activeIndex].target) {
         if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+        if (soundEnabled) playCompleteSound();
         const nextIncomplete = dhikrList.findIndex((d, i) => i > activeIndex && next[i] < d.target);
         const target = nextIncomplete !== -1
           ? nextIncomplete
@@ -146,11 +252,12 @@ export default function TasbihPage() {
         }
       } else {
         if (navigator.vibrate) navigator.vibrate(15);
+        if (soundEnabled) playTapSound();
       }
 
       return next;
     });
-  }, [activeIndex, dhikrList]);
+  }, [activeIndex, dhikrList, soundEnabled]);
 
   const reset = useCallback(() => {
     setCounts((prev) => {
@@ -180,11 +287,9 @@ export default function TasbihPage() {
   };
 
   const removeCustomDhikr = (idx: number) => {
-    // idx is relative to customDhikr array
     const updated = customDhikr.filter((_, i) => i !== idx);
     setCustomDhikr(updated);
     localStorage.setItem(CUSTOM_DHIKR_KEY, JSON.stringify(updated));
-    // Also remove the count
     const globalIdx = DEFAULT_DHIKR.length + idx;
     setCounts(prev => {
       const next = prev.filter((_, i) => i !== globalIdx);
@@ -205,6 +310,9 @@ export default function TasbihPage() {
     return d.toLocaleDateString(language === "ar" ? "ar" : "en", { day: "numeric", month: "short" });
   };
 
+  const weeklyData = useMemo(() => getWeeklyData(history, language), [history, language]);
+  const monthlyData = useMemo(() => getMonthlyData(history, language), [history, language]);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="islamic-header">
@@ -214,6 +322,11 @@ export default function TasbihPage() {
             <h1 className="text-lg font-bold">{t("তাসবিহ কাউন্টার", "Tasbih Counter", "عداد التسبيح")}</h1>
           </div>
           <div className="flex items-center gap-1">
+            {/* Sound toggle */}
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleSound}>
+              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-muted-foreground" />}
+            </Button>
+
             {/* Add custom dhikr */}
             <Dialog open={addOpen} onOpenChange={setAddOpen}>
               <DialogTrigger asChild>
@@ -226,34 +339,11 @@ export default function TasbihPage() {
                   <DialogTitle className="text-sm">{t("কাস্টম যিকর যোগ করুন", "Add Custom Dhikr", "أضف ذكرًا مخصصًا")}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3">
-                  <Input
-                    placeholder={t("আরবি টেক্সট", "Arabic text", "النص العربي")}
-                    value={newArabic}
-                    onChange={e => setNewArabic(e.target.value)}
-                    className="font-arabic text-right"
-                    dir="rtl"
-                  />
-                  <Input
-                    placeholder={t("বাংলা নাম", "Bengali name", "الاسم البنغالي")}
-                    value={newBn}
-                    onChange={e => setNewBn(e.target.value)}
-                  />
-                  <Input
-                    placeholder={t("ইংরেজি নাম", "English name", "الاسم الإنجليزي")}
-                    value={newEn}
-                    onChange={e => setNewEn(e.target.value)}
-                  />
-                  <Input
-                    type="number"
-                    placeholder={t("টার্গেট সংখ্যা", "Target count", "العدد المستهدف")}
-                    value={newTarget}
-                    onChange={e => setNewTarget(e.target.value)}
-                    min={1}
-                  />
-                  <Button onClick={addCustomDhikr} className="w-full" size="sm">
-                    {t("যোগ করুন", "Add", "أضف")}
-                  </Button>
-
+                  <Input placeholder={t("আরবি টেক্সট", "Arabic text", "النص العربي")} value={newArabic} onChange={e => setNewArabic(e.target.value)} className="font-arabic text-right" dir="rtl" />
+                  <Input placeholder={t("বাংলা নাম", "Bengali name", "الاسم البنغالي")} value={newBn} onChange={e => setNewBn(e.target.value)} />
+                  <Input placeholder={t("ইংরেজি নাম", "English name", "الاسم الإنجليزي")} value={newEn} onChange={e => setNewEn(e.target.value)} />
+                  <Input type="number" placeholder={t("টার্গেট সংখ্যা", "Target count", "العدد المستهدف")} value={newTarget} onChange={e => setNewTarget(e.target.value)} min={1} />
+                  <Button onClick={addCustomDhikr} className="w-full" size="sm">{t("যোগ করুন", "Add", "أضف")}</Button>
                   {customDhikr.length > 0 && (
                     <div className="pt-2 border-t border-border">
                       <p className="text-[10px] text-muted-foreground mb-2">{t("আপনার যিকরসমূহ", "Your Dhikr", "أذكارك")}</p>
@@ -281,44 +371,84 @@ export default function TasbihPage() {
                   <History className="w-4 h-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-[340px] rounded-xl">
+              <DialogContent className="max-w-[360px] rounded-xl">
                 <DialogHeader>
                   <DialogTitle className="text-sm">{t("তাসবিহ হিস্ট্রি", "Tasbih History", "سجل التسبيح")}</DialogTitle>
                 </DialogHeader>
-                <ScrollArea className="max-h-[400px]">
-                  {history.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-6">{t("কোনো হিস্ট্রি নেই", "No history yet", "لا يوجد سجل")}</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {history.slice(0, 30).map((h, idx) => (
-                        <div key={idx} className="islamic-card p-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-semibold">{formatDate(h.date)}</span>
-                            <span className="text-xs font-bold text-primary">{h.total} {t("বার", "times", "مرة")}</span>
-                          </div>
-                          <div className="space-y-1">
-                            {h.details.filter(d => d.count > 0).map((d, di) => (
-                              <div key={di} className="flex items-center justify-between">
-                                <span className="text-[10px] text-muted-foreground truncate flex-1">{d.name}</span>
-                                <div className="flex items-center gap-1.5">
-                                  <div className="w-16 h-1.5 rounded-full bg-border overflow-hidden">
-                                    <div
-                                      className="h-full rounded-full bg-primary transition-all"
-                                      style={{ width: `${Math.min((d.count / d.target) * 100, 100)}%` }}
-                                    />
-                                  </div>
-                                  <span className={`text-[10px] font-medium ${d.count >= d.target ? "text-success" : "text-foreground"}`}>
-                                    {d.count}/{d.target}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
+
+                <Tabs defaultValue="weekly" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 h-8">
+                    <TabsTrigger value="weekly" className="text-[11px]">{t("সাপ্তাহিক", "Weekly", "أسبوعي")}</TabsTrigger>
+                    <TabsTrigger value="monthly" className="text-[11px]">{t("মাসিক", "Monthly", "شهري")}</TabsTrigger>
+                    <TabsTrigger value="list" className="text-[11px]">{t("তালিকা", "List", "قائمة")}</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="weekly" className="mt-3">
+                    <div className="h-48">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={weeklyData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                          <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={30} />
+                          <Tooltip
+                            contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
+                            labelStyle={{ color: "hsl(var(--foreground))" }}
+                          />
+                          <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name={t("তাসবিহ", "Tasbih", "تسبيح")} />
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
-                  )}
-                </ScrollArea>
+                  </TabsContent>
+
+                  <TabsContent value="monthly" className="mt-3">
+                    <div className="h-48">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={monthlyData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="label" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+                          <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={30} />
+                          <Tooltip
+                            contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
+                            labelStyle={{ color: "hsl(var(--foreground))" }}
+                          />
+                          <Bar dataKey="total" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} name={t("তাসবিহ", "Tasbih", "تسبيح")} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="list" className="mt-3">
+                    <ScrollArea className="max-h-[300px]">
+                      {history.length === 0 ? (
+                        <p className="text-xs text-muted-foreground text-center py-6">{t("কোনো হিস্ট্রি নেই", "No history yet", "لا يوجد سجل")}</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {history.slice(0, 30).map((h, idx) => (
+                            <div key={idx} className="islamic-card p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-semibold">{formatDate(h.date)}</span>
+                                <span className="text-xs font-bold text-primary">{h.total} {t("বার", "times", "مرة")}</span>
+                              </div>
+                              <div className="space-y-1">
+                                {h.details.filter(d => d.count > 0).map((d, di) => (
+                                  <div key={di} className="flex items-center justify-between">
+                                    <span className="text-[10px] text-muted-foreground truncate flex-1">{d.name}</span>
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="w-16 h-1.5 rounded-full bg-border overflow-hidden">
+                                        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min((d.count / d.target) * 100, 100)}%` }} />
+                                      </div>
+                                      <span className={`text-[10px] font-medium ${d.count >= d.target ? "text-success" : "text-foreground"}`}>{d.count}/{d.target}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </TabsContent>
+                </Tabs>
               </DialogContent>
             </Dialog>
 
@@ -362,9 +492,7 @@ export default function TasbihPage() {
             onClick={increment}
             className="absolute inset-4 rounded-full bg-card border-2 border-accent/20 shadow-lg flex flex-col items-center justify-center active:scale-95 transition-transform focus:outline-none hover:border-accent/40"
           >
-            <span className={`text-5xl font-bold ${completed ? "text-success" : "text-foreground"}`}>
-              {count}
-            </span>
+            <span className={`text-5xl font-bold ${completed ? "text-success" : "text-foreground"}`}>{count}</span>
             <span className="text-xs text-muted-foreground mt-1">/ {dhikr.target}</span>
             {completed && <span className="text-xs text-success font-medium mt-1">✓ {t("সম্পূর্ণ", "Done", "تم")}</span>}
           </button>
