@@ -314,20 +314,38 @@ export default function TasbihPage() {
 
     setCounts((prev) => {
       const next = [...prev];
+      const currentTarget = dhikrList[activeIndex].target;
+      
+      // Don't increment past target — completed means done
+      if (next[activeIndex] >= currentTarget) {
+        // Already completed, auto-advance to next incomplete
+        const nextIncomplete = dhikrList.findIndex((d, i) => i > activeIndex && next[i] < d.target);
+        const advanceTo = nextIncomplete !== -1
+          ? nextIncomplete
+          : dhikrList.findIndex((d, i) => next[i] < d.target);
+        if (advanceTo !== -1) {
+          setTimeout(() => setActiveIndex(advanceTo), 100);
+        }
+        if (navigator.vibrate) navigator.vibrate(15);
+        if (soundEnabled) playTapSound();
+        return prev; // no change
+      }
+
       next[activeIndex]++;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 
       if (!sessionStarted) { setSessionStarted(true); setSessionActive(true); }
 
-      if (next[activeIndex] >= dhikrList[activeIndex].target) {
+      if (next[activeIndex] >= currentTarget) {
         if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
         if (soundEnabled) playCompleteSound();
+        // Auto-advance after a brief pause
         const nextIncomplete = dhikrList.findIndex((d, i) => i > activeIndex && next[i] < d.target);
-        const target = nextIncomplete !== -1
+        const advanceTo = nextIncomplete !== -1
           ? nextIncomplete
           : dhikrList.findIndex((d, i) => next[i] < d.target);
-        if (target !== -1) {
-          setTimeout(() => setActiveIndex(target), 600);
+        if (advanceTo !== -1) {
+          setTimeout(() => setActiveIndex(advanceTo), 800);
         }
       } else {
         if (navigator.vibrate) navigator.vibrate(15);
