@@ -7,13 +7,13 @@ const pageVariants = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] },
+    transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] as const },
   },
   exit: {
     opacity: 0,
     y: -12,
     scale: 0.99,
-    transition: { duration: 0.2, ease: [0.55, 0.06, 0.68, 0.19] },
+    transition: { duration: 0.2, ease: [0.55, 0.06, 0.68, 0.19] as const },
   },
 };
 
