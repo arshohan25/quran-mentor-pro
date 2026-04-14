@@ -1,14 +1,16 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, History, Plus, Trash2, Volume2, VolumeX, Timer, Play, Pause } from "lucide-react";
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, History, Plus, Trash2, Volume2, VolumeX, Timer, Play, Pause, Globe } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { Moon, Sun } from "lucide-react";
 
 interface Dhikr {
   arabic: string;
@@ -33,7 +35,6 @@ const CUSTOM_DHIKR_KEY = "tasbih-custom-dhikr";
 const HISTORY_KEY = "tasbih-history";
 const SOUND_KEY = "tasbih-sound-enabled";
 
-// Web Audio API sound effects
 function createAudioContext() {
   return new (window.AudioContext || (window as any).webkitAudioContext)();
 }
@@ -65,7 +66,6 @@ function playCompleteSound() {
   try {
     const ctx = getAudioCtx();
     const now = ctx.currentTime;
-    // Play a pleasant ascending two-note chime
     [600, 900].forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -109,7 +109,7 @@ function loadCounts(total: number): number[] {
 interface HistoryEntry {
   date: string;
   total: number;
-  sessionTime?: number; // seconds
+  sessionTime?: number;
   details: { name: string; count: number; target: number }[];
 }
 
@@ -125,7 +125,6 @@ function saveHistory(history: HistoryEntry[]) {
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 90)));
 }
 
-// Chart data helpers
 function getWeeklyData(history: HistoryEntry[], language: string): { label: string; total: number }[] {
   const now = new Date();
   const days: { label: string; total: number }[] = [];
@@ -171,7 +170,8 @@ function getMonthlyData(history: HistoryEntry[], language: string): { label: str
 }
 
 export default function TasbihPage() {
-  const { t, language } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const [customDhikr, setCustomDhikr] = useState<Dhikr[]>(loadCustomDhikr);
   const dhikrList = useMemo(() => [...DEFAULT_DHIKR, ...customDhikr], [customDhikr]);
 
@@ -184,7 +184,6 @@ export default function TasbihPage() {
     try { return localStorage.getItem(SOUND_KEY) !== "false"; } catch { return true; }
   });
 
-  // Session timer
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const [sessionActive, setSessionActive] = useState(false);
   const [sessionStarted, setSessionStarted] = useState(false);
@@ -206,7 +205,6 @@ export default function TasbihPage() {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  // Form state for custom dhikr
   const [newArabic, setNewArabic] = useState("");
   const [newBn, setNewBn] = useState("");
   const [newEn, setNewEn] = useState("");
@@ -264,7 +262,6 @@ export default function TasbihPage() {
       next[activeIndex]++;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 
-      // Auto-start session timer on first tap
       if (!sessionStarted) { setSessionStarted(true); setSessionActive(true); }
 
       if (next[activeIndex] >= dhikrList[activeIndex].target) {
@@ -340,28 +337,111 @@ export default function TasbihPage() {
   const weeklyData = useMemo(() => getWeeklyData(history, language), [history, language]);
   const monthlyData = useMemo(() => getMonthlyData(history, language), [history, language]);
 
+  const langs = [
+    { id: "bn" as const, label: "বাংলা" },
+    { id: "en" as const, label: "English" },
+    { id: "ar" as const, label: "عربي" },
+  ];
+
+  const completedCount = counts.filter((c, i) => c >= (dhikrList[i]?.target || 1)).length;
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* ── Compact Header ── */}
       <header className="islamic-header">
-        <div className="container py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="hover:opacity-80"><ArrowLeft className="w-5 h-5" /></Link>
-            <h1 className="text-lg font-bold">{t("তাসবিহ কাউন্টার", "Tasbih Counter", "عداد التسبيح")}</h1>
+        <div className="container px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Link to="/" className="hover:opacity-80 transition-opacity">
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <h1 className="text-base font-semibold tracking-tight">
+              {t("তাসবিহ", "Tasbih", "تسبيح")}
+            </h1>
           </div>
+
           <div className="flex items-center gap-1">
-            {/* Sound toggle */}
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleSound}>
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-muted-foreground" />}
+            {/* Theme toggle */}
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10" onClick={toggleTheme}>
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
 
-            {/* Add custom dhikr */}
+            {/* Language globe */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10">
+                  <Globe className="w-4 h-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-36 p-1.5" align="end">
+                {langs.map(l => (
+                  <button
+                    key={l.id}
+                    onClick={() => setLanguage(l.id)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                      language === l.id
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Feature Toolbar ── */}
+      <div className="bg-card border-b border-border">
+        <div className="container px-4">
+          <div className="flex items-center justify-between py-2 gap-1 overflow-x-auto scrollbar-hide">
+            {/* Sound */}
+            <button
+              onClick={toggleSound}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-[10px] font-medium transition-all min-w-[52px] ${
+                soundEnabled ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              {t("সাউন্ড", "Sound", "صوت")}
+            </button>
+
+            {/* Timer */}
+            <button
+              onClick={() => {
+                if (!sessionStarted) { setSessionStarted(true); setSessionActive(true); }
+                else setSessionActive(prev => !prev);
+              }}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-[10px] font-medium transition-all min-w-[52px] ${
+                sessionActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <div className="flex items-center gap-1">
+                <Timer className="w-4 h-4" />
+                {sessionStarted && (sessionActive ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />)}
+              </div>
+              <span className="font-mono text-[10px]">{formatTimer(sessionSeconds)}</span>
+            </button>
+
+            {/* Reset */}
+            <button
+              onClick={reset}
+              className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-[10px] font-medium text-muted-foreground hover:bg-muted transition-all min-w-[52px]"
+            >
+              <RotateCcw className="w-4 h-4" />
+              {t("রিসেট", "Reset", "إعادة")}
+            </button>
+
+            {/* Add */}
             <Dialog open={addOpen} onOpenChange={setAddOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <button className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-[10px] font-medium text-muted-foreground hover:bg-muted transition-all min-w-[52px]">
                   <Plus className="w-4 h-4" />
-                </Button>
+                  {t("যোগ", "Add", "إضافة")}
+                </button>
               </DialogTrigger>
-              <DialogContent className="max-w-[340px] rounded-xl">
+              <DialogContent className="max-w-[340px] rounded-2xl">
                 <DialogHeader>
                   <DialogTitle className="text-sm">{t("কাস্টম যিকর যোগ করুন", "Add Custom Dhikr", "أضف ذكرًا مخصصًا")}</DialogTitle>
                 </DialogHeader>
@@ -394,15 +474,15 @@ export default function TasbihPage() {
             {/* History */}
             <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <button className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-[10px] font-medium text-muted-foreground hover:bg-muted transition-all min-w-[52px]">
                   <History className="w-4 h-4" />
-                </Button>
+                  {t("হিস্ট্রি", "History", "السجل")}
+                </button>
               </DialogTrigger>
-              <DialogContent className="max-w-[360px] rounded-xl">
+              <DialogContent className="max-w-[360px] rounded-2xl">
                 <DialogHeader>
                   <DialogTitle className="text-sm">{t("তাসবিহ হিস্ট্রি", "Tasbih History", "سجل التسبيح")}</DialogTitle>
                 </DialogHeader>
-
                 <Tabs defaultValue="weekly" className="w-full">
                   <TabsList className="grid w-full grid-cols-3 h-8">
                     <TabsTrigger value="weekly" className="text-[11px]">{t("সাপ্তাহিক", "Weekly", "أسبوعي")}</TabsTrigger>
@@ -417,10 +497,7 @@ export default function TasbihPage() {
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                           <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                           <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={30} />
-                          <Tooltip
-                            contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
-                            labelStyle={{ color: "hsl(var(--foreground))" }}
-                          />
+                          <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }} labelStyle={{ color: "hsl(var(--foreground))" }} />
                           <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name={t("তাসবিহ", "Tasbih", "تسبيح")} />
                         </BarChart>
                       </ResponsiveContainer>
@@ -434,10 +511,7 @@ export default function TasbihPage() {
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                           <XAxis dataKey="label" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
                           <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={30} />
-                          <Tooltip
-                            contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
-                            labelStyle={{ color: "hsl(var(--foreground))" }}
-                          />
+                          <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }} labelStyle={{ color: "hsl(var(--foreground))" }} />
                           <Bar dataKey="total" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} name={t("তাসবিহ", "Tasbih", "تسبيح")} />
                         </BarChart>
                       </ResponsiveContainer>
@@ -449,21 +523,21 @@ export default function TasbihPage() {
                       {history.length === 0 ? (
                         <p className="text-xs text-muted-foreground text-center py-6">{t("কোনো হিস্ট্রি নেই", "No history yet", "لا يوجد سجل")}</p>
                       ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-2.5">
                           {history.slice(0, 30).map((h, idx) => (
-                            <div key={idx} className="islamic-card p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-semibold">{formatDate(h.date)}</span>
-                              <div className="flex items-center gap-2">
-                                {h.sessionTime != null && h.sessionTime > 0 && (
-                                  <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                                    <Timer className="w-2.5 h-2.5" />
-                                    {formatTimer(h.sessionTime)}
-                                  </span>
-                                )}
-                                <span className="text-xs font-bold text-primary">{h.total} {t("বার", "times", "مرة")}</span>
+                            <div key={idx} className="rounded-xl border border-border/60 bg-muted/30 p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-semibold">{formatDate(h.date)}</span>
+                                <div className="flex items-center gap-2">
+                                  {h.sessionTime != null && h.sessionTime > 0 && (
+                                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                                      <Timer className="w-2.5 h-2.5" />
+                                      {formatTimer(h.sessionTime)}
+                                    </span>
+                                  )}
+                                  <span className="text-xs font-bold text-primary">{h.total} {t("বার", "times", "مرة")}</span>
+                                </div>
                               </div>
-                            </div>
                               <div className="space-y-1">
                                 {h.details.filter(d => d.count > 0).map((d, di) => (
                                   <div key={di} className="flex items-center justify-between">
@@ -486,37 +560,55 @@ export default function TasbihPage() {
                 </Tabs>
               </DialogContent>
             </Dialog>
-
-            <LanguageSwitcher />
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="container py-6 flex flex-col items-center gap-5 max-w-sm mx-auto">
+      {/* ── Main Content ── */}
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 max-w-md mx-auto w-full gap-6">
+        {/* Stats strip */}
+        <div className="flex items-center justify-center gap-6 text-center">
+          <div>
+            <p className="text-2xl font-bold text-primary">{totalToday}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t("মোট", "Total", "الكل")}</p>
+          </div>
+          <div className="w-px h-8 bg-border" />
+          <div>
+            <p className="text-2xl font-bold text-accent">{completedCount}<span className="text-sm text-muted-foreground font-normal">/{dhikrList.length}</span></p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t("সম্পন্ন", "Done", "مكتمل")}</p>
+          </div>
+        </div>
+
         {/* Dhikr selector */}
-        <div className="flex items-center gap-3 w-full">
-          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setActiveIndex((i) => (i - 1 + dhikrList.length) % dhikrList.length)}>
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex-1 text-center islamic-card p-3">
-            <p className="font-arabic text-2xl text-primary leading-relaxed">{dhikr.arabic}</p>
-            <p className="text-xs text-muted-foreground mt-1">
+        <div className="flex items-center gap-2 w-full">
+          <button
+            className="shrink-0 w-9 h-9 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors"
+            onClick={() => setActiveIndex((i) => (i - 1 + dhikrList.length) % dhikrList.length)}
+          >
+            <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+          </button>
+          <div className="flex-1 text-center py-3">
+            <p className="font-arabic text-2xl sm:text-3xl text-primary leading-relaxed">{dhikr.arabic}</p>
+            <p className="text-xs text-muted-foreground mt-1.5">
               {language === "bn" ? dhikr.bn : language === "ar" ? dhikr.ar : dhikr.en}
             </p>
           </div>
-          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setActiveIndex((i) => (i + 1) % dhikrList.length)}>
-            <ChevronRight className="w-5 h-5" />
-          </Button>
+          <button
+            className="shrink-0 w-9 h-9 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors"
+            onClick={() => setActiveIndex((i) => (i + 1) % dhikrList.length)}
+          >
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </button>
         </div>
 
         {/* Counter circle */}
-        <div className="relative w-56 h-56 sm:w-64 sm:h-64">
+        <div className="relative w-52 h-52 sm:w-60 sm:h-60">
           <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 200 200">
-            <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(var(--border))" strokeWidth="6" />
+            <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(var(--border))" strokeWidth="5" />
             <circle
               cx="100" cy="100" r="90" fill="none"
               stroke={completed ? "hsl(var(--success))" : "hsl(var(--primary))"}
-              strokeWidth="6" strokeLinecap="round"
+              strokeWidth="5" strokeLinecap="round"
               strokeDasharray={`${2 * Math.PI * 90}`}
               strokeDashoffset={`${2 * Math.PI * 90 * (1 - progress / 100)}`}
               className="transition-all duration-300"
@@ -525,60 +617,30 @@ export default function TasbihPage() {
 
           <button
             onClick={increment}
-            className="absolute inset-4 rounded-full bg-card border-2 border-accent/20 shadow-lg flex flex-col items-center justify-center active:scale-95 transition-transform focus:outline-none hover:border-accent/40"
+            className="absolute inset-3 rounded-full bg-card border border-border/50 shadow-md flex flex-col items-center justify-center active:scale-[0.97] transition-transform focus:outline-none"
           >
-            <span className={`text-5xl font-bold ${completed ? "text-success" : "text-foreground"}`}>{count}</span>
-            <span className="text-xs text-muted-foreground mt-1">/ {dhikr.target}</span>
-            {completed && <span className="text-xs text-success font-medium mt-1">✓ {t("সম্পূর্ণ", "Done", "تم")}</span>}
+            <span className={`text-5xl font-bold tracking-tight ${completed ? "text-success" : "text-foreground"}`}>{count}</span>
+            <span className="text-[11px] text-muted-foreground mt-0.5">/ {dhikr.target}</span>
+            {completed && (
+              <span className="text-[11px] text-success font-medium mt-1 flex items-center gap-0.5">
+                ✓ {t("সম্পূর্ণ", "Done", "تم")}
+              </span>
+            )}
           </button>
         </div>
 
-        {/* Reset */}
-        <Button variant="outline" size="sm" onClick={reset} className="gap-2">
-          <RotateCcw className="w-3.5 h-3.5" />
-          {t("রিসেট", "Reset", "إعادة")}
-        </Button>
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-2 w-full">
-          <div className="islamic-card p-3 text-center">
-            <p className="text-xl font-bold text-primary">{totalToday}</p>
-            <p className="text-[10px] text-muted-foreground">{t("মোট", "Total", "الكل")}</p>
-          </div>
-          <div className="islamic-card p-3 text-center">
-            <p className="text-xl font-bold text-accent">{counts.filter((c, i) => c >= (dhikrList[i]?.target || 1)).length}/{dhikrList.length}</p>
-            <p className="text-[10px] text-muted-foreground">{t("সম্পন্ন", "Done", "مكتمل")}</p>
-          </div>
-          <button
-            onClick={() => {
-              if (!sessionStarted) { setSessionStarted(true); setSessionActive(true); }
-              else setSessionActive(prev => !prev);
-            }}
-            className="islamic-card p-3 text-center hover:bg-accent/5 transition-colors"
-          >
-            <div className="flex items-center justify-center gap-1">
-              <Timer className="w-3.5 h-3.5 text-muted-foreground" />
-              <p className={`text-xl font-bold font-mono ${sessionActive ? "text-primary" : "text-foreground"}`}>{formatTimer(sessionSeconds)}</p>
-            </div>
-            <div className="flex items-center justify-center gap-1">
-              {sessionActive ? <Pause className="w-2.5 h-2.5 text-muted-foreground" /> : <Play className="w-2.5 h-2.5 text-muted-foreground" />}
-              <p className="text-[10px] text-muted-foreground">{t("সময়", "Time", "الوقت")}</p>
-            </div>
-          </button>
-        </div>
-
-        {/* Quick dhikr pills */}
-        <div className="flex flex-wrap gap-2 justify-center">
+        {/* Dhikr pills */}
+        <div className="flex flex-wrap gap-1.5 justify-center w-full">
           {dhikrList.map((d, i) => (
             <button
               key={i}
               onClick={() => setActiveIndex(i)}
               className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all border ${
                 i === activeIndex
-                  ? "bg-primary text-primary-foreground border-primary"
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
                   : counts[i] >= d.target
-                  ? "bg-success/10 text-success border-success/30"
-                  : "bg-card text-muted-foreground border-border hover:border-accent/40"
+                  ? "bg-success/10 text-success border-success/20"
+                  : "bg-card text-muted-foreground border-border hover:border-primary/30"
               }`}
             >
               {language === "bn" ? d.bn : language === "ar" ? d.ar : d.en}
