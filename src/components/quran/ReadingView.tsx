@@ -54,7 +54,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const [mushafPage, setMushafPage] = useState(() => SURAH_START_PAGES[selectedSurah] || 1);
   const [fontSize, setFontSize] = useState(() => {
     const saved = localStorage.getItem("mushaf-font-size");
-    return saved ? Number(saved) : 22;
+    return saved ? Number(saved) : 20;
   });
   const [pageInput, setPageInput] = useState("");
   const [showPageInput, setShowPageInput] = useState(false);
