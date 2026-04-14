@@ -219,6 +219,9 @@ export default function TasbihPage() {
   // Tap scale animation
   const [tapped, setTapped] = useState(false);
 
+  // Celebration animation
+  const [showCelebration, setShowCelebration] = useState(false);
+
   useEffect(() => {
     if (sessionActive) {
       timerRef.current = setInterval(() => setSessionSeconds(s => s + 1), 1000);
@@ -339,6 +342,9 @@ export default function TasbihPage() {
       if (next[activeIndex] >= currentTarget) {
         if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
         if (soundEnabled) playCompleteSound();
+        // Show celebration
+        setShowCelebration(true);
+        setTimeout(() => setShowCelebration(false), 1500);
         // Keep completed count, auto-advance to next incomplete
         const nextIncomplete = dhikrList.findIndex((d, i) => i > activeIndex && next[i] < d.target);
         const advanceTo = nextIncomplete !== -1
@@ -446,6 +452,34 @@ export default function TasbihPage() {
         @keyframes tap-pulse {
           0% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.3); }
           100% { box-shadow: 0 0 0 20px hsl(var(--primary) / 0); }
+        }
+        @keyframes confetti-fall {
+          0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+          100% { transform: translateY(180px) rotate(720deg) scale(0.3); opacity: 0; }
+        }
+        @keyframes checkmark-pop {
+          0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+          50% { transform: scale(1.2) rotate(0deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes celebration-glow {
+          0% { box-shadow: 0 0 0 0 hsl(var(--success) / 0.4); }
+          50% { box-shadow: 0 0 30px 10px hsl(var(--success) / 0.2); }
+          100% { box-shadow: 0 0 0 0 hsl(var(--success) / 0); }
+        }
+        .confetti-particle {
+          position: absolute;
+          width: 8px;
+          height: 8px;
+          border-radius: 2px;
+          animation: confetti-fall 1.2s ease-out forwards;
+          pointer-events: none;
+        }
+        .celebration-check {
+          animation: checkmark-pop 0.5s ease-out forwards;
+        }
+        .celebration-ring {
+          animation: celebration-glow 1.5s ease-out forwards;
         }
       `}</style>
 
@@ -780,6 +814,34 @@ export default function TasbihPage() {
 
         {/* Counter circle with ripple */}
         <div className="relative w-52 h-52 sm:w-60 sm:h-60">
+          {/* Celebration confetti */}
+          {showCelebration && (
+            <>
+              {Array.from({ length: 12 }).map((_, i) => {
+                const colors = ["hsl(var(--primary))", "hsl(var(--success))", "hsl(var(--accent))", "#f59e0b", "#ec4899", "#8b5cf6"];
+                const angle = (i / 12) * 360;
+                const dist = 30 + Math.random() * 40;
+                const x = 50 + Math.cos((angle * Math.PI) / 180) * dist;
+                const y = 50 + Math.sin((angle * Math.PI) / 180) * dist;
+                return (
+                  <span
+                    key={i}
+                    className="confetti-particle"
+                    style={{
+                      left: `${x}%`,
+                      top: `${y - 20}%`,
+                      background: colors[i % colors.length],
+                      animationDelay: `${i * 0.05}s`,
+                      borderRadius: i % 3 === 0 ? "50%" : "2px",
+                      width: i % 2 === 0 ? "8px" : "6px",
+                      height: i % 2 === 0 ? "8px" : "10px",
+                    }}
+                  />
+                );
+              })}
+            </>
+          )}
+
           <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 200 200">
             <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(var(--border))" strokeWidth="5" />
             <circle
@@ -797,7 +859,7 @@ export default function TasbihPage() {
             onClick={(e) => increment(e)}
             className={`absolute inset-3 rounded-full bg-card border border-border/50 shadow-md flex flex-col items-center justify-center focus:outline-none overflow-hidden transition-transform duration-150 ${
               tapped ? "scale-[0.95]" : "scale-100"
-            }`}
+            } ${showCelebration ? "celebration-ring" : ""}`}
             style={tapped ? { animation: "tap-pulse 0.4s ease-out" } : undefined}
           >
             {/* Ripples */}
@@ -808,12 +870,23 @@ export default function TasbihPage() {
                 style={{ left: r.x, top: r.y }}
               />
             ))}
-            <span className={`text-5xl font-bold tracking-tight transition-colors duration-200 ${completed ? "text-success" : "text-foreground"}`}>{count}</span>
-            <span className="text-[11px] text-muted-foreground mt-0.5">/ {dhikr.target}</span>
-            {completed && (
-              <span className="text-[11px] text-success font-medium mt-1 flex items-center gap-0.5 animate-fade-in">
-                ✓ {t("সম্পূর্ণ", "Done", "تم")}
-              </span>
+
+            {/* Celebration checkmark overlay */}
+            {showCelebration ? (
+              <div className="celebration-check flex flex-col items-center">
+                <span className="text-4xl mb-1">✅</span>
+                <span className="text-sm font-bold text-success">{t("আলহামদুলিল্লাহ", "Alhamdulillah", "الحمد لله")}</span>
+              </div>
+            ) : (
+              <>
+                <span className={`text-5xl font-bold tracking-tight transition-colors duration-200 ${completed ? "text-success" : "text-foreground"}`}>{count}</span>
+                <span className="text-[11px] text-muted-foreground mt-0.5">/ {dhikr.target}</span>
+                {completed && (
+                  <span className="text-[11px] text-success font-medium mt-1 flex items-center gap-0.5 animate-fade-in">
+                    ✓ {t("সম্পূর্ণ", "Done", "تم")}
+                  </span>
+                )}
+              </>
             )}
           </button>
         </div>
