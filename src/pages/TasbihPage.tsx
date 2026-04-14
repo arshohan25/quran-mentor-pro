@@ -524,14 +524,17 @@ export default function TasbihPage() {
 
       {/* ── Compact Header ── */}
       <header className="islamic-header">
-        <div className="container px-4 py-3 flex items-center justify-between">
+        <div className="container px-4 py-3 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-2.5">
-            <Link to="/" className="hover:opacity-80 transition-opacity">
-              <ArrowLeft className="w-5 h-5" />
+            <Link to="/" className="hover:opacity-80 transition-opacity p-1">
+              <ArrowLeft className="w-5 h-5" strokeWidth={1.8} />
             </Link>
-            <h1 className="text-base font-semibold tracking-tight">
-              {t("তাসবিহ", "Tasbih", "تسبيح")}
-            </h1>
+            <div>
+              <h1 className="text-base font-bold tracking-tight leading-tight">
+                {t("তাসবিহ", "Tasbih", "تسبيح")}
+              </h1>
+              <p className="text-primary-foreground/50 text-[10px]">{t("ডিজিটাল যিকর", "Digital dhikr", "الذكر الرقمي")}</p>
+            </div>
           </div>
 
           <div className="flex items-center gap-1">

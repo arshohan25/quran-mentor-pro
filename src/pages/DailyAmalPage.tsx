@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Star, BookOpen, Trophy, Flame } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Star, BookOpen, Trophy, Flame, ListChecks } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { DAILY_AMALS, AMAL_CATEGORIES, DailyAmal } from "@/data/dailyAmalData";
