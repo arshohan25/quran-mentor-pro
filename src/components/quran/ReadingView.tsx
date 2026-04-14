@@ -289,7 +289,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
             ))}
           </div>
         ) : (
-          <div className={`max-w-2xl mx-auto px-1.5 sm:px-2.5 pt-2 pb-3${[1, 2, 604].includes(mushafPage) ? ' min-h-[70vh] flex flex-col justify-center' : ''}`}>
+          <div className="max-w-2xl mx-auto px-1.5 sm:px-2.5 pt-2 pb-3">
             <div className="space-y-0.5">
               {mushafDisplayLines.map((line) => {
                 const surahInfo = line.surahNumber
