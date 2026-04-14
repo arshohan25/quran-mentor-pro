@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ChevronDown } from "lucide-react";
+import { ArrowLeft, ChevronDown, X, Loader2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuranPage, type MushafLine } from "@/hooks/useQuranPage";
 import { surahList } from "@/data/surahList";
@@ -8,6 +8,7 @@ import ReadingSettings from "@/components/quran/ReadingSettings";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import type { QuranSectionProps } from "@/components/quran/types";
+import { AnimatePresence, motion } from "framer-motion";
 
 function toArabicNum(n: number): string {
   return n.toString().replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[parseInt(d, 10)]);
