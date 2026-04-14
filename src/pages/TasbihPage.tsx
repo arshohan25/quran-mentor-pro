@@ -371,6 +371,16 @@ export default function TasbihPage() {
     });
   }, [activeIndex]);
 
+  const resetAll = useCallback(() => {
+    const next = Array(dhikrList.length).fill(0);
+    setCounts(next);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    setActiveIndex(0);
+    setSessionSeconds(0);
+    setSessionActive(false);
+    setSessionStarted(false);
+  }, [dhikrList.length]);
+
   const addCustomDhikr = () => {
     const text = newArabic.trim() || newEn.trim() || newBn.trim();
     if (!text) return;
