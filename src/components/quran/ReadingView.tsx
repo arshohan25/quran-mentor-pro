@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { applyTajweedColors } from "@/utils/tajweed";
 import { ArrowLeft, ChevronDown, X, Loader2, Star, Share2, Copy, Check } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuranPage, type MushafLine } from "@/hooks/useQuranPage";
@@ -76,6 +77,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const [popupY, setPopupY] = useState<number>(200);
   const contentRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
+  const [tajweedEnabled, setTajweedEnabled] = useState(() => localStorage.getItem("mushaf-tajweed") === "true");
 
   // Swipe gesture handling
   const touchStartX = useRef<number | null>(null);
@@ -234,7 +236,17 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                 Juz {currentJuz}
               </span>
             )}
-            <ReadingSettings fontSize={QURAN_COM_FONT_SIZE} hideFontSize />
+            <ReadingSettings
+              fontSize={QURAN_COM_FONT_SIZE}
+              hideFontSize
+              tajweedEnabled={tajweedEnabled}
+              onTajweedToggle={() => {
+                setTajweedEnabled(v => {
+                  localStorage.setItem("mushaf-tajweed", String(!v));
+                  return !v;
+                });
+              }}
+            />
           </div>
         </div>
 
@@ -396,7 +408,11 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                             }}
                             onClick={(e) => handleVerseClick(word.chapter_id, word.verse_number, word.text_uthmani, e)}
                           >
-                            <span>{word.text_uthmani}</span>
+                            {tajweedEnabled ? (
+                              <span dangerouslySetInnerHTML={{ __html: applyTajweedColors(word.text_uthmani) }} />
+                            ) : (
+                              <span>{word.text_uthmani}</span>
+                            )}
                             {word.isEndOfVerse && (
                               <span
                                 className="inline-flex items-center justify-center select-none align-middle mx-0.5"
