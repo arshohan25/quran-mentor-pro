@@ -578,14 +578,35 @@ export default function TasbihPage() {
               {t("রিসেট", "Reset", "إعادة")}
             </button>
 
-            {/* Reset all */}
-            <button
-              onClick={resetAll}
-              className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-[10px] font-medium text-destructive/70 hover:bg-destructive/10 transition-all min-w-[52px]"
-            >
-              <RotateCcw className="w-4 h-4" />
-              {t("সব রিসেট", "All Reset", "إعادة الكل")}
-            </button>
+            {/* Reset all with confirmation */}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-[10px] font-medium text-destructive/70 hover:bg-destructive/10 transition-all min-w-[52px]"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  {t("সব রিসেট", "All Reset", "إعادة الكل")}
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="max-w-[320px] rounded-2xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-sm">{t("সব রিসেট করবেন?", "Reset all?", "إعادة تعيين الكل؟")}</AlertDialogTitle>
+                  <AlertDialogDescription className="text-xs">
+                    {t(
+                      "সব তাসবিহ কাউন্ট ও সেশন টাইমার রিসেট হয়ে যাবে। এই কাজটি ফেরানো যাবে না।",
+                      "All tasbih counts and session timer will be reset. This action cannot be undone.",
+                      "سيتم إعادة تعيين جميع العدادات والمؤقت. لا يمكن التراجع عن هذا."
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="text-xs h-8">{t("বাতিল", "Cancel", "إلغاء")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={resetAll} className="text-xs h-8 bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    {t("রিসেট করুন", "Reset", "إعادة")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
             {/* Daily Target */}
             <Dialog open={targetOpen} onOpenChange={setTargetOpen}>
