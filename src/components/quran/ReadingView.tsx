@@ -54,7 +54,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const [mushafPage, setMushafPage] = useState(() => SURAH_START_PAGES[selectedSurah] || 1);
   const [fontSize, setFontSize] = useState(() => {
     const saved = localStorage.getItem("mushaf-font-size");
-    return saved ? Number(saved) : 20;
+    return saved ? Number(saved) : 16;
   });
   const [pageInput, setPageInput] = useState("");
   const [showPageInput, setShowPageInput] = useState(false);
@@ -310,8 +310,8 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                       fontFamily: "'UthmanicHafs', 'Amiri', serif",
                       fontSize: `${fontSize}px`,
                       color: TEXT_WHITE,
-                      wordSpacing: "2px",
-                      lineHeight: "1.7",
+                      wordSpacing: "1px",
+                      lineHeight: "1.55",
                       letterSpacing: "0px",
                     }}
                   >
