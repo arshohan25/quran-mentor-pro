@@ -190,9 +190,26 @@ function escapeHtml(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// Example Arabic snippets demonstrating each rule
+const tajweedExamples: Record<string, string> = {
+  "Izhar": "مِنْ عِلْمٍ",
+  "Iqlab": "مِنۢ بَعْدِ",
+  "Idgham Ghunnah": "مَن يَّعْمَلْ",
+  "Idgham No Ghunnah": "مِن رَّبِّهِمْ",
+  "Ikhfa": "مِن قَبْلِ",
+  "Ikhfa Shafawi": "تَرْمِيهِم بِحِجَارَةٍ",
+  "Idgham Shafawi": "هُم مِّنَ",
+  "Ghunnah": "إِنَّ",
+  "Qalqalah": "يَلِدْ",
+  "Madd Lazim": "ٓالٓمٓ",
+  "Madd Tabii": "قَالَ",
+  "Madd Iwad": "عَلِيمًا",
+};
+
 export const tajweedLegend = rules.map((r) => ({
   name: r.name,
   nameBn: r.nameBn,
   nameEn: r.nameEn,
   color: r.color,
+  example: tajweedExamples[r.name] || "",
 }));
