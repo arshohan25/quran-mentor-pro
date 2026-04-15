@@ -18,7 +18,7 @@ export default function SabinaPage() {
   const [completedCount, setCompletedCount] = useState(0);
 
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
-  const surahData = data?.[0];
+  const surahData = data?.arabic;
   const totalAyahs = surahData?.ayahs?.length ?? 0;
   const ayahText = surahData?.ayahs?.[currentAyah - 1]?.text ?? "";
 
