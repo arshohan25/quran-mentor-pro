@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Mic, MicOff, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, Sparkles, Eye } from "lucide-react";
+import { ArrowLeft, Mic, MicOff, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, Sparkles, Eye, Volume2 } from "lucide-react";
+import { useWordCorrection } from "@/hooks/useWordCorrection";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
 import { useArabicRecitationEngine } from "@/hooks/useArabicRecitationEngine";
@@ -38,6 +39,7 @@ export default function SabinaPage() {
   );
 
   const { words, revealedIndex, errorIndex, isListening, lastSpoken, speechError, totalWords } = state;
+  const { playWordAudio } = useWordCorrection(selectedSurah, currentAyah, errorIndex);
   const progressPercent = totalWords > 0 ? (revealedIndex / totalWords) * 100 : 0;
 
   useEffect(() => {
@@ -210,6 +212,13 @@ export default function SabinaPage() {
                 <p className="text-sm font-medium">
                   {t("ভুল হয়েছে! সঠিকভাবে পড়ুন", "Wrong! Read correctly", "خطأ! اقرأ بشكل صحيح")}
                 </p>
+                <button
+                  onClick={() => playWordAudio(errorIndex)}
+                  className="p-1 rounded-full hover:bg-destructive/20 transition"
+                  title={t("সঠিক উচ্চারণ শুনুন", "Listen to correct pronunciation", "استمع للنطق الصحيح")}
+                >
+                  <Volume2 className="w-4 h-4" />
+                </button>
               </div>
             )}
 
