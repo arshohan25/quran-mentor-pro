@@ -1,42 +1,25 @@
 
 
-## Plan: "সবিনা" — Live Recitation Detection Page
+## Plan: Sabina — Continuous Mic + Hidden Words with Hint Button
 
-### Overview
-A new dedicated page `/sabina` where the user selects a Surah and Ayah, then starts reciting. Sabina listens via the microphone, reveals words one-by-one as the user recites correctly, marks errors in red with a warning beep, and pauses until the user corrects themselves.
+### Problems to fix
+1. **Mic stops between ayahs** — When an ayah completes, the engine calls `stopListening()` then the ayah text changes which triggers another `stopListening()`. User has to manually restart mic each time.
+2. **Words are visible (blurred but readable)** — User wants a true memorization mode: no words shown at all until recited correctly. Only a "Hint" button to peek at the current word.
 
-### What already exists
-- `useArabicRecitationEngine` hook — handles all the speech recognition, word matching, error detection, and beep sounds
-- `LiveRecitationCheck` component — inline version of this feature
-- `useQuranApi` hook — fetches Surah text with translations
+### Changes
 
-### What to build
+#### 1. Keep mic running across ayahs (`useArabicRecitationEngine.ts`)
+- Remove `stopListening()` from the `onComplete` callback path — instead of stopping, just call `onComplete()` and let the engine naturally reset when `ayahText` changes
+- In the `ayahText` change effect: instead of calling `stopListening()`, keep the recognition running — just reset `revealedIndex`, `errorIndex`, counters, etc. If recognition is active, restart it seamlessly (stop + immediate start)
+- Add a `keepListening` option or handle it by checking if `isListening` was true before the text changed
 
-#### 1. New page: `src/pages/SabinaPage.tsx`
-- Full-screen dedicated page with Islamic header ("সবিনা", "Sabina")
-- Surah selector dropdown + Ayah navigation (prev/next)
-- Large Arabic text display area showing words RTL:
-  - **Correct words**: revealed in normal foreground color with a subtle green checkmark feel
-  - **Current word**: highlighted with primary color + underline
-  - **Error word**: red background + red text + warning beep (already handled by the engine)
-  - **Upcoming words**: blurred/dimmed (not yet revealed)
-- Large mic button to start/stop listening
-- Progress bar showing words completed out of total
-- Auto-advance to next ayah when current one is completed
-- Sensitivity mode selector (strict/balanced/assist)
+#### 2. Hide all words, add Hint button (`SabinaPage.tsx`)
+- Remove the blurred upcoming words — don't render unrecited words at all (or show dots/dashes as placeholders)
+- Only show: revealed words (green/primary) + current word position indicator (e.g., "___") + error word (red)
+- Add a `showHint` state and a "হিন্ট" button — clicking it temporarily reveals the current word for 2-3 seconds, then hides it again
+- The hint shows only the current expected word, not the entire remaining text
 
-#### 2. Add route in `App.tsx`
-- Add `/sabina` route pointing to `SabinaPage`
-
-#### 3. Add link on Index page
-- Add "সবিনা" to the quick actions or sections grid on the home page with a suitable icon (e.g., `Sparkles` or `Brain`)
-
-### Files to create/modify
-- **Create** `src/pages/SabinaPage.tsx` — full page using `useArabicRecitationEngine` + `useSurahWithTranslations`
-- **Edit** `src/App.tsx` — add route
-- **Edit** `src/pages/Index.tsx` — add navigation link
-
-### No changes needed to
-- `useArabicRecitationEngine` — already has all the logic (word matching, error beep, auto-restart recognition)
-- `arabicUtils.ts` — matching utilities already complete
+### Files to modify
+- `src/hooks/useArabicRecitationEngine.ts` — Keep recognition alive across ayah changes
+- `src/pages/SabinaPage.tsx` — Hide words, add hint button, keep mic on continuously
 
