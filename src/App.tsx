@@ -22,6 +22,7 @@ import TasbihPage from "./pages/TasbihPage.tsx";
 import DuaPage from "./pages/DuaPage.tsx";
 import HijriCalendarPage from "./pages/HijriCalendarPage.tsx";
 import DailyAmalPage from "./pages/DailyAmalPage.tsx";
+import SabinaPage from "./pages/SabinaPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ function AnimatedRoutes() {
         <Route path="/dua" element={<PageTransition><DuaPage /></PageTransition>} />
         <Route path="/hijri" element={<PageTransition><HijriCalendarPage /></PageTransition>} />
         <Route path="/daily-amal" element={<PageTransition><DailyAmalPage /></PageTransition>} />
+        <Route path="/sabina" element={<PageTransition><SabinaPage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
