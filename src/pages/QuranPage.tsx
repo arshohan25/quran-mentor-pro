@@ -77,31 +77,27 @@ export default function QuranPage() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 pb-20">
-        <div className="grid grid-cols-4 gap-2.5 w-full max-w-lg mx-auto">
+      <div className="flex-1 overflow-y-auto px-3 pt-4 pb-20">
+        <div className="grid grid-cols-4 gap-2 w-full max-w-md mx-auto">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             return (
               <div
                 key={cat.id}
                 onClick={() => cat.active && setActiveSection(cat.id)}
-                className={`group bg-card rounded-2xl border border-border flex flex-col items-center justify-center py-5 px-3 text-center transition-all duration-200 shadow-sm
+                className={`group relative bg-card rounded-xl border border-border/60 flex flex-col items-center justify-center py-3.5 px-1.5 text-center transition-all duration-200 overflow-hidden
                   ${cat.active
-                    ? "cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+                    ? "cursor-pointer hover:border-primary/30 hover:shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.15)] active:scale-[0.96]"
                     : "opacity-40 cursor-not-allowed"
                   }`}
               >
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
-                  <Icon className="w-5 h-5 text-primary" strokeWidth={1.8} />
+                <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-1.5 group-hover:bg-primary/15 transition-colors">
+                  <Icon className="w-[18px] h-[18px] text-primary" strokeWidth={1.8} />
                 </div>
-                <span className="text-xs font-bold text-foreground leading-tight">
+                <span className="relative text-[10px] font-semibold text-foreground leading-tight line-clamp-2">
                   {language === "bn" ? cat.labelBn : language === "ar" ? cat.labelAr : cat.labelEn}
                 </span>
-                {!cat.active && (
-                  <span className="premium-badge mt-1 text-[8px]">
-                    {t("শীঘ্রই আসছে", "Coming soon", "قريباً")}
-                  </span>
-                )}
               </div>
             );
           })}
