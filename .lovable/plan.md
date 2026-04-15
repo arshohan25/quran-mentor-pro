@@ -1,37 +1,22 @@
 
 
-## Plan: Mushaf-Style Sabina Page with Continuous Mic
+## Plan: Fix Over-Revealing Words in Interim Speech Matching
 
-### What changes
-Completely redesign Sabina to use the **Mushaf page layout** (15 lines per page, word-by-word) instead of single-ayah view. Mic stays on continuously across pages.
+### Problem
+The interim speech matching loop processes ALL tokens from the growing interim transcript every time. When the user finishes ayah 2, the interim text accumulates words like "الحمد لله رب العالمين الرحمن الرحيم". Each interim update re-scans all tokens, and since `revealedRef` advances with each match, words from ayah 3 get incorrectly revealed before the user actually recites them.
 
-### How it works
-1. **Use `useQuranPage(pageNumber)`** to fetch exact Mushaf page data (lines + words) — same API the ReadingView uses
-2. **Concatenate all words on the page** into one text string, feed to `useArabicRecitationEngine`
-3. **Display in 15-line Mushaf layout** — each line shows its words RTL. Words start as dots/hidden, revealed as recited correctly
-4. **When page completes** → auto-advance to next page, mic stays on
-5. **Ayahs stay visible** after recitation (green text), never disappear
-6. **Page navigation** — user can pick a surah (auto-jumps to its start page via `SURAH_START_PAGES`) or manually go prev/next page
+### Root Cause
+In `useArabicRecitationEngine.ts` lines 154-172, the interim handler:
+1. Tokenizes the FULL interim transcript into `allTokens`
+2. Loops through ALL tokens, matching each against `currentWords[revealedRef.current]`
+3. Since interim text grows (e.g., "الحمد" → "الحمد لله" → "الحمد لله رب"), old tokens get re-processed and keep advancing the revealed index beyond what was actually spoken
 
-### Engine changes (`useArabicRecitationEngine.ts`)
-- Fix the `onend` handler: when `revealedRef.current >= words.length` (page complete), the engine currently sets `isListening = false`. Need to keep it alive — the `onComplete` callback will change the page text, and the `ayahText` change effect will restart recognition
-- Store `words` in a ref so `onend` always checks the latest word count (currently captures stale `words` from closure)
+### Fix
+Add an `interimMatchedCountRef` to track how many interim tokens have already been matched. Only process NEW tokens (those beyond the previously matched count). Reset this counter when a final result arrives or when the text changes.
 
-### Page rewrite (`SabinaPage.tsx`)
-- Replace surah+ayah selectors with **surah selector + page number display**
-- Use `useQuranPage(currentPage)` instead of `useSurahWithTranslations`
-- Build page text by joining all `line.words.map(w => w.text_uthmani)`
-- Render 15 lines in a Mushaf-like grid, each word styled based on its index in the flat word array:
-  - `i < revealedIndex` → visible green
-  - `i === revealedIndex` → current position marker
-  - `i === errorIndex` → red error
-  - else → hidden dot
-- On complete: `setCurrentPage(p => p + 1)`, keep mic running
-- Hint button reveals current word temporarily
-- Progress bar shows page-level progress
-- Sticky mic button at bottom
-
-### Files to modify
-- **`src/pages/SabinaPage.tsx`** — Major rewrite to Mushaf page layout
-- **`src/hooks/useArabicRecitationEngine.ts`** — Fix `onend` to use ref for words length, keep mic alive across page transitions
+### Changes to `src/hooks/useArabicRecitationEngine.ts`
+- Add `interimMatchedCountRef = useRef(0)`
+- In the interim handler: skip tokens up to `interimMatchedCountRef.current`, only try matching new tokens
+- When a match succeeds in interim, increment `interimMatchedCountRef`
+- Reset `interimMatchedCountRef` to 0 when `finalCountRef` advances or when `ayahText` changes
 
