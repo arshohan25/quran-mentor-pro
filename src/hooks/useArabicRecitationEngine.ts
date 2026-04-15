@@ -46,9 +46,8 @@ export function useArabicRecitationEngine(
 
   useEffect(() => { revealedRef.current = revealedIndex; }, [revealedIndex]);
 
-  // Reset when ayahText changes
+  // Reset when ayahText changes — keep mic running if active
   useEffect(() => {
-    stopListening();
     setRevealedIndex(0);
     setErrorIndex(null);
     setLastSpoken("");
@@ -56,6 +55,14 @@ export function useArabicRecitationEngine(
     revealedRef.current = 0;
     finalCountRef.current = 0;
     processedTokensRef.current = new Set();
+
+    // If listening, restart recognition seamlessly for the new text
+    if (recognitionRef.current && isListening) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+      // onend handler will auto-restart since revealedRef < words.length
+    }
   }, [ayahText]);
 
   const stopListening = useCallback(() => {
@@ -121,7 +128,6 @@ export function useArabicRecitationEngine(
               if (idx + 1 >= words.length) {
                 playBeep(800, 0.15, 0.2);
                 setTimeout(() => {
-                  stopListening();
                   onComplete?.();
                 }, 500);
                 return;
