@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { applyTajweedColors, tajweedLegend } from "@/utils/tajweed";
-import { ArrowLeft, ChevronDown, X, Loader2, Star, Share2, Copy, Check } from "lucide-react";
+import { ArrowLeft, ChevronDown, X, Loader2, Star, Share2, Copy, Check, Play, Pause } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuranPage, type MushafLine } from "@/hooks/useQuranPage";
 import { surahList } from "@/data/surahList";
@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import type { QuranSectionProps } from "@/components/quran/types";
 import { AnimatePresence, motion } from "framer-motion";
+import { useMushafWordAudio } from "@/hooks/useMushafWordAudio";
 
 function toArabicNum(n: number): string {
   return n.toString().replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[parseInt(d, 10)]);
@@ -62,6 +63,7 @@ const QURAN_COM_LINE_HEIGHT = 2.05;
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
   const { t, language } = useLanguage();
   const { toggleFavorite, isFavorite } = useBookmark();
+  const { playingVerse, highlightedWordPos, playVerse, stopAudio } = useMushafWordAudio();
   const [copied, setCopied] = useState(false);
   const [copiedArabic, setCopiedArabic] = useState(false);
 
@@ -163,7 +165,8 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0 });
     setScrolled(false);
-  }, [mushafPage]);
+    stopAudio();
+  }, [mushafPage, stopAudio]);
 
   useEffect(() => {
     const el = contentRef.current;
@@ -420,16 +423,49 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
                     >
                       {line.words.map((word, wordIndex) => {
                         const isSelected = selectedVerse?.surah === word.chapter_id && selectedVerse?.ayah === word.verse_number;
+                        const isWordPlaying = playingVerse === word.verse_key;
+                        const isWordHighlighted = isWordPlaying && highlightedWordPos === word.position;
                         return (
                           <span
                             key={`${word.verse_key}-${word.position}-${wordIndex}`}
-                            className="inline-flex items-center shrink-0 cursor-pointer transition-colors duration-150"
+                            className="inline-flex items-center shrink-0 cursor-pointer transition-all duration-200"
                             style={{
-                              background: isSelected ? `${TEAL}22` : undefined,
+                              background: isWordHighlighted
+                                ? `${TEAL}44`
+                                : isSelected
+                                ? `${TEAL}22`
+                                : undefined,
                               borderRadius: "4px",
+                              boxShadow: isWordHighlighted ? `0 0 8px ${TEAL}66` : undefined,
+                              transform: isWordHighlighted ? "scale(1.05)" : undefined,
                             }}
                             onClick={(e) => handleVerseClick(word.chapter_id, word.verse_number, word.text_uthmani, e)}
                           >
+                            {word.isStartOfVerse && (
+                              <button
+                                className="inline-flex items-center justify-center select-none align-middle mx-0.5 transition-colors"
+                                style={{
+                                  width: `${Math.max(20, QURAN_COM_FONT_SIZE * 1)}px`,
+                                  height: `${Math.max(20, QURAN_COM_FONT_SIZE * 1)}px`,
+                                  borderRadius: "50%",
+                                  background: isWordPlaying ? TEAL : `${TEAL}22`,
+                                  color: isWordPlaying ? "#fff" : TEAL,
+                                  fontSize: `${Math.max(8, QURAN_COM_FONT_SIZE * 0.38)}px`,
+                                  lineHeight: 1,
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  playVerse(word.verse_key);
+                                }}
+                                title={isWordPlaying ? "Pause" : `Play ${word.verse_key}`}
+                              >
+                                {isWordPlaying ? (
+                                  <Pause className="w-2.5 h-2.5" />
+                                ) : (
+                                  <Play className="w-2.5 h-2.5" />
+                                )}
+                              </button>
+                            )}
                             {tajweedEnabled ? (
                               <span dangerouslySetInnerHTML={{ __html: applyTajweedColors(word.text_uthmani) }} />
                             ) : (

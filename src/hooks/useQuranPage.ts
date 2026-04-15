@@ -15,6 +15,7 @@ export interface PageLineWord {
   line_number: number;
   position: number;
   isEndOfVerse: boolean;
+  isStartOfVerse: boolean;
 }
 
 export interface MushafLine {
@@ -80,6 +81,7 @@ export function useQuranPage(pageNumber: number) {
             line_number: word.line_number,
             position: word.position,
             isEndOfVerse: index === verseWords.length - 1,
+            isStartOfVerse: index === 0,
           };
 
           const existingWords = linesMap.get(word.line_number) ?? [];
