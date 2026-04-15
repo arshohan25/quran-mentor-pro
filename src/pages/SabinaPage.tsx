@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Mic, MicOff, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, Sparkles } from "lucide-react";
+import { ArrowLeft, Mic, MicOff, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, Sparkles, Eye } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
 import { useArabicRecitationEngine } from "@/hooks/useArabicRecitationEngine";
@@ -16,19 +16,20 @@ export default function SabinaPage() {
   const [currentAyah, setCurrentAyah] = useState(1);
   const [sensitivityMode, setSensitivityMode] = useState<MatchMode>("balanced");
   const [completedCount, setCompletedCount] = useState(0);
+  const [showHint, setShowHint] = useState(false);
 
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
   const surahData = data?.arabic;
   const totalAyahs = surahData?.ayahs?.length ?? 0;
   const ayahText = surahData?.ayahs?.[currentAyah - 1]?.text ?? "";
 
-  const handleComplete = () => {
+  const handleComplete = useCallback(() => {
     setCompletedCount((c) => c + 1);
-    // Auto-advance to next ayah
+    setShowHint(false);
     if (currentAyah < totalAyahs) {
       setTimeout(() => setCurrentAyah((a) => a + 1), 800);
     }
-  };
+  }, [currentAyah, totalAyahs]);
 
   const { state, toggleListening, stopListening } = useArabicRecitationEngine(
     ayahText,
@@ -39,14 +40,16 @@ export default function SabinaPage() {
   const { words, revealedIndex, errorIndex, isListening, lastSpoken, speechError, totalWords } = state;
   const progressPercent = totalWords > 0 ? (revealedIndex / totalWords) * 100 : 0;
 
-  // Reset completed count when surah changes
   useEffect(() => {
     setCurrentAyah(1);
     setCompletedCount(0);
     stopListening();
   }, [selectedSurah, stopListening]);
 
-  const surahInfo = surahList.find((s) => s.number === selectedSurah);
+  const handleHint = () => {
+    setShowHint(true);
+    setTimeout(() => setShowHint(false), 2500);
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -66,16 +69,15 @@ export default function SabinaPage() {
         </div>
         <p className="text-center text-sm text-muted-foreground">
           {t(
-            "তেলাওয়াত করুন, সবিনা শুনবে ও সংশোধন করবে",
-            "Recite and Sabina will listen & correct you",
-            "اقرأ وسبينا ستستمع وتصحح لك"
+            "মুখস্থ তেলাওয়াত করুন, সবিনা শুনবে ও সংশোধন করবে",
+            "Recite from memory, Sabina will listen & correct",
+            "اقرأ من حفظك وسبينا ستستمع وتصحح"
           )}
         </p>
       </div>
 
       {/* Controls */}
       <div className="px-4 space-y-3">
-        {/* Surah + Sensitivity Row */}
         <div className="flex gap-2">
           <Select value={String(selectedSurah)} onValueChange={(v) => setSelectedSurah(Number(v))}>
             <SelectTrigger className="flex-1 h-9 text-xs">
@@ -104,25 +106,13 @@ export default function SabinaPage() {
 
         {/* Ayah Navigation */}
         <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            disabled={currentAyah <= 1}
-            onClick={() => setCurrentAyah((a) => a - 1)}
-          >
+          <Button variant="ghost" size="icon" className="h-8 w-8" disabled={currentAyah <= 1} onClick={() => setCurrentAyah((a) => a - 1)}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <span className="text-sm text-muted-foreground">
             {t("আয়াত", "Ayah", "آية")} {currentAyah} / {totalAyahs || "..."}
           </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            disabled={currentAyah >= totalAyahs}
-            onClick={() => setCurrentAyah((a) => a + 1)}
-          >
+          <Button variant="ghost" size="icon" className="h-8 w-8" disabled={currentAyah >= totalAyahs} onClick={() => setCurrentAyah((a) => a + 1)}>
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
@@ -136,32 +126,50 @@ export default function SabinaPage() {
           </div>
         ) : (
           <div className="w-full max-w-lg space-y-6">
-            {/* Arabic Words Display */}
+            {/* Arabic Words Display — hidden until recited */}
             <div className="flex flex-wrap gap-x-3 gap-y-2 justify-center p-4 rounded-2xl bg-card border border-border min-h-[120px] items-center" dir="rtl">
               {words.map((word, i) => {
                 const isRevealed = i < revealedIndex;
                 const isCurrent = i === revealedIndex;
                 const isError = errorIndex === i;
+                const isHinted = isCurrent && showHint;
 
+                if (isRevealed) {
+                  return (
+                    <span key={`${currentAyah}-${i}`} className="font-arabic text-2xl md:text-3xl text-primary px-1 py-0.5 transition-all duration-300">
+                      {word}
+                    </span>
+                  );
+                }
+
+                if (isError) {
+                  return (
+                    <span key={`${currentAyah}-${i}`} className="font-arabic text-2xl md:text-3xl text-destructive bg-destructive/15 animate-pulse px-1 py-0.5 rounded">
+                      {word}
+                    </span>
+                  );
+                }
+
+                if (isHinted) {
+                  return (
+                    <span key={`${currentAyah}-${i}`} className="font-arabic text-2xl md:text-3xl text-accent-foreground bg-accent/30 px-1 py-0.5 rounded border border-accent/50 transition-all">
+                      {word}
+                    </span>
+                  );
+                }
+
+                if (isCurrent) {
+                  return (
+                    <span key={`${currentAyah}-${i}`} className="font-arabic text-2xl md:text-3xl text-muted-foreground/30 px-1 py-0.5 border-b-2 border-primary/40">
+                      ﴿؟﴾
+                    </span>
+                  );
+                }
+
+                // Hidden — show a small dot placeholder
                 return (
-                  <span
-                    key={`${currentAyah}-${i}`}
-                    className={`font-arabic text-2xl md:text-3xl transition-all duration-300 px-1 py-0.5 rounded ${
-                      isRevealed
-                        ? "text-primary"
-                        : isError
-                        ? "text-destructive bg-destructive/15 animate-pulse"
-                        : isCurrent
-                        ? "text-foreground font-bold border-b-2 border-primary"
-                        : "text-muted-foreground/15 select-none"
-                    }`}
-                    style={
-                      !isRevealed && !isError && !isCurrent
-                        ? { filter: "blur(6px)", userSelect: "none" }
-                        : undefined
-                    }
-                  >
-                    {word}
+                  <span key={`${currentAyah}-${i}`} className="text-muted-foreground/20 px-1 py-0.5 text-lg select-none">
+                    •
                   </span>
                 );
               })}
@@ -179,6 +187,20 @@ export default function SabinaPage() {
                 <span>{revealedIndex}/{totalWords} {t("শব্দ", "words", "كلمات")}</span>
                 <span>{completedCount} {t("আয়াত সম্পন্ন", "ayahs done", "آيات مكتملة")}</span>
               </div>
+            </div>
+
+            {/* Hint Button */}
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleHint}
+                disabled={revealedIndex >= totalWords || showHint}
+                className="gap-2"
+              >
+                <Eye className="w-4 h-4" />
+                {t("হিন্ট", "Hint", "تلميح")}
+              </Button>
             </div>
 
             {/* Error / Status Feedback */}
