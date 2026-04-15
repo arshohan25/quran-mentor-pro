@@ -63,7 +63,7 @@ const QURAN_COM_LINE_HEIGHT = 2.05;
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
   const { t, language } = useLanguage();
   const { toggleFavorite, isFavorite } = useBookmark();
-  const { playingVerse, highlightedWordPos, playVerse, stopAudio } = useMushafWordAudio();
+  const { playingVerse, highlightedWordPos, playVerse, stopAudio, prefetchChapter } = useMushafWordAudio();
   const [copied, setCopied] = useState(false);
   const [copiedArabic, setCopiedArabic] = useState(false);
 
@@ -148,6 +148,11 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   }, [selectedVerse]);
 
   const { data, isLoading, error } = useQuranPage(mushafPage);
+
+  // Prefetch audio segments for current surah
+  useEffect(() => {
+    prefetchChapter(selectedSurah);
+  }, [selectedSurah, prefetchChapter]);
 
   useEffect(() => {
     const surah = surahForPage(mushafPage);
