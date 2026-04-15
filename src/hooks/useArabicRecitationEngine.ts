@@ -43,6 +43,7 @@ export function useArabicRecitationEngine(
   const revealedRef = useRef(0);
   const finalCountRef = useRef(0);
   const processedTokensRef = useRef<Set<string>>(new Set());
+  const interimMatchedCountRef = useRef(0);
   const wordsRef = useRef<string[]>(words);
   const onCompleteRef = useRef(onComplete);
   const keepAliveRef = useRef(false); // Keep mic alive across page transitions
@@ -60,6 +61,7 @@ export function useArabicRecitationEngine(
     revealedRef.current = 0;
     finalCountRef.current = 0;
     processedTokensRef.current = new Set();
+    interimMatchedCountRef.current = 0;
 
     // If listening or keepAlive, restart recognition for new text
     if (recognitionRef.current && (isListening || keepAliveRef.current)) {
@@ -118,6 +120,7 @@ export function useArabicRecitationEngine(
 
         if (result.isFinal) {
           finalCountRef.current = i + 1;
+          interimMatchedCountRef.current = 0;
 
           for (const token of allTokens) {
             const idx = revealedRef.current;
@@ -151,12 +154,15 @@ export function useArabicRecitationEngine(
           const interimText = result[0].transcript;
           setLastSpoken(interimText);
 
-          for (const token of allTokens) {
+          // Only process NEW tokens beyond what we already matched in this interim session
+          const newTokens = allTokens.slice(interimMatchedCountRef.current);
+          for (const token of newTokens) {
             const idx = revealedRef.current;
             if (idx >= currentWords.length) break;
 
-            const { matched } = bestMatchScore(currentWords[idx], [interimText], mode);
+            const { matched } = bestMatchScore(currentWords[idx], [token], mode);
             if (matched) {
+              interimMatchedCountRef.current++;
               revealedRef.current = idx + 1;
               setRevealedIndex(idx + 1);
               setErrorIndex(null);
@@ -168,6 +174,8 @@ export function useArabicRecitationEngine(
                 setTimeout(() => { onCompleteRef.current?.(); }, 500);
                 return;
               }
+            } else {
+              break; // Stop at first non-match to prevent skipping
             }
           }
         }
