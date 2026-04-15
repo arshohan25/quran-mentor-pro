@@ -63,7 +63,7 @@ const QURAN_COM_LINE_HEIGHT = 2.05;
 export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
   const { t, language } = useLanguage();
   const { toggleFavorite, isFavorite } = useBookmark();
-  const [copied, setCopied] = useState(false);
+  const { playingVerse, highlightedWordPos, playVerse, stopAudio } = useMushafWordAudio();
   const [copiedArabic, setCopiedArabic] = useState(false);
 
   const [mushafPage, setMushafPage] = useState(() => SURAH_START_PAGES[selectedSurah] || 1);
