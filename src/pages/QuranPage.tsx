@@ -18,13 +18,13 @@ import SabinaView from "@/components/quran/SabinaView";
 const CATEGORIES = [
   { id: "reading" as const, icon: BookOpen, labelBn: "মুসহাফ", labelEn: "Mushaf", labelAr: "المصحف", active: true },
   { id: "sabina" as const, icon: Sparkles, labelBn: "সবিনা", labelEn: "Sabina", labelAr: "سبينا", active: true },
-  { id: "translation" as const, icon: Languages, labelBn: "তরজমা ও তাফসির", labelEn: "Translation", labelAr: "الترجمة", active: true },
-  { id: "audio" as const, icon: Volume2, labelBn: "অডিও তেলাওয়াত", labelEn: "Audio", labelAr: "الصوت", active: true },
-  { id: "wordmeaning" as const, icon: Mic2, labelBn: "শব্দার্থ", labelEn: "Word Meaning", labelAr: "المعاني", active: true },
+  { id: "translation" as const, icon: Languages, labelBn: "তরজমা", labelEn: "Translation", labelAr: "الترجمة", active: true },
+  { id: "audio" as const, icon: Volume2, labelBn: "অডিও", labelEn: "Audio", labelAr: "الصوت", active: true },
+  { id: "wordmeaning" as const, icon: Mic2, labelBn: "শব্দার্থ", labelEn: "Words", labelAr: "المعاني", active: true },
   { id: "hifz" as const, icon: GraduationCap, labelBn: "হিফয", labelEn: "Hifz", labelAr: "الحفظ", active: true },
   { id: "bookmarks" as const, icon: Bookmark, labelBn: "বুকমার্ক", labelEn: "Bookmarks", labelAr: "الإشارات", active: true },
-  { id: "topics" as const, icon: Grid3X3, labelBn: "বিষয় ভিত্তিক", labelEn: "By Topic", labelAr: "الموضوع", active: true },
-  { id: "juz" as const, icon: Layers, labelBn: "জুয ব্রাউজার", labelEn: "Juz Browser", labelAr: "الأجزاء", active: true },
+  { id: "topics" as const, icon: Grid3X3, labelBn: "বিষয়", labelEn: "Topics", labelAr: "الموضوع", active: true },
+  { id: "juz" as const, icon: Layers, labelBn: "জুয", labelEn: "Juz", labelAr: "الأجزاء", active: true },
 ];
 
 export default function QuranPage() {
