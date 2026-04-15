@@ -152,12 +152,15 @@ export function useArabicRecitationEngine(
           const interimText = result[0].transcript;
           setLastSpoken(interimText);
 
-          for (const token of allTokens) {
+          // Only process NEW tokens beyond what we already matched in this interim session
+          const newTokens = allTokens.slice(interimMatchedCountRef.current);
+          for (const token of newTokens) {
             const idx = revealedRef.current;
             if (idx >= currentWords.length) break;
 
-            const { matched } = bestMatchScore(currentWords[idx], [interimText], mode);
+            const { matched } = bestMatchScore(currentWords[idx], [token], mode);
             if (matched) {
+              interimMatchedCountRef.current++;
               revealedRef.current = idx + 1;
               setRevealedIndex(idx + 1);
               setErrorIndex(null);
@@ -169,6 +172,8 @@ export function useArabicRecitationEngine(
                 setTimeout(() => { onCompleteRef.current?.(); }, 500);
                 return;
               }
+            } else {
+              break; // Stop at first non-match to prevent skipping
             }
           }
         }
