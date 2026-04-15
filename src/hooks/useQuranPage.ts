@@ -15,6 +15,7 @@ export interface PageLineWord {
   line_number: number;
   position: number;
   isEndOfVerse: boolean;
+  isStartOfVerse: boolean;
 }
 
 export interface MushafLine {
