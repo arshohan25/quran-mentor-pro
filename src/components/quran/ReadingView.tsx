@@ -64,6 +64,7 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   const { t, language } = useLanguage();
   const { toggleFavorite, isFavorite } = useBookmark();
   const { playingVerse, highlightedWordPos, playVerse, stopAudio } = useMushafWordAudio();
+  const [copied, setCopied] = useState(false);
   const [copiedArabic, setCopiedArabic] = useState(false);
 
   const [mushafPage, setMushafPage] = useState(() => SURAH_START_PAGES[selectedSurah] || 1);
