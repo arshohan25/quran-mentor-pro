@@ -95,7 +95,7 @@ export default function QuranPage() {
                 <div className="relative w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-1.5 group-hover:bg-primary/15 transition-colors">
                   <Icon className="w-[18px] h-[18px] text-primary" strokeWidth={1.8} />
                 </div>
-                <span className="relative text-[10px] font-semibold text-foreground leading-tight line-clamp-2">
+                <span className="relative text-[10px] font-semibold text-foreground leading-tight line-clamp-2 mt-1">
                   {language === "bn" ? cat.labelBn : language === "ar" ? cat.labelAr : cat.labelEn}
                 </span>
               </div>
