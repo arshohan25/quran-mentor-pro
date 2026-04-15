@@ -165,7 +165,8 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0 });
     setScrolled(false);
-  }, [mushafPage]);
+    stopAudio();
+  }, [mushafPage, stopAudio]);
 
   useEffect(() => {
     const el = contentRef.current;
