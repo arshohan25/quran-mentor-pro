@@ -1,88 +1,134 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Mic, MicOff, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, Sparkles, Eye, Volume2 } from "lucide-react";
-import { useWordCorrection } from "@/hooks/useWordCorrection";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useSurahWithTranslations } from "@/hooks/useQuranApi";
+import { useQuranPage } from "@/hooks/useQuranPage";
 import { useArabicRecitationEngine } from "@/hooks/useArabicRecitationEngine";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { surahList } from "@/data/surahList";
+import { SURAH_START_PAGES, surahForPage } from "@/data/mushafPages";
 import type { MatchMode } from "@/utils/arabicUtils";
+
+function toArabicNum(n: number): string {
+  return String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[parseInt(d)]);
+}
 
 export default function SabinaPage() {
   const { t, language } = useLanguage();
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedSurah, setSelectedSurah] = useState(1);
-  const [currentAyah, setCurrentAyah] = useState(1);
   const [sensitivityMode, setSensitivityMode] = useState<MatchMode>("balanced");
-  const [completedCount, setCompletedCount] = useState(0);
   const [showHint, setShowHint] = useState(false);
+  const [completedPages, setCompletedPages] = useState(0);
+  const activeLineRef = useRef<HTMLDivElement>(null);
 
-  const { data, isLoading } = useSurahWithTranslations(selectedSurah);
-  const surahData = data?.arabic;
-  const totalAyahs = surahData?.ayahs?.length ?? 0;
-  const ayahText = surahData?.ayahs?.[currentAyah - 1]?.text ?? "";
+  const { data: pageData, isLoading } = useQuranPage(currentPage);
 
-  const handleComplete = useCallback(() => {
-    setCompletedCount((c) => c + 1);
+  // Build flat word list from page lines
+  const flatWords = useMemo(() => {
+    if (!pageData?.lines) return [];
+    return pageData.lines.flatMap((line) => line.words);
+  }, [pageData]);
+
+  const pageText = useMemo(() => {
+    return flatWords.map((w) => w.text_uthmani).join(" ");
+  }, [flatWords]);
+
+  // Word index boundaries per line for rendering
+  const lineWordRanges = useMemo(() => {
+    if (!pageData?.lines) return [];
+    let offset = 0;
+    return pageData.lines.map((line) => {
+      const start = offset;
+      offset += line.words.length;
+      return { line_number: line.line_number, start, end: offset, words: line.words };
+    });
+  }, [pageData]);
+
+  const handlePageComplete = useCallback(() => {
+    setCompletedPages((c) => c + 1);
     setShowHint(false);
-    if (currentAyah < totalAyahs) {
-      setTimeout(() => setCurrentAyah((a) => a + 1), 800);
+    // Auto-advance to next page, mic stays alive via keepAliveRef
+    if (currentPage < 604) {
+      setTimeout(() => setCurrentPage((p) => p + 1), 600);
     }
-  }, [currentAyah, totalAyahs]);
+  }, [currentPage]);
 
   const { state, toggleListening, stopListening } = useArabicRecitationEngine(
-    ayahText,
+    pageText,
     sensitivityMode,
-    handleComplete
+    handlePageComplete
   );
 
   const { words, revealedIndex, errorIndex, isListening, lastSpoken, speechError, totalWords } = state;
-  const { playWordAudio } = useWordCorrection(selectedSurah, currentAyah, errorIndex);
   const progressPercent = totalWords > 0 ? (revealedIndex / totalWords) * 100 : 0;
 
+  // When surah changes, jump to its start page
   useEffect(() => {
-    setCurrentAyah(1);
-    setCompletedCount(0);
-    stopListening();
-  }, [selectedSurah, stopListening]);
+    const startPage = SURAH_START_PAGES[selectedSurah] ?? 1;
+    setCurrentPage(startPage);
+    setCompletedPages(0);
+  }, [selectedSurah]);
+
+  // Sync selectedSurah display when page changes
+  useEffect(() => {
+    const surah = surahForPage(currentPage);
+    if (surah !== selectedSurah) {
+      setSelectedSurah(surah);
+    }
+  }, [currentPage]);
+
+  // Auto-scroll to current word's line
+  useEffect(() => {
+    if (activeLineRef.current) {
+      activeLineRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [revealedIndex]);
 
   const handleHint = () => {
     setShowHint(true);
     setTimeout(() => setShowHint(false), 2500);
   };
 
+  const goNext = () => { if (currentPage < 604) setCurrentPage((p) => p + 1); };
+  const goPrev = () => { if (currentPage > 1) setCurrentPage((p) => p - 1); };
+
+  // Find which line the current word is on
+  const currentLineNumber = useMemo(() => {
+    for (const range of lineWordRanges) {
+      if (revealedIndex >= range.start && revealedIndex < range.end) {
+        return range.line_number;
+      }
+    }
+    return lineWordRanges[lineWordRanges.length - 1]?.line_number ?? 1;
+  }, [revealedIndex, lineWordRanges]);
+
+  const currentSurahInfo = surahList.find((s) => s.number === selectedSurah);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <div className="bg-gradient-to-b from-primary/20 to-background px-4 pt-4 pb-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-gradient-to-b from-primary/20 to-background px-4 pt-4 pb-3">
+        <div className="flex items-center justify-between mb-2">
           <Link to="/" className="p-2 rounded-full hover:bg-primary/10 transition">
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </Link>
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            <h1 className="text-xl font-bold text-foreground font-arabic">
+            <h1 className="text-lg font-bold text-foreground font-arabic">
               {t("সবিনা", "Sabina", "سبينا")}
             </h1>
           </div>
           <div className="w-9" />
         </div>
-        <p className="text-center text-sm text-muted-foreground">
-          {t(
-            "মুখস্থ তেলাওয়াত করুন, সবিনা শুনবে ও সংশোধন করবে",
-            "Recite from memory, Sabina will listen & correct",
-            "اقرأ من حفظك وسبينا ستستمع وتصحح"
-          )}
-        </p>
-      </div>
 
-      {/* Controls */}
-      <div className="px-4 space-y-3">
-        <div className="flex gap-2">
+        {/* Controls Row */}
+        <div className="flex gap-2 mb-2">
           <Select value={String(selectedSurah)} onValueChange={(v) => setSelectedSurah(Number(v))}>
-            <SelectTrigger className="flex-1 h-9 text-xs">
+            <SelectTrigger className="flex-1 h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="max-h-60">
@@ -95,7 +141,7 @@ export default function SabinaPage() {
           </Select>
 
           <Select value={sensitivityMode} onValueChange={(v) => setSensitivityMode(v as MatchMode)}>
-            <SelectTrigger className="w-28 h-9 text-xs">
+            <SelectTrigger className="w-24 h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -106,154 +152,188 @@ export default function SabinaPage() {
           </Select>
         </div>
 
-        {/* Ayah Navigation */}
+        {/* Page Nav */}
         <div className="flex items-center justify-between">
-          <Button variant="ghost" size="icon" className="h-8 w-8" disabled={currentAyah <= 1} onClick={() => setCurrentAyah((a) => a - 1)}>
+          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={currentPage <= 1} onClick={goPrev}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-sm text-muted-foreground">
-            {t("আয়াত", "Ayah", "آية")} {currentAyah} / {totalAyahs || "..."}
+          <span className="text-xs text-muted-foreground">
+            {t("পৃষ্ঠা", "Page", "صفحة")} {toArabicNum(currentPage)} / ٦٠٤
           </span>
-          <Button variant="ghost" size="icon" className="h-8 w-8" disabled={currentAyah >= totalAyahs} onClick={() => setCurrentAyah((a) => a + 1)}>
+          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={currentPage >= 604} onClick={goNext}>
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
-      {/* Main Recitation Area */}
-      <div className="flex-1 px-4 py-6 flex flex-col items-center justify-center">
+      {/* Mushaf Page Area */}
+      <div className="flex-1 overflow-y-auto px-2 pb-4">
         {isLoading ? (
-          <div className="text-muted-foreground text-sm animate-pulse">
-            {t("লোড হচ্ছে...", "Loading...", "جاري التحميل...")}
+          <div className="space-y-3 p-4">
+            {Array.from({ length: 15 }).map((_, i) => (
+              <Skeleton key={i} className="h-8 w-full" />
+            ))}
           </div>
         ) : (
-          <div className="w-full max-w-lg space-y-6">
-            {/* Arabic Words Display — hidden until recited */}
-            <div className="flex flex-wrap gap-x-3 gap-y-2 justify-center p-4 rounded-2xl bg-card border border-border min-h-[120px] items-center" dir="rtl">
-              {words.map((word, i) => {
-                const isRevealed = i < revealedIndex;
-                const isCurrent = i === revealedIndex;
-                const isError = errorIndex === i;
-                const isHinted = isCurrent && showHint;
+          <div className="bg-card border border-border rounded-xl p-3 min-h-[400px]">
+            {/* Surah header if page starts a surah */}
+            {pageData?.verses?.[0]?.verse_number === 1 && currentSurahInfo && (
+              <div className="text-center mb-3 pb-2 border-b border-border">
+                <h2 className="font-arabic text-xl text-primary">{currentSurahInfo.name}</h2>
+                {selectedSurah !== 1 && selectedSurah !== 9 && (
+                  <p className="font-arabic text-sm text-muted-foreground mt-1">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</p>
+                )}
+              </div>
+            )}
 
-                if (isRevealed) {
-                  return (
-                    <span key={`${currentAyah}-${i}`} className="font-arabic text-2xl md:text-3xl text-primary px-1 py-0.5 transition-all duration-300">
-                      {word}
-                    </span>
-                  );
-                }
-
-                if (isError) {
-                  return (
-                    <span key={`${currentAyah}-${i}`} className="font-arabic text-2xl md:text-3xl text-destructive bg-destructive/15 animate-pulse px-1 py-0.5 rounded">
-                      {word}
-                    </span>
-                  );
-                }
-
-                if (isHinted) {
-                  return (
-                    <span key={`${currentAyah}-${i}`} className="font-arabic text-2xl md:text-3xl text-accent-foreground bg-accent/30 px-1 py-0.5 rounded border border-accent/50 transition-all">
-                      {word}
-                    </span>
-                  );
-                }
-
-                if (isCurrent) {
-                  return (
-                    <span key={`${currentAyah}-${i}`} className="font-arabic text-2xl md:text-3xl text-muted-foreground/30 px-1 py-0.5 border-b-2 border-primary/40">
-                      ﴿؟﴾
-                    </span>
-                  );
-                }
-
-                // Hidden — show a small dot placeholder
+            {/* 15 Lines */}
+            <div className="space-y-1" dir="rtl">
+              {lineWordRanges.map((range) => {
+                const isActiveLine = currentLineNumber === range.line_number;
                 return (
-                  <span key={`${currentAyah}-${i}`} className="text-muted-foreground/20 px-1 py-0.5 text-lg select-none">
-                    •
-                  </span>
+                  <div
+                    key={range.line_number}
+                    ref={isActiveLine ? activeLineRef : undefined}
+                    className={`flex flex-wrap justify-center gap-x-1.5 gap-y-0.5 py-1 rounded-lg transition-colors ${
+                      isActiveLine ? "bg-primary/5" : ""
+                    }`}
+                  >
+                    {range.words.map((word, wi) => {
+                      const globalIndex = range.start + wi;
+                      const isRevealed = globalIndex < revealedIndex;
+                      const isCurrent = globalIndex === revealedIndex;
+                      const isError = errorIndex === globalIndex;
+                      const isHinted = isCurrent && showHint;
+
+                      if (isRevealed) {
+                        return (
+                          <span
+                            key={`${range.line_number}-${wi}`}
+                            className="font-arabic text-lg sm:text-xl text-primary transition-all duration-300"
+                          >
+                            {word.text_uthmani}
+                            {word.isEndOfVerse && (
+                              <span className="text-muted-foreground/50 text-sm mx-0.5">
+                                ﴿{toArabicNum(word.verse_number)}﴾
+                              </span>
+                            )}
+                          </span>
+                        );
+                      }
+
+                      if (isError) {
+                        return (
+                          <span
+                            key={`${range.line_number}-${wi}`}
+                            className="font-arabic text-lg sm:text-xl text-destructive bg-destructive/15 animate-pulse rounded px-0.5"
+                          >
+                            {word.text_uthmani}
+                          </span>
+                        );
+                      }
+
+                      if (isHinted) {
+                        return (
+                          <span
+                            key={`${range.line_number}-${wi}`}
+                            className="font-arabic text-lg sm:text-xl text-accent-foreground bg-accent/30 rounded border border-accent/50"
+                          >
+                            {word.text_uthmani}
+                          </span>
+                        );
+                      }
+
+                      if (isCurrent) {
+                        return (
+                          <span
+                            key={`${range.line_number}-${wi}`}
+                            className="font-arabic text-lg sm:text-xl text-muted-foreground/40 border-b-2 border-primary/50"
+                          >
+                            ﴿؟﴾
+                          </span>
+                        );
+                      }
+
+                      // Hidden — dot placeholder
+                      return (
+                        <span
+                          key={`${range.line_number}-${wi}`}
+                          className="text-muted-foreground/20 text-sm select-none"
+                        >
+                          •
+                        </span>
+                      );
+                    })}
+                  </div>
                 );
               })}
-              {words.length === 0 && (
-                <span className="text-muted-foreground text-sm">
-                  {t("আয়াত লোড হচ্ছে...", "Loading ayah...", "جاري تحميل الآية...")}
-                </span>
-              )}
             </div>
-
-            {/* Progress Bar */}
-            <div className="space-y-1">
-              <Progress value={progressPercent} className="h-2" />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{revealedIndex}/{totalWords} {t("শব্দ", "words", "كلمات")}</span>
-                <span>{completedCount} {t("আয়াত সম্পন্ন", "ayahs done", "آيات مكتملة")}</span>
-              </div>
-            </div>
-
-            {/* Hint Button */}
-            <div className="flex justify-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleHint}
-                disabled={revealedIndex >= totalWords || showHint}
-                className="gap-2"
-              >
-                <Eye className="w-4 h-4" />
-                {t("হিন্ট", "Hint", "تلميح")}
-              </Button>
-            </div>
-
-            {/* Error / Status Feedback */}
-            {errorIndex !== null && (
-              <div className="flex items-center gap-2 justify-center text-destructive bg-destructive/10 rounded-lg px-3 py-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <p className="text-sm font-medium">
-                  {t("ভুল হয়েছে! সঠিকভাবে পড়ুন", "Wrong! Read correctly", "خطأ! اقرأ بشكل صحيح")}
-                </p>
-                <button
-                  onClick={() => playWordAudio(errorIndex)}
-                  className="p-1 rounded-full hover:bg-destructive/20 transition"
-                  title={t("সঠিক উচ্চারণ শুনুন", "Listen to correct pronunciation", "استمع للنطق الصحيح")}
-                >
-                  <Volume2 className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-
-            {revealedIndex > 0 && revealedIndex === totalWords && (
-              <div className="flex items-center gap-2 justify-center text-primary bg-primary/10 rounded-lg px-3 py-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <p className="text-sm font-medium">
-                  {t("সঠিক! পরবর্তী আয়াতে যাচ্ছে...", "Correct! Moving to next...", "صحيح! الانتقال إلى التالي...")}
-                </p>
-              </div>
-            )}
-
-            {speechError && (
-              <p className="text-center text-xs text-muted-foreground">{speechError}</p>
-            )}
-
-            {lastSpoken && isListening && (
-              <p className="text-center text-xs text-muted-foreground/60 truncate" dir="rtl">🎤 {lastSpoken}</p>
-            )}
           </div>
         )}
+
+        {/* Progress */}
+        <div className="mt-3 px-2 space-y-1">
+          <Progress value={progressPercent} className="h-2" />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>{revealedIndex}/{totalWords} {t("শব্দ", "words", "كلمات")}</span>
+            <span>{completedPages} {t("পৃষ্ঠা সম্পন্ন", "pages done", "صفحات مكتملة")}</span>
+          </div>
+        </div>
+
+        {/* Error / Status */}
+        <div className="px-2 mt-2 space-y-2">
+          {errorIndex !== null && (
+            <div className="flex items-center gap-2 justify-center text-destructive bg-destructive/10 rounded-lg px-3 py-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <p className="text-xs font-medium">
+                {t("ভুল হয়েছে!", "Wrong word!", "خطأ!")}
+              </p>
+              <Volume2 className="w-4 h-4 cursor-pointer hover:opacity-70" />
+            </div>
+          )}
+
+          {revealedIndex > 0 && revealedIndex === totalWords && totalWords > 0 && (
+            <div className="flex items-center gap-2 justify-center text-primary bg-primary/10 rounded-lg px-3 py-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <p className="text-xs font-medium">
+                {t("পৃষ্ঠা সম্পন্ন! পরবর্তী পৃষ্ঠায় যাচ্ছে...", "Page complete! Moving to next...", "اكتملت الصفحة!")}
+              </p>
+            </div>
+          )}
+
+          {speechError && (
+            <p className="text-center text-xs text-muted-foreground">{speechError}</p>
+          )}
+
+          {lastSpoken && isListening && (
+            <p className="text-center text-xs text-muted-foreground/60 truncate" dir="rtl">🎤 {lastSpoken}</p>
+          )}
+        </div>
       </div>
 
-      {/* Mic Button */}
-      <div className="px-4 pb-20 flex justify-center">
+      {/* Bottom Controls — Hint + Mic */}
+      <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border px-4 py-3 pb-20 flex items-center justify-center gap-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleHint}
+          disabled={revealedIndex >= totalWords || showHint || isLoading}
+          className="gap-1.5"
+        >
+          <Eye className="w-4 h-4" />
+          {t("হিন্ট", "Hint", "تلميح")}
+        </Button>
+
         <button
           onClick={toggleListening}
-          disabled={isLoading || !ayahText}
-          className={`w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-lg ${
+          disabled={isLoading || !pageText}
+          className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg ${
             isListening
               ? "bg-destructive text-destructive-foreground animate-pulse scale-110"
               : "bg-primary text-primary-foreground hover:scale-105"
           } disabled:opacity-40 disabled:scale-100`}
         >
-          {isListening ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
+          {isListening ? <MicOff className="w-7 h-7" /> : <Mic className="w-7 h-7" />}
         </button>
       </div>
     </div>
