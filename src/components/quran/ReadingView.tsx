@@ -149,6 +149,11 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
 
   const { data, isLoading, error } = useQuranPage(mushafPage);
 
+  // Prefetch audio segments for current surah
+  useEffect(() => {
+    prefetchChapter(selectedSurah);
+  }, [selectedSurah, prefetchChapter]);
+
   useEffect(() => {
     const surah = surahForPage(mushafPage);
     if (surah !== selectedSurah) setSelectedSurah(surah);
