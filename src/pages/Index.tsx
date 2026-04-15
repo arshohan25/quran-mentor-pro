@@ -20,9 +20,9 @@ const Index = () => {
 
   const quickActions = [
     { icon: BookOpen, label: t("কুরআন", "Quran", "القرآن"), path: "/quran", gradient: "from-primary/15 to-primary/5" },
+    { icon: Sparkles, label: t("সবিনা", "Sabina", "سبينا"), path: "/sabina", gradient: "from-accent/15 to-accent/5" },
     { icon: Volume2, label: t("অডিও", "Audio", "صوتي"), path: "/audio", gradient: "from-accent/15 to-accent/5" },
     { icon: Mic, label: t("প্র্যাকটিস", "Practice", "تدرب"), path: "/practice", gradient: "from-primary/15 to-primary/5" },
-    { icon: Sparkles, label: t("সবিনা", "Sabina", "سبينا"), path: "/sabina", gradient: "from-accent/15 to-accent/5" },
     { icon: Calendar, label: t("প্ল্যানার", "Planner", "مخطط"), path: "/planner", gradient: "from-accent/15 to-accent/5" },
   ];
 
