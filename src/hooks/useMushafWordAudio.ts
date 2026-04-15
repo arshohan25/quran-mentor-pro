@@ -6,17 +6,19 @@ interface WordSegment {
   endMs: number;
 }
 
-interface VerseAudio {
-  url: string;
-  segments: WordSegment[];
-}
-
-const AUDIO_BASE = "https://verses.quran.com/";
 const RECITER_ID = 7; // Mishary Rashid Alafasy
+
+// Instant audio URL — no API call needed
+function getDirectAudioUrl(verseKey: string): string {
+  const [ch, v] = verseKey.split(":");
+  const chPad = ch.padStart(3, "0");
+  const vPad = v.padStart(3, "0");
+  return `https://verses.quran.com/Alafasy/mp3/${chPad}${vPad}.mp3`;
+}
 
 /**
  * Hook for per-verse audio playback with word-by-word timing segments.
- * Fetches all audio files for a given chapter and caches them.
+ * Plays audio INSTANTLY via direct URL, then fetches segments in background for highlighting.
  */
 export function useMushafWordAudio() {
   const [playingVerse, setPlayingVerse] = useState<string | null>(null);
@@ -24,42 +26,48 @@ export function useMushafWordAudio() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const segmentsRef = useRef<WordSegment[]>([]);
   const animRef = useRef<number | null>(null);
-  const chapterCacheRef = useRef<Map<number, Map<string, VerseAudio>>>(new Map());
+  const chapterCacheRef = useRef<Map<number, Map<string, WordSegment[]>>>(new Map());
 
-  const fetchChapterAudio = useCallback(async (chapter: number): Promise<Map<string, VerseAudio>> => {
+  const fetchSegments = useCallback(async (chapter: number): Promise<Map<string, WordSegment[]>> => {
     if (chapterCacheRef.current.has(chapter)) {
       return chapterCacheRef.current.get(chapter)!;
     }
 
-    const res = await fetch(
-      `https://api.quran.com/api/v4/recitations/${RECITER_ID}/by_chapter/${chapter}?per_page=300`
-    );
-    if (!res.ok) throw new Error("Failed to fetch audio");
-    const data = await res.json();
-
-    const map = new Map<string, VerseAudio>();
-    for (const file of data.audio_files ?? []) {
-      const segments: WordSegment[] = (file.segments ?? []).map(
-        (seg: number[]) => ({
-          wordPosition: seg[2],
-          startMs: seg[3],
-          endMs: seg[4],
-        })
+    try {
+      const res = await fetch(
+        `https://api.quran.com/api/v4/recitations/${RECITER_ID}/by_chapter/${chapter}?per_page=300`
       );
-      map.set(file.verse_key, {
-        url: file.url.startsWith("http") ? file.url : AUDIO_BASE + file.url,
-        segments,
-      });
-    }
+      if (!res.ok) return new Map();
+      const data = await res.json();
 
-    chapterCacheRef.current.set(chapter, map);
-    return map;
+      const map = new Map<string, WordSegment[]>();
+      for (const file of data.audio_files ?? []) {
+        const segments: WordSegment[] = (file.segments ?? []).map(
+          (seg: number[]) => ({
+            wordPosition: seg[2],
+            startMs: seg[3],
+            endMs: seg[4],
+          })
+        );
+        map.set(file.verse_key, segments);
+      }
+
+      chapterCacheRef.current.set(chapter, map);
+      return map;
+    } catch {
+      return new Map();
+    }
   }, []);
 
   const trackProgress = useCallback(() => {
     const audio = audioRef.current;
     const segments = segmentsRef.current;
-    if (!audio || segments.length === 0) return;
+    if (!audio || segments.length === 0) {
+      if (!audio?.paused) {
+        animRef.current = requestAnimationFrame(trackProgress);
+      }
+      return;
+    }
 
     const currentMs = audio.currentTime * 1000;
     let activePos = -1;
@@ -91,7 +99,6 @@ export function useMushafWordAudio() {
   }, []);
 
   const playVerse = useCallback(async (verseKey: string) => {
-    // If same verse is playing, stop it
     if (playingVerse === verseKey) {
       stopAudio();
       return;
@@ -99,28 +106,37 @@ export function useMushafWordAudio() {
 
     stopAudio();
 
-    const chapter = Number(verseKey.split(":")[0]);
+    // Play audio INSTANTLY — no API call needed
+    const audioUrl = getDirectAudioUrl(verseKey);
+    const audio = new Audio(audioUrl);
+    audioRef.current = audio;
+    setPlayingVerse(verseKey);
+
+    audio.onended = () => stopAudio();
+    audio.onerror = () => stopAudio();
+
     try {
-      const chapterAudio = await fetchChapterAudio(chapter);
-      const verseAudio = chapterAudio.get(verseKey);
-      if (!verseAudio) return;
-
-      segmentsRef.current = verseAudio.segments;
-      const audio = new Audio(verseAudio.url);
-      audioRef.current = audio;
-      setPlayingVerse(verseKey);
-
-      audio.onended = () => stopAudio();
-      audio.onerror = () => stopAudio();
-
       await audio.play();
       animRef.current = requestAnimationFrame(trackProgress);
     } catch {
       stopAudio();
+      return;
     }
-  }, [playingVerse, stopAudio, fetchChapterAudio, trackProgress]);
 
-  // Cleanup on unmount
+    // Fetch segments in background for word-by-word highlighting
+    const chapter = Number(verseKey.split(":")[0]);
+    const segMap = await fetchSegments(chapter);
+    const segs = segMap.get(verseKey);
+    if (segs && audioRef.current === audio) {
+      segmentsRef.current = segs;
+    }
+  }, [playingVerse, stopAudio, fetchSegments, trackProgress]);
+
+  // Prefetch segments when component mounts or chapter changes
+  const prefetchChapter = useCallback((chapter: number) => {
+    fetchSegments(chapter);
+  }, [fetchSegments]);
+
   useEffect(() => {
     return () => {
       audioRef.current?.pause();
@@ -133,5 +149,6 @@ export function useMushafWordAudio() {
     highlightedWordPos,
     playVerse,
     stopAudio,
+    prefetchChapter,
   };
 }
