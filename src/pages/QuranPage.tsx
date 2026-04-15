@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, BookOpen, Mic2, Languages, GraduationCap, Bookmark, Grid3X3, Layers, Volume2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Mic2, Languages, GraduationCap, Bookmark, Grid3X3, Layers, Volume2, Sparkles } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import type { ActiveSection } from "@/components/quran/types";
@@ -13,9 +13,11 @@ import BookmarksView from "@/components/quran/BookmarksView";
 import TopicBrowser from "@/components/quran/TopicBrowser";
 import JuzBrowser from "@/components/quran/JuzBrowser";
 import ReadingView from "@/components/quran/ReadingView";
+import SabinaView from "@/components/quran/SabinaView";
 
 const CATEGORIES = [
   { id: "reading" as const, icon: BookOpen, labelBn: "মুসহাফ", labelEn: "Mushaf", labelAr: "المصحف", active: true },
+  { id: "sabina" as const, icon: Sparkles, labelBn: "সবিনা", labelEn: "Sabina", labelAr: "سبينا", active: true },
   { id: "translation" as const, icon: Languages, labelBn: "তরজমা ও তাফসির", labelEn: "Translation", labelAr: "الترجمة", active: true },
   { id: "audio" as const, icon: Volume2, labelBn: "অডিও তেলাওয়াত", labelEn: "Audio", labelAr: "الصوت", active: true },
   { id: "wordmeaning" as const, icon: Mic2, labelBn: "শব্দার্থ", labelEn: "Word Meaning", labelAr: "المعاني", active: true },
@@ -40,6 +42,7 @@ export default function QuranPage() {
   const onBack = () => setActiveSection(null);
 
   if (activeSection === "reading") return <ReadingView selectedSurah={selectedSurah} setSelectedSurah={setSelectedSurah} onBack={onBack} />;
+  if (activeSection === "sabina") return <SabinaView selectedSurah={selectedSurah} setSelectedSurah={setSelectedSurah} onBack={onBack} />;
   if (activeSection === "translation") return <TranslationView selectedSurah={selectedSurah} setSelectedSurah={setSelectedSurah} onBack={onBack} />;
   if (activeSection === "audio") return <AudioView selectedSurah={selectedSurah} setSelectedSurah={setSelectedSurah} onBack={onBack} />;
   if (activeSection === "wordmeaning") return <WordMeaningView selectedSurah={selectedSurah} setSelectedSurah={setSelectedSurah} onBack={onBack} />;
