@@ -325,14 +325,23 @@ export default function ReadingView({ selectedSurah, setSelectedSurah, onBack }:
         ) : (
           <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-4 pb-4">
             {tajweedEnabled && (
-              <div className="flex flex-wrap gap-x-3 gap-y-1.5 mb-3 p-2.5 rounded-lg" style={{ background: DARK_BORDER }}>
-                <span className="text-[10px] font-semibold w-full mb-0.5" style={{ color: TEXT_DIM }}>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-2 mb-3 p-2.5 rounded-lg" style={{ background: DARK_BORDER }}>
+                <span className="text-[10px] font-semibold col-span-2 mb-0.5" style={{ color: TEXT_DIM }}>
                   {t("তাজবীদ রঙ:", "Tajweed Colors:", "ألوان التجويد:")}
                 </span>
                 {tajweedLegend.map((item) => (
                   <div key={item.name} className="flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: item.color }} />
-                    <span className="text-[9px]" style={{ color: TEXT_DIM }}>{t(item.nameBn, item.nameEn, item.name)}</span>
+                    <span className="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style={{ backgroundColor: item.color }} />
+                    <div className="flex flex-col leading-tight">
+                      <span className="text-[9px]" style={{ color: TEXT_DIM }}>{t(item.nameBn, item.nameEn, item.name)}</span>
+                      {item.example && (
+                        <span
+                          className="text-[11px] font-arabic"
+                          style={{ color: item.color }}
+                          dangerouslySetInnerHTML={{ __html: applyTajweedColors(item.example) }}
+                        />
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
