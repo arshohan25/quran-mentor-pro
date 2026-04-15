@@ -122,7 +122,7 @@ export default function SabinaPage() {
   const { words, revealedIndex, errorIndex, isListening, lastSpoken, speechError, totalWords } = state;
   const progressPercent = totalWords > 0 ? (revealedIndex / totalWords) * 100 : 0;
 
-  // When surah changes, jump to its start page
+  const { playErrorWord } = usePageWordAudio(flatWords, errorIndex);
   useEffect(() => {
     const startPage = SURAH_START_PAGES[selectedSurah] ?? 1;
     setCurrentPage(startPage);
@@ -344,7 +344,9 @@ export default function SabinaPage() {
               <p className="text-xs font-medium">
                 {t("ভুল হয়েছে!", "Wrong word!", "خطأ!")}
               </p>
-              <Volume2 className="w-4 h-4 cursor-pointer hover:opacity-70" />
+              <button onClick={playErrorWord} className="p-1 hover:opacity-70 transition">
+                <Volume2 className="w-4 h-4" />
+              </button>
             </div>
           )}
 
