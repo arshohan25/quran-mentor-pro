@@ -1,4 +1,4 @@
-export type ActiveSection = null | "translation" | "audio" | "wordmeaning" | "hifz" | "bookmarks" | "topics" | "juz" | "reading";
+export type ActiveSection = null | "translation" | "audio" | "wordmeaning" | "hifz" | "bookmarks" | "topics" | "juz" | "reading" | "sabina";
 
 export const LINES_PER_PAGE = 15;
 export const CHARS_PER_LINE = 30;
