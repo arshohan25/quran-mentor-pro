@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Mic, MicOff, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, Sparkles, Eye } from "lucide-react";
+import { ArrowLeft, Mic, MicOff, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, Sparkles, Eye, Volume2 } from "lucide-react";
+import { useWordCorrection } from "@/hooks/useWordCorrection";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
 import { useArabicRecitationEngine } from "@/hooks/useArabicRecitationEngine";
