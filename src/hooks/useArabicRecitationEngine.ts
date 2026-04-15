@@ -43,8 +43,13 @@ export function useArabicRecitationEngine(
   const revealedRef = useRef(0);
   const finalCountRef = useRef(0);
   const processedTokensRef = useRef<Set<string>>(new Set());
+  const wordsRef = useRef<string[]>(words);
+  const onCompleteRef = useRef(onComplete);
+  const keepAliveRef = useRef(false); // Keep mic alive across page transitions
 
   useEffect(() => { revealedRef.current = revealedIndex; }, [revealedIndex]);
+  useEffect(() => { wordsRef.current = words; }, [words]);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
 
   // Reset when ayahText changes — keep mic running if active
   useEffect(() => {
@@ -56,16 +61,24 @@ export function useArabicRecitationEngine(
     finalCountRef.current = 0;
     processedTokensRef.current = new Set();
 
-    // If listening, restart recognition seamlessly for the new text
-    if (recognitionRef.current && isListening) {
+    // If listening or keepAlive, restart recognition for new text
+    if (recognitionRef.current && (isListening || keepAliveRef.current)) {
       try {
         recognitionRef.current.stop();
       } catch {}
       // onend handler will auto-restart since revealedRef < words.length
+    } else if (keepAliveRef.current && !recognitionRef.current) {
+      // keepAlive was set but recognition stopped — restart
+      setTimeout(() => {
+        if (keepAliveRef.current) {
+          startListeningInternal();
+        }
+      }, 300);
     }
   }, [ayahText]);
 
   const stopListening = useCallback(() => {
+    keepAliveRef.current = false;
     if (recognitionRef.current) {
       try { recognitionRef.current.stop(); } catch {}
       recognitionRef.current = null;
@@ -73,7 +86,7 @@ export function useArabicRecitationEngine(
     setIsListening(false);
   }, []);
 
-  const startListening = useCallback(() => {
+  const startListeningInternal = useCallback(() => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
       setSpeechError("Speech recognition not supported");
@@ -91,10 +104,11 @@ export function useArabicRecitationEngine(
     recognition.maxAlternatives = 3;
 
     recognition.onresult = (event: any) => {
+      const currentWords = wordsRef.current;
+
       for (let i = finalCountRef.current; i < event.results.length; i++) {
         const result = event.results[i];
 
-        // Collect all alternatives
         const alternatives: string[] = [];
         for (let a = 0; a < result.length; a++) {
           alternatives.push(result[a].transcript);
@@ -107,13 +121,13 @@ export function useArabicRecitationEngine(
 
           for (const token of allTokens) {
             const idx = revealedRef.current;
-            if (idx >= words.length) break;
+            if (idx >= currentWords.length) break;
 
             const tokenKey = `${idx}-${token}`;
             if (processedTokensRef.current.has(tokenKey)) continue;
             processedTokensRef.current.add(tokenKey);
 
-            const { matched } = bestMatchScore(words[idx], alternatives, mode);
+            const { matched } = bestMatchScore(currentWords[idx], alternatives, mode);
 
             if (matched) {
               revealedRef.current = idx + 1;
@@ -121,9 +135,10 @@ export function useArabicRecitationEngine(
               setErrorIndex(null);
               setLastSpoken(token);
 
-              if (idx + 1 >= words.length) {
+              if (idx + 1 >= currentWords.length) {
                 playBeep(800, 0.15, 0.2);
-                setTimeout(() => { onComplete?.(); }, 500);
+                keepAliveRef.current = true; // Keep mic alive for next page
+                setTimeout(() => { onCompleteRef.current?.(); }, 500);
                 return;
               }
             } else {
@@ -133,24 +148,24 @@ export function useArabicRecitationEngine(
             }
           }
         } else {
-          // Interim: try to match words in real-time
           const interimText = result[0].transcript;
           setLastSpoken(interimText);
 
           for (const token of allTokens) {
             const idx = revealedRef.current;
-            if (idx >= words.length) break;
+            if (idx >= currentWords.length) break;
 
-            const { matched } = bestMatchScore(words[idx], [interimText], mode);
+            const { matched } = bestMatchScore(currentWords[idx], [interimText], mode);
             if (matched) {
               revealedRef.current = idx + 1;
               setRevealedIndex(idx + 1);
               setErrorIndex(null);
               setLastSpoken(token);
 
-              if (idx + 1 >= words.length) {
+              if (idx + 1 >= currentWords.length) {
                 playBeep(800, 0.15, 0.2);
-                setTimeout(() => { onComplete?.(); }, 500);
+                keepAliveRef.current = true;
+                setTimeout(() => { onCompleteRef.current?.(); }, 500);
                 return;
               }
             }
@@ -163,13 +178,14 @@ export function useArabicRecitationEngine(
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
         setSpeechError("Microphone permission denied");
         setIsListening(false);
-      } else if (event.error !== "no-speech" && event.error !== "aborted") {
-        // Don't show error for transient issues
+        keepAliveRef.current = false;
       }
     };
 
     recognition.onend = () => {
-      if (revealedRef.current < words.length && recognitionRef.current) {
+      const currentWords = wordsRef.current;
+      // Restart if still has words to process OR keepAlive is set (waiting for new page)
+      if ((revealedRef.current < currentWords.length || keepAliveRef.current) && recognitionRef.current) {
         try {
           finalCountRef.current = 0;
           processedTokensRef.current = new Set();
@@ -187,7 +203,12 @@ export function useArabicRecitationEngine(
     processedTokensRef.current = new Set();
     recognition.start();
     setIsListening(true);
-  }, [words, mode, stopListening, onComplete]);
+  }, [mode]);
+
+  const startListening = useCallback(() => {
+    keepAliveRef.current = true;
+    startListeningInternal();
+  }, [startListeningInternal]);
 
   const toggleListening = useCallback(() => {
     if (isListening) stopListening();
@@ -196,7 +217,10 @@ export function useArabicRecitationEngine(
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => { if (recognitionRef.current) try { recognitionRef.current.stop(); } catch {} };
+    return () => {
+      keepAliveRef.current = false;
+      if (recognitionRef.current) try { recognitionRef.current.stop(); } catch {}
+    };
   }, []);
 
   return {
