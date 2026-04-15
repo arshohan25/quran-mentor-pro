@@ -1,30 +1,37 @@
 
 
-## Plan: Play Correct Pronunciation Audio on Error in Sabina
+## Plan: Mushaf-Style Sabina Page with Continuous Mic
 
-### What to build
-When the user makes a mistake on a word, automatically play a short audio clip of the correct pronunciation of that specific word using the Quran.com word audio API.
+### What changes
+Completely redesign Sabina to use the **Mushaf page layout** (15 lines per page, word-by-word) instead of single-ayah view. Mic stays on continuously across pages.
 
 ### How it works
-- Quran.com provides per-word audio at: `https://audio.qurancdn.com/wbw/...` 
-- The word-by-word API (`/api/v4/verses/by_key/{surah}:{ayah}?words=true&word_fields=audio_url`) returns an `audio_url` field for each word
-- When `errorIndex` is set in the engine, fetch the word audio URL and play it so the user hears the correct pronunciation
+1. **Use `useQuranPage(pageNumber)`** to fetch exact Mushaf page data (lines + words) — same API the ReadingView uses
+2. **Concatenate all words on the page** into one text string, feed to `useArabicRecitationEngine`
+3. **Display in 15-line Mushaf layout** — each line shows its words RTL. Words start as dots/hidden, revealed as recited correctly
+4. **When page completes** → auto-advance to next page, mic stays on
+5. **Ayahs stay visible** after recitation (green text), never disappear
+6. **Page navigation** — user can pick a surah (auto-jumps to its start page via `SURAH_START_PAGES`) or manually go prev/next page
 
-### Changes
+### Engine changes (`useArabicRecitationEngine.ts`)
+- Fix the `onend` handler: when `revealedRef.current >= words.length` (page complete), the engine currently sets `isListening = false`. Need to keep it alive — the `onComplete` callback will change the page text, and the `ayahText` change effect will restart recognition
+- Store `words` in a ref so `onend` always checks the latest word count (currently captures stale `words` from closure)
 
-#### 1. New hook: `src/hooks/useWordCorrection.ts`
-- Accepts `surahNumber`, `ayahNumber`, and `errorWordIndex`
-- Fetches word data from Quran.com API for the current ayah (cached per ayah)
-- When `errorWordIndex` changes to a non-null value, plays the audio for that word position
-- Uses a simple `new Audio(url).play()` approach
-- API: `https://api.quran.com/api/v4/verses/by_key/${surah}:${ayah}?language=ar&words=true&word_fields=audio_url`
+### Page rewrite (`SabinaPage.tsx`)
+- Replace surah+ayah selectors with **surah selector + page number display**
+- Use `useQuranPage(currentPage)` instead of `useSurahWithTranslations`
+- Build page text by joining all `line.words.map(w => w.text_uthmani)`
+- Render 15 lines in a Mushaf-like grid, each word styled based on its index in the flat word array:
+  - `i < revealedIndex` → visible green
+  - `i === revealedIndex` → current position marker
+  - `i === errorIndex` → red error
+  - else → hidden dot
+- On complete: `setCurrentPage(p => p + 1)`, keep mic running
+- Hint button reveals current word temporarily
+- Progress bar shows page-level progress
+- Sticky mic button at bottom
 
-#### 2. Update `src/pages/SabinaPage.tsx`
-- Import and use `useWordCorrection(selectedSurah, currentAyah, errorIndex)`
-- Add a small speaker icon button next to the error message so user can replay the correct audio manually
-- The audio plays automatically on error, with a manual replay option
-
-### Files
-- **Create** `src/hooks/useWordCorrection.ts`
-- **Edit** `src/pages/SabinaPage.tsx` — integrate the hook + add replay button
+### Files to modify
+- **`src/pages/SabinaPage.tsx`** — Major rewrite to Mushaf page layout
+- **`src/hooks/useArabicRecitationEngine.ts`** — Fix `onend` to use ref for words length, keep mic alive across page transitions
 
