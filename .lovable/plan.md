@@ -1,25 +1,30 @@
 
 
-## Plan: Sabina — Continuous Mic + Hidden Words with Hint Button
+## Plan: Play Correct Pronunciation Audio on Error in Sabina
 
-### Problems to fix
-1. **Mic stops between ayahs** — When an ayah completes, the engine calls `stopListening()` then the ayah text changes which triggers another `stopListening()`. User has to manually restart mic each time.
-2. **Words are visible (blurred but readable)** — User wants a true memorization mode: no words shown at all until recited correctly. Only a "Hint" button to peek at the current word.
+### What to build
+When the user makes a mistake on a word, automatically play a short audio clip of the correct pronunciation of that specific word using the Quran.com word audio API.
+
+### How it works
+- Quran.com provides per-word audio at: `https://audio.qurancdn.com/wbw/...` 
+- The word-by-word API (`/api/v4/verses/by_key/{surah}:{ayah}?words=true&word_fields=audio_url`) returns an `audio_url` field for each word
+- When `errorIndex` is set in the engine, fetch the word audio URL and play it so the user hears the correct pronunciation
 
 ### Changes
 
-#### 1. Keep mic running across ayahs (`useArabicRecitationEngine.ts`)
-- Remove `stopListening()` from the `onComplete` callback path — instead of stopping, just call `onComplete()` and let the engine naturally reset when `ayahText` changes
-- In the `ayahText` change effect: instead of calling `stopListening()`, keep the recognition running — just reset `revealedIndex`, `errorIndex`, counters, etc. If recognition is active, restart it seamlessly (stop + immediate start)
-- Add a `keepListening` option or handle it by checking if `isListening` was true before the text changed
+#### 1. New hook: `src/hooks/useWordCorrection.ts`
+- Accepts `surahNumber`, `ayahNumber`, and `errorWordIndex`
+- Fetches word data from Quran.com API for the current ayah (cached per ayah)
+- When `errorWordIndex` changes to a non-null value, plays the audio for that word position
+- Uses a simple `new Audio(url).play()` approach
+- API: `https://api.quran.com/api/v4/verses/by_key/${surah}:${ayah}?language=ar&words=true&word_fields=audio_url`
 
-#### 2. Hide all words, add Hint button (`SabinaPage.tsx`)
-- Remove the blurred upcoming words — don't render unrecited words at all (or show dots/dashes as placeholders)
-- Only show: revealed words (green/primary) + current word position indicator (e.g., "___") + error word (red)
-- Add a `showHint` state and a "হিন্ট" button — clicking it temporarily reveals the current word for 2-3 seconds, then hides it again
-- The hint shows only the current expected word, not the entire remaining text
+#### 2. Update `src/pages/SabinaPage.tsx`
+- Import and use `useWordCorrection(selectedSurah, currentAyah, errorIndex)`
+- Add a small speaker icon button next to the error message so user can replay the correct audio manually
+- The audio plays automatically on error, with a manual replay option
 
-### Files to modify
-- `src/hooks/useArabicRecitationEngine.ts` — Keep recognition alive across ayah changes
-- `src/pages/SabinaPage.tsx` — Hide words, add hint button, keep mic on continuously
+### Files
+- **Create** `src/hooks/useWordCorrection.ts`
+- **Edit** `src/pages/SabinaPage.tsx` — integrate the hook + add replay button
 
