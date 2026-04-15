@@ -91,32 +91,28 @@ export function useArabicRecitationEngine(
     recognition.maxAlternatives = 3;
 
     recognition.onresult = (event: any) => {
-      let interimText = "";
-
       for (let i = finalCountRef.current; i < event.results.length; i++) {
         const result = event.results[i];
+
+        // Collect all alternatives
+        const alternatives: string[] = [];
+        for (let a = 0; a < result.length; a++) {
+          alternatives.push(result[a].transcript);
+        }
+
+        const allTokens = tokenizeArabicWords(result[0].transcript);
+
         if (result.isFinal) {
           finalCountRef.current = i + 1;
 
-          // Collect all alternatives
-          const alternatives: string[] = [];
-          for (let a = 0; a < result.length; a++) {
-            alternatives.push(result[a].transcript);
-          }
-
-          // Process each token from the best alternative
-          const bestTokens = tokenizeArabicWords(result[0].transcript);
-          
-          for (const token of bestTokens) {
+          for (const token of allTokens) {
             const idx = revealedRef.current;
             if (idx >= words.length) break;
 
-            // Dedupe: skip if we've already processed this exact token recently
             const tokenKey = `${idx}-${token}`;
             if (processedTokensRef.current.has(tokenKey)) continue;
             processedTokensRef.current.add(tokenKey);
 
-            // Score against expected word using all alternatives
             const { matched } = bestMatchScore(words[idx], alternatives, mode);
 
             if (matched) {
@@ -127,9 +123,7 @@ export function useArabicRecitationEngine(
 
               if (idx + 1 >= words.length) {
                 playBeep(800, 0.15, 0.2);
-                setTimeout(() => {
-                  onComplete?.();
-                }, 500);
+                setTimeout(() => { onComplete?.(); }, 500);
                 return;
               }
             } else {
@@ -139,11 +133,30 @@ export function useArabicRecitationEngine(
             }
           }
         } else {
-          interimText = result[0].transcript;
+          // Interim: try to match words in real-time
+          const interimText = result[0].transcript;
+          setLastSpoken(interimText);
+
+          for (const token of allTokens) {
+            const idx = revealedRef.current;
+            if (idx >= words.length) break;
+
+            const { matched } = bestMatchScore(words[idx], [interimText], mode);
+            if (matched) {
+              revealedRef.current = idx + 1;
+              setRevealedIndex(idx + 1);
+              setErrorIndex(null);
+              setLastSpoken(token);
+
+              if (idx + 1 >= words.length) {
+                playBeep(800, 0.15, 0.2);
+                setTimeout(() => { onComplete?.(); }, 500);
+                return;
+              }
+            }
+          }
         }
       }
-
-      if (interimText) setLastSpoken(interimText);
     };
 
     recognition.onerror = (event: any) => {
