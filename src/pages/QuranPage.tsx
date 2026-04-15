@@ -78,7 +78,7 @@ export default function QuranPage() {
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 py-6 pb-20">
-        <div className="grid grid-cols-2 gap-3 w-full max-w-lg mx-auto">
+        <div className="grid grid-cols-4 gap-2.5 w-full max-w-lg mx-auto">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             return (
