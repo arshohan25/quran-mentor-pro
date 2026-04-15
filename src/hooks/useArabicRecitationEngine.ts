@@ -61,6 +61,7 @@ export function useArabicRecitationEngine(
     revealedRef.current = 0;
     finalCountRef.current = 0;
     processedTokensRef.current = new Set();
+    interimMatchedCountRef.current = 0;
 
     // If listening or keepAlive, restart recognition for new text
     if (recognitionRef.current && (isListening || keepAliveRef.current)) {
@@ -119,6 +120,7 @@ export function useArabicRecitationEngine(
 
         if (result.isFinal) {
           finalCountRef.current = i + 1;
+          interimMatchedCountRef.current = 0;
 
           for (const token of allTokens) {
             const idx = revealedRef.current;
