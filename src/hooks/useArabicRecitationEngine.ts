@@ -43,6 +43,7 @@ export function useArabicRecitationEngine(
   const revealedRef = useRef(0);
   const finalCountRef = useRef(0);
   const processedTokensRef = useRef<Set<string>>(new Set());
+  const interimMatchedCountRef = useRef(0);
   const wordsRef = useRef<string[]>(words);
   const onCompleteRef = useRef(onComplete);
   const keepAliveRef = useRef(false); // Keep mic alive across page transitions
