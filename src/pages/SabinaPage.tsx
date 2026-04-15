@@ -12,6 +12,62 @@ import { surahList } from "@/data/surahList";
 import { SURAH_START_PAGES, surahForPage } from "@/data/mushafPages";
 import type { MatchMode } from "@/utils/arabicUtils";
 
+// Play word audio from quran.com CDN
+function usePageWordAudio(flatWords: any[], errorIndex: number | null) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const cacheRef = useRef<Map<string, string>>(new Map());
+  const lastPlayedRef = useRef<string>("");
+
+  const playErrorWord = useCallback(() => {
+    if (errorIndex === null || !flatWords[errorIndex]) return;
+    const word = flatWords[errorIndex];
+    const verseKey = word.verse_key;
+    const position = word.position;
+    const cacheKey = `${verseKey}:${position}`;
+
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+
+    const doPlay = (url: string) => {
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.play().catch(() => {});
+    };
+
+    if (cacheRef.current.has(cacheKey)) {
+      doPlay(cacheRef.current.get(cacheKey)!);
+      return;
+    }
+
+    fetch(`https://api.quran.com/api/v4/verses/by_key/${verseKey}?language=ar&words=true&word_fields=audio_url`)
+      .then(r => r.json())
+      .then(data => {
+        const words = data?.verse?.words || [];
+        words.filter((w: any) => w.char_type_name === "word").forEach((w: any) => {
+          const url = w.audio_url?.startsWith("http") ? w.audio_url : w.audio_url ? `https://audio.qurancdn.com/${w.audio_url}` : null;
+          if (url) cacheRef.current.set(`${verseKey}:${w.position}`, url);
+        });
+        const audioUrl = cacheRef.current.get(cacheKey);
+        if (audioUrl) doPlay(audioUrl);
+      })
+      .catch(() => {});
+  }, [flatWords, errorIndex]);
+
+  // Auto-play on error
+  useEffect(() => {
+    if (errorIndex === null) return;
+    const key = `${errorIndex}`;
+    if (lastPlayedRef.current === key) return;
+    lastPlayedRef.current = key;
+    const t = setTimeout(playErrorWord, 350);
+    return () => clearTimeout(t);
+  }, [errorIndex, playErrorWord]);
+
+  // Cleanup
+  useEffect(() => () => { if (audioRef.current) audioRef.current.pause(); }, []);
+
+  return { playErrorWord };
+}
+
 function toArabicNum(n: number): string {
   return String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[parseInt(d)]);
 }
@@ -66,7 +122,7 @@ export default function SabinaPage() {
   const { words, revealedIndex, errorIndex, isListening, lastSpoken, speechError, totalWords } = state;
   const progressPercent = totalWords > 0 ? (revealedIndex / totalWords) * 100 : 0;
 
-  // When surah changes, jump to its start page
+  const { playErrorWord } = usePageWordAudio(flatWords, errorIndex);
   useEffect(() => {
     const startPage = SURAH_START_PAGES[selectedSurah] ?? 1;
     setCurrentPage(startPage);
@@ -288,7 +344,9 @@ export default function SabinaPage() {
               <p className="text-xs font-medium">
                 {t("ভুল হয়েছে!", "Wrong word!", "خطأ!")}
               </p>
-              <Volume2 className="w-4 h-4 cursor-pointer hover:opacity-70" />
+              <button onClick={playErrorWord} className="p-1 hover:opacity-70 transition">
+                <Volume2 className="w-4 h-4" />
+              </button>
             </div>
           )}
 
