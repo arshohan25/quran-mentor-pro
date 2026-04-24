@@ -1,154 +1,41 @@
 
-# Bengali Hadith + Tafsir + Qaza Tracker + Notifications + AI Q&A
 
-5 major features added to the existing app, reusing current patterns (LanguageContext, premium-card styling, localStorage for client state, react-query for API data). Lovable Cloud will be enabled to power the AI Q&A edge function.
+## Show Hadith chapter titles in Bengali
 
-## 1. Bengali Hadith Library (`/hadith`)
+### Problem
+On `/hadith/muslim`, chapter titles render in English ("The Book of Faith", "The Book of Purification"…). The current data source (`fawazahmed0/hadith-api` Bengali edition) only translates hadith bodies — its `metadata.sections` map keeps the original English book names. So even on the Bengali edition, chapter labels come through in English.
 
-A new section covering **Sahih Sittah** with Bengali text and search.
+### Fix
+Maintain a small, local Bengali chapter-name map for each of the 6 collections and use it as the primary label, falling back to the API's English name when a translation is missing.
 
-**Data source**: [hadithapi.com](https://hadithapi.com) (free, supports Bengali via `lang=bn` for Bukhari/Muslim/Tirmidhi/Abu Dawud/Nasai/Ibn Majah). Fallback: bundled JSON for offline-friendly browsing of book/chapter lists.
+### Changes
 
-**Pages**:
-- `/hadith` — 6 collection cards (Bukhari, Muslim, Tirmidhi, Abu Dawud, Nasa'i, Ibn Majah) + global search bar + "Daily Hadith" widget.
-- `/hadith/:collection` — chapter list (kitab) for that book.
-- `/hadith/:collection/:chapter` — paginated hadith list with Arabic + Bengali + narrator + grade (sahih/hasan/da'if).
+1. **New file `src/data/hadithChapterNamesBn.ts`**
+   - Export `HADITH_CHAPTER_NAMES_BN: Record<bookSlug, Record<chapterNumber, string>>` for `bukhari`, `muslim`, `tirmidhi`, `abudawud`, `nasai`, `ibnmajah`.
+   - Cover all standard chapters (Sahih Muslim ~56 books, Bukhari ~97, etc.) with widely-used Bengali names (e.g. `১: ঈমান`, `২: পবিত্রতা`, `৩: হায়েয`, `৪: সালাত`…).
+   - Keys are stringified chapter numbers to match the API's section keys.
 
-**Features**: search by keyword across all collections, filter by grade, bookmark hadith, share, copy. Bookmarks reuse the `useBookmark` hook pattern (extended with a `hadithBookmarks` slice).
+2. **Edit `src/hooks/useHadithApi.ts`**
+   - In `useHadithChapters(bookSlug)`, import the BN map and for each chapter compute:
+     - `chapterBengali = MAP[bookSlug]?.[num]`
+     - `chapterEnglish = name` (existing English from API, kept as fallback)
+   - Extend `ApiChapter` interface with optional `chapterBengali?: string`.
 
-**Files**:
-- `src/pages/HadithPage.tsx`, `HadithCollectionPage.tsx`, `HadithChapterPage.tsx`
-- `src/hooks/useHadithApi.ts` (react-query)
-- `src/data/hadithCollections.ts` (collection metadata + chapter fallback)
-- `src/components/hadith/HadithCard.tsx`, `HadithSearchBar.tsx`, `DailyHadith.tsx`
+3. **Edit `src/pages/HadithCollectionPage.tsx`**
+   - Use `useLanguage()` `language` to choose the title:
+     - `bn` → `ch.chapterBengali ?? ch.chapterEnglish`
+     - else → `ch.chapterEnglish`
+   - Optionally show the English name as a small subtitle under the Bengali title when `language === "bn"` (helps users recognize the book).
+   - Replace the hadith count label with `{ch.hadithCount} {t("হাদীস", "hadith")}` (already correct).
 
-## 2. Tafsir inside Translation View
+4. **Edit `src/pages/HadithChapterPage.tsx`** (same pattern, for the chapter header)
+   - Apply the same Bengali-first label logic so the header on the hadith list page also reads in Bengali.
 
-Each ayah gets an expandable **"তাফসির দেখুন"** accordion under the existing Bengali translation.
+### Out of scope
+- No changes to API source, caching, search, or practice features.
+- No new dependencies.
 
-**Data source**: quran.com tafsir API — `https://api.quran.com/api/v4/tafsirs/{id}/by_ayah/{key}`.
-- Default tafsir: **Tafsir Ibn Kathir (Bengali)** — id `164`.
-- Optional dropdown: Ibn Kathir, Fathul Majid, Tafhimul Quran, Ahsanul Bayan (Bengali ones available on quran.com).
+### Notes
+- The Bengali chapter map is static and small (a few KB), shipped with the app — works offline, no extra requests.
+- If a chapter number isn't in the map (e.g. rare appendices), the UI gracefully falls back to the English name so nothing renders blank.
 
-**Behavior**: lazy-loaded per ayah on accordion open (not all at once — saves bandwidth). React-query caches per `surah:ayah:tafsirId`. Stripped of HTML, rendered as plain text inside a `<details>` styled as a card section.
-
-**Files**:
-- `src/hooks/useTafsir.ts`
-- `src/components/quran/TafsirAccordion.tsx`
-- `TranslationView.tsx` — add `<TafsirAccordion>` per ayah; add tafsir-edition selector in header.
-
-## 3. Qaza Prayer Tracker (`/qaza`)
-
-Track lifetime missed prayers per waqt, log makeup, view dashboard.
-
-**Setup screen** (first visit): user inputs estimated missed counts for Fajr / Dhuhr / Asr / Maghrib / Isha / Witr (7 fields). Stored in localStorage as `qaza_initial`.
-
-**Dashboard**:
-- Total missed remaining (per prayer + grand total)
-- Progress ring per waqt (`% completed`)
-- "Today" quick-log: + buttons to log 1 makeup for each prayer (also supports custom +N)
-- 30-day chart (reuses `HifzProgressChart` pattern with recharts)
-- Streak: consecutive days with at least 1 makeup
-- Reset / edit initial counts
-
-**Storage**: localStorage (`qaza_state` = `{initial, completed, dailyLog: {date: {fajr, dhuhr,...}}}`). When Cloud auth is added later, easy migration to Supabase.
-
-**Files**:
-- `src/pages/QazaPage.tsx`
-- `src/hooks/useQazaTracker.ts`
-- `src/components/qaza/QazaSetup.tsx`, `QazaDashboard.tsx`, `QazaProgressRing.tsx`, `QazaDailyLog.tsx`, `QazaChart.tsx`
-
-Route added at `/qaza` and tile added to Index.
-
-## 4. Adhan + Daily Reminder Notifications
-
-Configurable Web Push (Notifications API) with daily ayah and adhan reminders. Existing `useDailyDuaNotification` already shows the pattern — we extend the system.
-
-**New settings page** (`/notifications`):
-- Master toggle + "Request permission"
-- 5 prayer adhan toggles (Fajr/Dhuhr/Asr/Maghrib/Isha) — auto times from `usePrayerTimes` (geo) with optional manual offset (-15…+15 min)
-- Daily Ayah toggle + time picker (default 08:00)
-- Daily Hadith toggle + time picker (default 19:00)
-- Daily Dua toggle (existing) — moved here for consolidation
-- Per-notification sound: silent / soft chime / adhan audio (short clip)
-
-**Engine** (`useNotificationScheduler`):
-- On mount + on settings change, computes next-fire times for each enabled item
-- Uses `setTimeout` chains (re-arms after each fire) — simple, works while tab/PWA is open
-- For background delivery on installed PWA, registers a Service Worker with periodic checks
-- Adhan audio: short MP3 in `/public/audio/adhan-soft.mp3` (and a Fajr-specific one with "as-salatu khayrun min an-nawm")
-- Daily Ayah: pulls from existing `surahList` + cached random ayah; click → opens `/quran?surah=X&ayah=Y`
-
-**Files**:
-- `src/pages/NotificationsPage.tsx`
-- `src/hooks/useNotificationScheduler.ts`
-- `src/hooks/useNotificationSettings.ts` (localStorage-backed config)
-- `src/utils/notifications.ts` (permission, schedule, fire helpers)
-- `public/sw-notifications.js` (service worker)
-- `public/audio/adhan-soft.mp3`, `adhan-fajr.mp3` (small CC0 clips)
-
-**Note**: True server-side push requires user accounts + a push service. Phase 1 uses local scheduling (works while app is open or PWA is installed). When Cloud auth lands, we can upgrade to true Web Push with VAPID via an edge function.
-
-## 5. AI Bengali Islamic Q&A (`/ask`)
-
-Chat interface where users ask Islamic questions in Bengali; Lovable AI answers in Bengali with disclaimers and references.
-
-**Backend**: Lovable Cloud + edge function `supabase/functions/islamic-qa/index.ts`
-- Streams via SSE (per AI gateway pattern shown in docs)
-- Model: `google/gemini-3-flash-preview` (default)
-- System prompt (server-side, Bengali) instructs model to:
-  - Answer in Bengali only
-  - Cite Quran (surah:ayah) and Hadith (collection + number) when possible
-  - State the four-madhhab consensus where relevant; mention differences
-  - Refuse to issue binding fatwas — recommend a qualified scholar for personal matters
-  - Add the disclaimer at the end of every answer
-- Validates input (zod): max 2000 chars, non-empty
-- Handles 429 (rate limit) and 402 (credits) with friendly Bengali messages
-
-**Frontend** (`/ask`):
-- Conversation UI (token-by-token streaming)
-- Suggested prompts (e.g., "নামাজে রুকুর দোয়া কী?", "যাকাতের নিসাব কত?")
-- Persistent chat history in localStorage (per session)
-- Markdown rendering (`react-markdown`) for answer formatting
-- Persistent disclaimer banner: *"এই উত্তর AI দ্বারা generated — fiqh-সংক্রান্ত ব্যক্তিগত মাসআলায় অনুগ্রহ করে যোগ্য আলেমের পরামর্শ নিন।"*
-- Copy / share answer; report problem button
-
-**Files**:
-- `src/pages/AskPage.tsx`
-- `src/components/ask/ChatBubble.tsx`, `SuggestedPrompts.tsx`, `Disclaimer.tsx`
-- `supabase/functions/islamic-qa/index.ts`
-- Adds `react-markdown` dependency
-
-## Integration & Navigation Changes
-
-**`src/App.tsx`** — add 5 routes: `/hadith`, `/hadith/:collection`, `/hadith/:collection/:chapter`, `/qaza`, `/notifications`, `/ask`.
-
-**`src/pages/Index.tsx`** — add 4 new tiles to "More Features": Hadith, Qaza Tracker, Notifications, Ask AI. Move Daily Dua toggle into `/notifications` page link.
-
-**`src/components/BottomNav.tsx`** — replace less-used "Tasbih" slot with a "More" menu OR keep nav and surface new items only on Home (recommended; nav stays at 5 items: Home / Quran / Qibla / Prayer / **Ask AI**). Tasbih remains accessible via Home tile.
-
-**Lovable Cloud**: enabled for the Q&A edge function (no DB tables needed in phase 1; everything else stays in localStorage).
-
-## Phasing (delivery order in implementation)
-
-1. Enable Lovable Cloud + AI Q&A edge function + `/ask` page (proves Cloud + AI integration)
-2. Tafsir accordion in TranslationView (smallest surface, biggest immediate value)
-3. Qaza Tracker (`/qaza`) — fully client-side
-4. Notifications page + scheduler (uses existing `usePrayerTimes`)
-5. Hadith Library (largest scope; data integration last)
-6. BottomNav + Index tile updates
-7. QA: verify all 5 routes render, test AI streaming, test notification permission flow on iOS Safari + Chrome
-
-## Technical Notes
-
-- All new colors via existing semantic tokens (`primary`, `accent`, `card`, etc.) — no hardcoded hex.
-- All UI strings wrapped in `t(bn, en, ar)`.
-- All API calls via react-query for caching.
-- AI edge function: server-side prompt only, never exposed to client.
-- Notification permission requested on user gesture (toggle), never on page load.
-- Hadith API fetched client-side (free, no key); rate-limit aware with `staleTime: 1h`.
-- All artifacts client-side; no DB schema changes needed for phase 1.
-- Tafsir HTML stripped via small regex util; preserves Bengali Unicode.
-- Total est. new files: ~25; modified: 4 (App.tsx, Index.tsx, BottomNav.tsx, TranslationView.tsx).
-
-কোনো ফিচার বাদ দিতে চাইলে বা priority বদলাতে চাইলে বলুন — অন্যথায় approve করলে এই ক্রমে implement করা শুরু করবো।
