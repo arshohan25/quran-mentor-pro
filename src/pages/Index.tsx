@@ -162,7 +162,7 @@ const Index = () => {
         <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1 scrollbar-none">
           {[
             { icon: MessageCircleQuestion, label: t("AI প্রশ্ন", "Ask AI", "اسأل"), path: "/ask" },
-            { icon: ScrollText, label: t("হাদীস প্র্যাকটিস", "Hadith Practice", "تدرب الحديث"), path: "/hadith" },
+            { icon: ScrollText, label: t("হাদীস প্র্যাকটিস", "Hadith Practice", "تدرب الحديث"), path: "/hadith/practice" },
             { icon: ClipboardCheck, label: t("কাযা ট্র্যাকার", "Qaza Tracker", "القضاء"), path: "/qaza" },
             { icon: Bell, label: t("নোটিফিকেশন", "Notifications", "التنبيهات"), path: "/notifications" },
           ].map((p) => (
