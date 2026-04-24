@@ -54,9 +54,9 @@ export default function HadithCollectionPage() {
               </span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground truncate">{ch.chapterEnglish}</p>
-                {ch.chapterArabic && (
-                  <p className="text-[11px] text-muted-foreground font-arabic truncate" dir="rtl">{ch.chapterArabic}</p>
-                )}
+                <p className="text-[11px] text-muted-foreground">
+                  {ch.hadithCount} {t("হাদীস", "hadith")}
+                </p>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </Card>
