@@ -6,7 +6,7 @@ import {
   TrendingUp, MapPin, BarChart3, ArrowRight, Target,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
 import { surahList } from "@/data/surahList";
@@ -18,6 +18,18 @@ import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { getStreakStats } from "@/hooks/useStreakTracker";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Slider } from "@/components/ui/slider";
+import { Settings2 } from "lucide-react";
+
+const DAILY_GOAL_KEY = "daily-minutes-goal";
+function loadDailyGoal(): number {
+  try {
+    const raw = localStorage.getItem(DAILY_GOAL_KEY);
+    const n = raw ? parseInt(raw, 10) : NaN;
+    return Number.isFinite(n) && n >= 5 && n <= 120 ? n : 20;
+  } catch { return 20; }
+}
 
 // ---------- helpers ----------
 function getHijriToday(localeBn: boolean): string {
@@ -95,6 +107,13 @@ const Index = () => {
   }, []);
   const bookmarkCount = bookmarks.favorites?.length ?? 0;
   const hijri = getHijriToday(language === "bn");
+
+  const [dailyGoal, setDailyGoal] = useState<number>(loadDailyGoal);
+  useEffect(() => {
+    try { localStorage.setItem(DAILY_GOAL_KEY, String(dailyGoal)); } catch {}
+  }, [dailyGoal]);
+  const todayMinutes = streak.todayMinutes ?? 0;
+  const goalPct = Math.round(Math.min(100, (todayMinutes / dailyGoal) * 100));
 
   // Sections
   const quranTiles: Tile[] = [
@@ -243,8 +262,8 @@ const Index = () => {
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </div>
           </Link>
-          <Link to="/recitation/stats" className="stat-chip group flex-col items-start gap-2">
-            <div className="flex items-center gap-2 w-full">
+          <div className="stat-chip group flex-col items-start gap-2 relative">
+            <Link to="/recitation/stats" className="flex items-center gap-2 w-full">
               <div className="icon-container p-1.5 group-hover:scale-110 transition-transform">
                 <TrendingUp className="w-4 h-4 text-primary" strokeWidth={2} />
               </div>
@@ -253,22 +272,66 @@ const Index = () => {
                   {t("আজ অনুশীলন", "Today", "اليوم")}
                 </p>
                 <p className="text-sm font-bold text-foreground leading-tight mt-0.5 flex items-center gap-1">
-                  {streak.todayMinutes ?? 0}
-                  <span className="text-[10px] text-muted-foreground font-medium">/ 20 {t("মিনিট", "min", "د")}</span>
+                  {todayMinutes}
+                  <span className="text-[10px] text-muted-foreground font-medium">/ {dailyGoal} {t("মিনিট", "min", "د")}</span>
                 </p>
               </div>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1 group-hover:translate-x-0">
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              </div>
-            </div>
+            </Link>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={t("লক্ষ্য সেট করুন", "Set goal", "حدد الهدف")}
+                  className="absolute top-1.5 right-1.5 p-1 rounded-md hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Settings2 className="w-3.5 h-3.5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 space-y-3" align="end" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-primary" />
+                  <h4 className="text-sm font-semibold">
+                    {t("দৈনিক লক্ষ্য", "Daily Goal", "الهدف اليومي")}
+                  </h4>
+                  <span className="ml-auto text-xs font-bold text-primary">
+                    {dailyGoal} {t("মিনিট", "min", "د")}
+                  </span>
+                </div>
+                <Slider
+                  value={[dailyGoal]}
+                  onValueChange={([v]) => setDailyGoal(v)}
+                  min={5}
+                  max={120}
+                  step={5}
+                />
+                <div className="flex flex-wrap gap-1.5">
+                  {[10, 15, 20, 30, 45, 60].map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setDailyGoal(p)}
+                      className={`text-[11px] px-2 py-1 rounded-md border transition-colors ${
+                        dailyGoal === p
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-border hover:bg-muted"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  {t("রিসাইটেশন স্ট্যাটে আজ লগ মিনিটের ভিত্তিতে অগ্রগতি।", "Progress based on today's logged practice minutes.", "التقدم بناءً على دقائق التدريب اليوم.")}
+                </p>
+              </PopoverContent>
+            </Popover>
             {/* Progress bar */}
             <div className="w-full space-y-1">
-              <Progress value={Math.min(100, ((streak.todayMinutes ?? 0) / 20) * 100)} className="h-1.5" />
-              <p className="text-[10px] text-muted-foreground text-right">
-                {Math.round(Math.min(100, ((streak.todayMinutes ?? 0) / 20) * 100))}%
-              </p>
+              <Progress value={goalPct} className="h-1.5" />
+              <p className="text-[10px] text-muted-foreground text-right">{goalPct}%</p>
             </div>
-          </Link>
+          </div>
           <Link to="/bookmarks" className="stat-chip group">
             <div className="icon-container-gold p-1.5 group-hover:scale-110 transition-transform">
               <BookMarked className="w-4 h-4 text-accent" strokeWidth={2} />
