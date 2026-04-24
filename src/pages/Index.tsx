@@ -1,139 +1,152 @@
 import {
-  BookOpen, Mic, Headphones, Clock, BookMarked, Brain, Heart, Calendar,
+  BookOpen, Mic, Clock, BookMarked, Heart, Calendar,
   ChevronRight, Hash, CalendarDays, Bell, BellOff, ListChecks, Sparkles,
-  Moon, Star, BookText, Volume2, GraduationCap, MapPin, Compass, HandHeart,
-  ScrollText, ClipboardCheck, MessageCircleQuestion
+  Moon, BookText, Volume2, GraduationCap, Compass, HandHeart,
+  ScrollText, ClipboardCheck, MessageCircleQuestion, Layers, Flame,
+  TrendingUp, MapPin, BarChart3, ArrowRight,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useMemo } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
 import { surahList } from "@/data/surahList";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import AuthChip from "@/components/AuthChip";
 import DailyAyah from "@/components/DailyAyah";
-import ReadingProgress from "@/components/ReadingProgress";
 import { useDailyDuaNotification } from "@/hooks/useDailyDuaNotification";
+import { usePrayerTimes } from "@/hooks/usePrayerTimes";
+import { getStreakStats } from "@/hooks/useStreakTracker";
 import { Switch } from "@/components/ui/switch";
+
+// ---------- helpers ----------
+function getHijriToday(localeBn: boolean): string {
+  try {
+    const fmt = new Intl.DateTimeFormat(
+      localeBn ? "bn-u-ca-islamic-umalqura" : "en-u-ca-islamic-umalqura",
+      { day: "numeric", month: "long", year: "numeric" }
+    );
+    return fmt.format(new Date()).replace(" AH", "");
+  } catch {
+    return "";
+  }
+}
+
+function parseTimeToday(hhmm: string): Date {
+  const [h, m] = hhmm.split(":").map((n) => parseInt(n, 10));
+  const d = new Date();
+  d.setHours(h || 0, m || 0, 0, 0);
+  return d;
+}
+
+const PRAYER_LABELS_BN: Record<string, string> = {
+  Fajr: "ফজর", Dhuhr: "যোহর", Asr: "আসর", Maghrib: "মাগরিব", Isha: "এশা",
+};
+const PRAYER_LABELS_AR: Record<string, string> = {
+  Fajr: "الفجر", Dhuhr: "الظهر", Asr: "العصر", Maghrib: "المغرب", Isha: "العشاء",
+};
+
+function useNextPrayer() {
+  const { data, location } = usePrayerTimes();
+  return useMemo(() => {
+    if (!data) return null;
+    const order: (keyof typeof data)[] = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
+    const now = new Date();
+    for (const k of order) {
+      const raw = (data as any)[k] as string;
+      if (!raw) continue;
+      const t = parseTimeToday(raw.slice(0, 5));
+      if (t > now) {
+        const diff = Math.max(0, t.getTime() - now.getTime());
+        const hrs = Math.floor(diff / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        return { name: k as string, time: raw.slice(0, 5), inHrs: hrs, inMins: mins, city: location?.city };
+      }
+    }
+    // After Isha → tomorrow Fajr
+    return { name: "Fajr", time: (data.Fajr || "").slice(0, 5), inHrs: 0, inMins: 0, city: location?.city, tomorrow: true };
+  }, [data, location]);
+}
+
+// ---------- bento data ----------
+type Tile = {
+  icon: any;
+  title: string;
+  desc?: string;
+  path: string;
+  gold?: boolean;
+  isNew?: boolean;
+  span?: 1 | 2;
+};
 
 const Index = () => {
   const { t, language } = useLanguage();
   const { bookmarks } = useBookmark();
-  const { enabled: duaNotifEnabled, toggleEnabled: toggleDuaNotif, todaysDua, permission: duaPerm, requestPermission: requestDuaPerm } = useDailyDuaNotification();
-
-  const quickActions = [
-    { icon: BookOpen, label: t("কুরআন", "Quran", "القرآن"), path: "/quran", gradient: "from-primary/15 to-primary/5" },
-    { icon: Volume2, label: t("অডিও", "Audio", "صوتي"), path: "/audio", gradient: "from-accent/15 to-accent/5" },
-    { icon: Mic, label: t("প্র্যাকটিস", "Practice", "تدرب"), path: "/practice", gradient: "from-primary/15 to-primary/5" },
-    { icon: Calendar, label: t("প্ল্যানার", "Planner", "مخطط"), path: "/planner", gradient: "from-accent/15 to-accent/5" },
-  ];
-
-  const newSections = [
-    {
-      icon: MessageCircleQuestion,
-      title: t("AI প্রশ্নোত্তর", "Ask AI", "اسأل"),
-      desc: t("ইসলামিক প্রশ্নের বাংলা উত্তর", "Bengali Islamic Q&A"),
-      path: "/ask",
-    },
-    {
-      icon: ScrollText,
-      title: t("হাদীস লাইব্রেরি", "Hadith Library", "مكتبة الحديث"),
-      desc: t("সিহাহ সিত্তাহ — বাংলা অনুবাদ", "Sahih Sittah in Bengali"),
-      path: "/hadith",
-    },
-    {
-      icon: ClipboardCheck,
-      title: t("কাযা ট্র্যাকার", "Qaza Tracker", "تتبع القضاء"),
-      desc: t("ছুটে যাওয়া নামাজ আদায়", "Track missed prayers"),
-      path: "/qaza",
-    },
-    {
-      icon: Bell,
-      title: t("নোটিফিকেশন", "Notifications", "التنبيهات"),
-      desc: t("আযান ও দৈনিক রিমাইন্ডার", "Adhan & daily reminders"),
-      path: "/notifications",
-    },
-  ];
-
-  const sections = [
-    {
-      icon: Compass,
-      title: t("কিবলা ফাইন্ডার", "Qibla Finder", "مكتشف القبلة"),
-      desc: t("কিবলার দিক জানুন", "Find Qibla direction", "اعرف اتجاه القبلة"),
-      path: "/qibla",
-    },
-    {
-      icon: Hash,
-      title: t("তাসবিহ", "Tasbih Counter", "عداد التسبيح"),
-      desc: t("ডিজিটাল তাসবিহ গণনা", "Digital dhikr counter", "عداد الذكر الرقمي"),
-      path: "/tasbih",
-    },
-    {
-      icon: HandHeart,
-      title: t("দোয়া ও যিকর", "Duas & Azkar", "الأدعية والأذكار"),
-      desc: t("দৈনন্দিন দোয়া সংগ্রহ", "Daily dua collection", "مجموعة الأدعية"),
-      path: "/dua",
-    },
-    {
-      icon: CalendarDays,
-      title: t("হিজরি ক্যালেন্ডার", "Hijri Calendar", "التقويم الهجري"),
-      desc: t("ইসলামিক তারিখ ও দিন", "Islamic dates & events", "التواريخ الإسلامية"),
-      path: "/hijri",
-    },
-    {
-      icon: ListChecks,
-      title: t("দৈনিক আমল", "Daily Amal", "الأعمال اليومية"),
-      desc: t("রেফারেন্সসহ দৈনিক আমল ও ফযিলত", "Daily deeds with references", "الأعمال اليومية مع المراجع"),
-      path: "/daily-amal",
-    },
-    {
-      icon: BookText,
-      title: t("নামাজ শিক্ষা", "Prayer Guide", "دليل الصلاة"),
-      desc: t("চার মাযহাব অনুযায়ী নামাজ", "Prayer by 4 Madhabs", "أحكام الصلاة"),
-      path: "/prayer",
-    },
-    {
-      icon: Clock,
-      title: t("নামাজের সময়", "Prayer Times", "أوقات الصلاة"),
-      desc: t("আপনার লোকেশন অনুযায়ী", "Based on your location", "حسب موقعك"),
-      path: "/prayer-times",
-    },
-    {
-      icon: GraduationCap,
-      title: t("হিফজ", "Hifz Dashboard", "لوحة الحفظ"),
-      desc: t("মুখস্থ অগ্রগতি দেখুন", "Track memorization", "تتبع الحفظ"),
-      path: "/hifz",
-    },
-    {
-      icon: Heart,
-      title: t("বুকমার্ক", "Bookmarks", "المحفوظات"),
-      desc: t("সেভ করা আয়াত", "Saved ayahs", "الآيات المحفوظة"),
-      path: "/bookmarks",
-    },
-  ];
+  const { enabled: duaNotifEnabled, toggleEnabled: toggleDuaNotif, todaysDua, permission: duaPerm, requestPermission: requestDuaPerm } =
+    useDailyDuaNotification();
+  const nextPrayer = useNextPrayer();
 
   const lastReadSurah = bookmarks.lastRead
     ? surahList.find((s) => s.number === bookmarks.lastRead!.surah)
     : null;
 
+  const streak = useMemo(() => {
+    try { return getStreakStats(); } catch { return { currentStreak: 0, todayMinutes: 0 } as any; }
+  }, []);
+  const bookmarkCount = bookmarks.favorites?.length ?? 0;
+  const hijri = getHijriToday(language === "bn");
+
+  // Sections
+  const quranTiles: Tile[] = [
+    { icon: BookOpen, title: t("কুরআন পড়ুন", "Read Quran", "اقرأ"), desc: t("সব সূরা ও তাফসির", "All surahs & tafsir"), path: "/quran", span: 2 },
+    { icon: Volume2, title: t("অডিও", "Audio", "صوتي"), desc: t("কারীদের তিলাওয়াত", "Reciter audio"), path: "/audio" },
+    { icon: GraduationCap, title: t("হিফজ", "Hifz", "حفظ"), desc: t("মুখস্থ ট্র্যাক ও SRS", "Memorize + SRS"), path: "/hifz", gold: true, isNew: true },
+    { icon: Mic, title: t("প্র্যাকটিস", "Practice", "تدرب"), desc: t("লাইভ তিলাওয়াত", "Live recitation"), path: "/practice" },
+    { icon: BarChart3, title: t("রিসাইটেশন স্ট্যাট", "Recitation Stats", "إحصاءات"), desc: t("শব্দ-হিটম্যাপ", "Word heatmap"), path: "/recitation/stats", gold: true, isNew: true },
+    { icon: Layers, title: t("তাফসির তুলনা", "Tafsir Compare", "مقارنة التفسير"), desc: t("৪টি বাংলা তাফসির", "4 Bengali tafsirs"), path: "/tafsir/1/1", isNew: true },
+    { icon: Heart, title: t("বুকমার্ক", "Bookmarks", "المحفوظات"), desc: t("সেভ করা আয়াত", "Saved ayahs"), path: "/bookmarks" },
+    { icon: Calendar, title: t("প্ল্যানার", "Planner", "مخطط"), desc: t("দৈনিক টার্গেট", "Daily target"), path: "/planner", gold: true },
+  ];
+
+  const prayerTiles: Tile[] = [
+    { icon: Clock, title: t("নামাজের সময়", "Prayer Times", "أوقات الصلاة"), desc: t("লোকেশন অনুযায়ী", "Location-based"), path: "/prayer-times", span: 2 },
+    { icon: Compass, title: t("কিবলা", "Qibla", "القبلة"), desc: t("দিকনির্দেশ", "Direction"), path: "/qibla", gold: true },
+    { icon: BookText, title: t("নামাজ শিক্ষা", "Prayer Guide", "دليل الصلاة"), desc: t("৪ মাযহাব", "4 Madhabs"), path: "/prayer" },
+    { icon: ClipboardCheck, title: t("কাযা ট্র্যাকার", "Qaza Tracker", "القضاء"), desc: t("ছুটে যাওয়া নামাজ", "Missed prayers"), path: "/qaza", isNew: true },
+  ];
+
+  const dhikrTiles: Tile[] = [
+    { icon: Hash, title: t("তাসবিহ", "Tasbih", "تسبيح"), desc: t("ডিজিটাল কাউন্টার", "Digital counter"), path: "/tasbih" },
+    { icon: HandHeart, title: t("দোয়া ও যিকর", "Duas & Azkar", "أدعية"), desc: t("দৈনন্দিন সংগ্রহ", "Daily collection"), path: "/dua", gold: true },
+    { icon: ListChecks, title: t("দৈনিক আমল", "Daily Amal", "أعمال يومية"), desc: t("ফযিলতসহ", "With virtues"), path: "/daily-amal" },
+    { icon: CalendarDays, title: t("হিজরি ক্যালেন্ডার", "Hijri Calendar", "التقويم"), desc: t("ইসলামিক তারিখ", "Islamic dates"), path: "/hijri", gold: true },
+  ];
+
+  const learnTiles: Tile[] = [
+    { icon: ScrollText, title: t("হাদীস লাইব্রেরি", "Hadith Library", "الحديث"), desc: t("সিহাহ সিত্তাহ", "Sahih Sittah"), path: "/hadith", span: 2 },
+    { icon: MessageCircleQuestion, title: t("AI প্রশ্ন", "Ask AI", "اسأل"), desc: t("বাংলা Q&A", "Bengali Q&A"), path: "/ask", gold: true, isNew: true },
+    { icon: Bell, title: t("নোটিফিকেশন", "Notifications", "تنبيهات"), desc: t("আযান ও রিমাইন্ডার", "Adhan & reminders"), path: "/notifications" },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Premium Header */}
+      {/* ============ Premium Hero ============ */}
       <header className="islamic-header relative">
-        <div className="absolute inset-0 opacity-[0.03]">
-          <div className="font-arabic text-[100px] leading-none text-center pt-2 select-none">﷽</div>
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none select-none">
+          <div className="font-arabic text-[120px] leading-none text-center pt-1">﷽</div>
         </div>
-        <div className="relative z-10 container py-5 sm:py-6">
-          <div className="flex items-center justify-between mb-2">
+        <div className="relative z-10 container py-5 sm:py-7">
+          {/* Top row */}
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-primary-foreground/10 flex items-center justify-center backdrop-blur-sm">
+              <div className="w-9 h-9 rounded-xl bg-primary-foreground/10 flex items-center justify-center backdrop-blur-sm border border-primary-foreground/10">
                 <Moon className="w-4.5 h-4.5 text-accent" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-xl font-bold font-bengaliDisplay leading-tight">
+                <h1 className="text-base sm:text-lg font-bold font-bengaliDisplay leading-tight">
                   {t("কুরআন ও নামাজ", "Quran & Prayer", "القرآن والصلاة")}
                 </h1>
-                <p className="text-primary-foreground/60 text-[11px] sm:text-xs">
-                  {t("পড়ুন, শিখুন, অনুশীলন করুন", "Read, Learn, Practice", "اقرأ، تعلم، تدرب")}
+                <p className="text-primary-foreground/60 text-[10px] sm:text-[11px]">
+                  {t("পড়ুন · শিখুন · অনুশীলন করুন", "Read · Learn · Practice", "اقرأ · تعلم · تدرب")}
                 </p>
               </div>
             </div>
@@ -142,96 +155,134 @@ const Index = () => {
               <LanguageSwitcher />
             </div>
           </div>
+
+          {/* Hijri + Next prayer chips */}
+          <div className="flex gap-2 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
+            {hijri && (
+              <div className="flex-1 min-w-0 rounded-xl border border-primary-foreground/10 bg-primary-foreground/[0.06] backdrop-blur-sm px-3 py-2 flex items-center gap-2.5">
+                <CalendarDays className="w-3.5 h-3.5 text-accent shrink-0" strokeWidth={2} />
+                <div className="min-w-0">
+                  <p className="text-[9px] uppercase tracking-wider text-primary-foreground/50 font-semibold leading-none">
+                    {t("আজ হিজরি", "Today · Hijri", "اليوم")}
+                  </p>
+                  <p className="text-[12px] font-semibold text-primary-foreground/90 truncate mt-0.5">{hijri}</p>
+                </div>
+              </div>
+            )}
+            <Link
+              to="/prayer-times"
+              className="flex-1 min-w-0 rounded-xl border border-accent/30 bg-accent/10 backdrop-blur-sm px-3 py-2 flex items-center gap-2.5 hover:bg-accent/20 transition-colors"
+            >
+              <Clock className="w-3.5 h-3.5 text-accent shrink-0" strokeWidth={2} />
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] uppercase tracking-wider text-primary-foreground/50 font-semibold leading-none">
+                  {t("পরবর্তী নামাজ", "Next Prayer", "الصلاة القادمة")}
+                </p>
+                {nextPrayer ? (
+                  <p className="text-[12px] font-semibold text-primary-foreground/95 truncate mt-0.5">
+                    {language === "bn" ? PRAYER_LABELS_BN[nextPrayer.name] : language === "ar" ? PRAYER_LABELS_AR[nextPrayer.name] : nextPrayer.name}
+                    <span className="text-accent font-bold"> · {nextPrayer.time}</span>
+                  </p>
+                ) : (
+                  <p className="text-[12px] font-semibold text-primary-foreground/70 truncate mt-0.5 flex items-center gap-1">
+                    <MapPin className="w-3 h-3" /> {t("লোকেশন সেট করুন", "Set location", "حدد الموقع")}
+                  </p>
+                )}
+              </div>
+            </Link>
+          </div>
         </div>
       </header>
 
-      <main className="container py-5 space-y-4">
-        {/* Quick Actions */}
-        <div className="grid grid-cols-4 gap-2.5">
-          {quickActions.map((action) => (
-            <Link
-              key={action.path}
-              to={action.path}
-              className="premium-card flex flex-col items-center justify-center p-3.5 gap-2 hover:scale-[1.04] active:scale-[0.97] transition-all"
-            >
-              <div className={`p-2.5 rounded-xl bg-gradient-to-br ${action.gradient}`}>
-                <action.icon className="w-5 h-5 text-primary" strokeWidth={1.8} />
-              </div>
-              <span className="text-[11px] font-semibold text-foreground">{action.label}</span>
-            </Link>
-          ))}
-        </div>
-
-        {/* New Quick Access Pills */}
-        <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1 scrollbar-none">
-          {[
-            { icon: MessageCircleQuestion, label: t("AI প্রশ্ন", "Ask AI", "اسأل"), path: "/ask" },
-            { icon: ScrollText, label: t("হাদীস প্র্যাকটিস", "Hadith Practice", "تدرب الحديث"), path: "/hadith/practice" },
-            { icon: ClipboardCheck, label: t("কাযা ট্র্যাকার", "Qaza Tracker", "القضاء"), path: "/qaza" },
-            { icon: Bell, label: t("নোটিফিকেশন", "Notifications", "التنبيهات"), path: "/notifications" },
-          ].map((p) => (
-            <Link
-              key={p.path}
-              to={p.path}
-              className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 active:scale-95 transition-all"
-            >
-              <p.icon className="w-3.5 h-3.5" strokeWidth={2} />
-              <span className="text-[11px] font-bold whitespace-nowrap">{p.label}</span>
-            </Link>
-          ))}
-        </div>
-
-        {/* Continue Reading */}
+      <main className="container py-5 space-y-5">
+        {/* ============ Resume / Continue ============ */}
         {lastReadSurah && (
           <Link
             to={`/quran?surah=${bookmarks.lastRead!.surah}&ayah=${bookmarks.lastRead!.ayah}`}
-            className="block premium-card p-4 relative overflow-hidden group"
+            className="bento-tile-feature block group animate-in fade-in-0 slide-in-from-bottom-3 duration-500"
           >
-            <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: 'linear-gradient(to bottom, hsl(var(--accent)), hsl(var(--primary)))' }} />
-            <div className="flex items-center justify-between pl-3">
-              <div className="flex items-center gap-3">
-                <div className="icon-container-gold p-2">
-                  <BookMarked className="w-4 h-4 text-accent" strokeWidth={1.8} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-accent flex items-center gap-1.5">
-                    <Sparkles className="w-3 h-3" />
-                    {t("পড়া চালিয়ে যান", "Continue Reading", "أكمل القراءة")}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    {language === "bn" ? lastReadSurah.bengaliName : lastReadSurah.englishName} — {t("আয়াত", "Ayah", "آية")} {bookmarks.lastRead!.ayah}
-                    {bookmarks.lastRead!.timestamp && (
-                      <span className="ml-1 opacity-50">• {new Date(bookmarks.lastRead!.timestamp).toLocaleDateString()}</span>
-                    )}
-                  </p>
-                </div>
+            <div className="flex items-center justify-between gap-3 relative z-10">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-accent" strokeWidth={2.2} />
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-accent">
+                  {t("পড়া চালিয়ে যান", "Continue Reading", "أكمل القراءة")}
+                </span>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-accent transition-colors" />
+              <ArrowRight className="w-4 h-4 text-primary-foreground/70 group-hover:translate-x-1 transition-transform" />
+            </div>
+            <div className="relative z-10">
+              <h3 className="text-lg font-bold leading-tight">
+                {language === "bn" ? lastReadSurah.bengaliName : lastReadSurah.englishName}
+              </h3>
+              <p className="text-xs text-primary-foreground/70 mt-0.5">
+                {t("সূরা", "Surah", "سورة")} {lastReadSurah.number} · {t("আয়াত", "Ayah", "آية")} {bookmarks.lastRead!.ayah}
+                {bookmarks.lastRead!.timestamp && (
+                  <span className="opacity-60"> · {new Date(bookmarks.lastRead!.timestamp).toLocaleDateString()}</span>
+                )}
+              </p>
             </div>
           </Link>
         )}
 
-        {/* Reading Progress */}
-        <ReadingProgress />
-
-        {/* Daily Ayah */}
-        <DailyAyah />
-
-        {/* Daily Dua */}
-        <div className="premium-card p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className={`icon-container p-1.5 ${duaNotifEnabled ? '' : 'opacity-50'}`}>
-                {duaNotifEnabled ? <Bell className="w-4 h-4 text-accent" strokeWidth={1.8} /> : <BellOff className="w-4 h-4 text-muted-foreground" strokeWidth={1.8} />}
-              </div>
-              <h3 className="text-sm font-bold text-foreground">
-                {t("আজকের দোয়া", "Today's Dua", "دعاء اليوم")}
-              </h3>
+        {/* ============ Today strip (3 stat chips) ============ */}
+        <div className="flex gap-2 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
+          <Link to="/hifz" className="stat-chip">
+            <div className="icon-container-gold p-1.5">
+              <Flame className="w-4 h-4 text-accent" strokeWidth={2} />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-muted-foreground font-medium">
-                {t("নোটিফিকেশন", "Notify", "تنبيه")}
-              </span>
+            <div className="min-w-0">
+              <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold leading-none">
+                {t("স্ট্রিক", "Streak", "تتابع")}
+              </p>
+              <p className="text-sm font-bold text-foreground leading-tight mt-0.5">
+                {streak.currentStreak ?? 0} {t("দিন", "d", "ي")}
+              </p>
+            </div>
+          </Link>
+          <Link to="/recitation/stats" className="stat-chip">
+            <div className="icon-container p-1.5">
+              <TrendingUp className="w-4 h-4 text-primary" strokeWidth={2} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold leading-none">
+                {t("আজ অনুশীলন", "Today", "اليوم")}
+              </p>
+              <p className="text-sm font-bold text-foreground leading-tight mt-0.5">
+                {streak.todayMinutes ?? 0} {t("মিনিট", "min", "د")}
+              </p>
+            </div>
+          </Link>
+          <Link to="/bookmarks" className="stat-chip">
+            <div className="icon-container-gold p-1.5">
+              <BookMarked className="w-4 h-4 text-accent" strokeWidth={2} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold leading-none">
+                {t("বুকমার্ক", "Saved", "محفوظ")}
+              </p>
+              <p className="text-sm font-bold text-foreground leading-tight mt-0.5">
+                {bookmarkCount}
+              </p>
+            </div>
+          </Link>
+        </div>
+
+        {/* ============ Daily Ayah + Daily Dua ============ */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <DailyAyah />
+
+          <div className="premium-card p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className={`icon-container-gold p-1.5 ${duaNotifEnabled ? '' : 'opacity-50'}`}>
+                  {duaNotifEnabled
+                    ? <Bell className="w-4 h-4 text-accent" strokeWidth={1.8} />
+                    : <BellOff className="w-4 h-4 text-muted-foreground" strokeWidth={1.8} />}
+                </div>
+                <h3 className="text-sm font-bold text-foreground">
+                  {t("আজকের দোয়া", "Today's Dua", "دعاء اليوم")}
+                </h3>
+              </div>
               <Switch
                 checked={duaNotifEnabled}
                 onCheckedChange={() => {
@@ -240,93 +291,100 @@ const Index = () => {
                 }}
               />
             </div>
-          </div>
-          {todaysDua && (
-            <div className="space-y-2 pt-1">
-              <p className="font-arabic text-base leading-[2.2] text-foreground">{todaysDua.arabic}</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                {language === "bn" ? todaysDua.bn : todaysDua.en}
-              </p>
-              <p className="text-[10px] text-muted-foreground/50 flex items-center gap-1">
-                <BookOpen className="w-3 h-3" /> {todaysDua.reference}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* New Features */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-3.5 h-3.5 text-accent" strokeWidth={2} />
-            <h3 className="text-sm font-bold text-foreground">
-              {t("নতুন ফিচার", "New Features", "ميزات جديدة")}
-            </h3>
-            <span className="text-[9px] font-bold text-accent-foreground bg-accent px-1.5 py-0.5 rounded-full uppercase tracking-wide">
-              {t("নতুন", "New", "جديد")}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2.5">
-            {newSections.map((section) => (
-              <Link
-                key={section.path}
-                to={section.path}
-                className="group premium-card p-3.5 relative overflow-hidden hover:scale-[1.02] active:scale-[0.98] transition-all border border-accent/30"
-              >
-                <span className="absolute top-1.5 right-1.5 text-[8px] font-bold text-accent-foreground bg-accent px-1.5 py-0.5 rounded-full uppercase tracking-wide">
-                  {t("নতুন", "New", "جديد")}
-                </span>
-                <div className="icon-container-gold p-2 mb-2.5 w-fit group-hover:scale-110 transition-transform">
-                  <section.icon className="w-4.5 h-4.5 text-accent" strokeWidth={1.8} />
-                </div>
-                <h4 className="text-[13px] font-bold text-card-foreground mb-0.5 leading-tight">
-                  {section.title}
-                </h4>
-                <p className="text-muted-foreground text-[11px] leading-snug">
-                  {section.desc}
+            {todaysDua && (
+              <div className="space-y-2 pt-1">
+                <p className="font-arabic text-base leading-[2.2] text-foreground">{todaysDua.arabic}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {language === "bn" ? todaysDua.bn : todaysDua.en}
                 </p>
-              </Link>
-            ))}
+                <p className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
+                  <BookOpen className="w-3 h-3" /> {todaysDua.reference}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* More Features */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Star className="w-3.5 h-3.5 text-accent" strokeWidth={2} />
-            <h3 className="text-sm font-bold text-foreground">
-              {t("আরও ফিচার", "More Features", "المزيد")}
-            </h3>
-          </div>
-          <div className="grid grid-cols-2 gap-2.5">
-            {sections.map((section) => (
-              <Link
-                key={section.path}
-                to={section.path}
-                className="group premium-card p-3.5 relative overflow-hidden hover:scale-[1.02] active:scale-[0.98] transition-all"
-              >
-                <div className="icon-container p-2 mb-2.5 w-fit group-hover:scale-110 transition-transform">
-                  <section.icon className="w-4.5 h-4.5 text-primary" strokeWidth={1.8} />
-                </div>
-                <h4 className="text-[13px] font-bold text-card-foreground mb-0.5 leading-tight">
-                  {section.title}
-                </h4>
-                <p className="text-muted-foreground text-[11px] leading-snug">
-                  {section.desc}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </div>
+        {/* ============ BENTO SECTIONS ============ */}
+        <BentoSection
+          eyebrow={t("কুরআন", "Quran", "القرآن")}
+          arabic="القرآن الكريم"
+          tiles={quranTiles}
+        />
+        <BentoSection
+          eyebrow={t("নামাজ", "Prayer", "الصلاة")}
+          arabic="الصلاة"
+          tiles={prayerTiles}
+        />
+        <BentoSection
+          eyebrow={t("যিকর ও দোয়া", "Dhikr & Dua", "الذكر والدعاء")}
+          arabic="الذكر والدعاء"
+          tiles={dhikrTiles}
+        />
+        <BentoSection
+          eyebrow={t("শিখুন ও জিজ্ঞাসা", "Learn & Ask", "تعلم واسأل")}
+          arabic="تعلّم"
+          tiles={learnTiles}
+        />
 
         {/* Footer */}
-        <div className="text-center pt-3 pb-5">
+        <div className="text-center pt-3 pb-6">
           <div className="gold-divider">
-            <span className="text-accent/30 text-sm">✦</span>
+            <span className="text-accent/40 text-sm">✦</span>
           </div>
+          <p className="text-[10px] text-muted-foreground/50 mt-3 font-arabic">رَّبِّ زِدْنِي عِلْمًا</p>
         </div>
       </main>
     </div>
   );
 };
+
+// ---------- Section + Tile components ----------
+
+function BentoSection({ eyebrow, arabic, tiles }: { eyebrow: string; arabic: string; tiles: Tile[] }) {
+  return (
+    <section className="animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
+      <div className="section-eyebrow">
+        <span className="label">{eyebrow}</span>
+        <span className="line" />
+        <span className="ar">{arabic}</span>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+        {tiles.map((tile) => (
+          <BentoTile key={tile.path} tile={tile} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BentoTile({ tile }: { tile: Tile }) {
+  const Icon = tile.icon;
+  return (
+    <Link
+      to={tile.path}
+      className={`bento-tile group ${tile.gold ? "is-gold" : ""} ${tile.span === 2 ? "col-span-2" : ""}`}
+    >
+      {tile.isNew && <span className="new-pill">{"NEW"}</span>}
+      <div className="flex items-start justify-between">
+        <div className={`${tile.gold ? "icon-container-gold" : "icon-container"} p-2.5 group-hover:scale-110 transition-transform`}>
+          <Icon
+            className={`${tile.gold ? "text-accent" : "text-primary"} ${tile.span === 2 ? "w-5 h-5" : "w-4.5 h-4.5"}`}
+            strokeWidth={1.8}
+          />
+        </div>
+        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
+      </div>
+      <div className="mt-auto">
+        <h4 className={`font-bold text-card-foreground leading-tight ${tile.span === 2 ? "text-[15px]" : "text-[13px]"}`}>
+          {tile.title}
+        </h4>
+        {tile.desc && (
+          <p className="text-muted-foreground text-[11px] leading-snug mt-0.5">{tile.desc}</p>
+        )}
+      </div>
+    </Link>
+  );
+}
 
 export default Index;
