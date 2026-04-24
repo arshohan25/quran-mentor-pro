@@ -1,5 +1,6 @@
+// Maps to fawazahmed0/hadith-api book slugs (free, no API key).
 export interface HadithCollection {
-  id: string; // hadithapi.com slug
+  id: string; // slug used in our routes AND as the book key in the API
   bnName: string;
   enName: string;
   arName: string;
@@ -9,7 +10,7 @@ export interface HadithCollection {
 
 export const HADITH_COLLECTIONS: HadithCollection[] = [
   {
-    id: "sahih-bukhari",
+    id: "bukhari",
     bnName: "সহীহ বুখারী",
     enName: "Sahih Bukhari",
     arName: "صحيح البخاري",
@@ -17,7 +18,7 @@ export const HADITH_COLLECTIONS: HadithCollection[] = [
     description: "সবচেয়ে নির্ভরযোগ্য হাদীস সংকলন",
   },
   {
-    id: "sahih-muslim",
+    id: "muslim",
     bnName: "সহীহ মুসলিম",
     enName: "Sahih Muslim",
     arName: "صحيح مسلم",
@@ -25,7 +26,7 @@ export const HADITH_COLLECTIONS: HadithCollection[] = [
     description: "দ্বিতীয় সর্বাধিক নির্ভরযোগ্য সংকলন",
   },
   {
-    id: "al-tirmidhi",
+    id: "tirmidhi",
     bnName: "জামি‘ আত-তিরমিযী",
     enName: "Jami at-Tirmidhi",
     arName: "جامع الترمذي",
@@ -33,15 +34,15 @@ export const HADITH_COLLECTIONS: HadithCollection[] = [
     description: "ফিকহী হাদীসের গুরুত্বপূর্ণ সংকলন",
   },
   {
-    id: "abu-dawood",
+    id: "abudawud",
     bnName: "সুনান আবু দাউদ",
-    enName: "Sunan Abu Dawood",
+    enName: "Sunan Abu Dawud",
     arName: "سنن أبي داود",
     totalHadith: 5274,
     description: "আহকাম-সংক্রান্ত হাদীস",
   },
   {
-    id: "sunan-nasai",
+    id: "nasai",
     bnName: "সুনান আন-নাসাঈ",
     enName: "Sunan an-Nasa'i",
     arName: "سنن النسائي",
@@ -49,7 +50,7 @@ export const HADITH_COLLECTIONS: HadithCollection[] = [
     description: "অত্যন্ত সংক্ষিপ্ত ও সূক্ষ্ম যাচাইকৃত",
   },
   {
-    id: "ibn-e-majah",
+    id: "ibnmajah",
     bnName: "সুনান ইবনে মাজাহ",
     enName: "Sunan Ibn Majah",
     arName: "سنن ابن ماجه",
