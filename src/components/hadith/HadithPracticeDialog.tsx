@@ -315,14 +315,22 @@ export default function HadithPracticeDialog({ open, onOpenChange, hadith }: Pro
 
         {/* Stats */}
         {sections.length > 0 && (
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground border-t border-border/40 pt-2">
-            <span>
-              {t("ভুল চিহ্নিত", "Marked wrong")}:{" "}
-              <span className="text-destructive font-bold">{totalWrong}</span> / {totalWords}
-            </span>
-            <button onClick={clearMarks} className="flex items-center gap-1 hover:text-foreground">
-              <Eraser className="w-3 h-3" /> {t("পরিষ্কার", "Clear")}
-            </button>
+          <div className="space-y-1 border-t border-border/40 pt-2">
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>
+                {t("ভুল চিহ্নিত", "Marked wrong")}:{" "}
+                <span className="text-destructive font-bold">{totalWrong}</span> / {totalWords}
+              </span>
+              <button onClick={clearMarks} className="flex items-center gap-1 hover:text-foreground">
+                <Eraser className="w-3 h-3" /> {t("পরিষ্কার", "Clear")}
+              </button>
+            </div>
+            {lastSaved && (
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
+                <Save className="w-2.5 h-2.5" />
+                {t("সংরক্ষিত", "Saved")} · {lastSaved}
+              </div>
+            )}
           </div>
         )}
 
