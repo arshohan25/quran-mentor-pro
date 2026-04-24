@@ -28,6 +28,30 @@ const Index = () => {
 
   const sections = [
     {
+      icon: MessageCircleQuestion,
+      title: t("AI প্রশ্নোত্তর", "Ask AI", "اسأل"),
+      desc: t("ইসলামিক প্রশ্নের বাংলা উত্তর", "Bengali Islamic Q&A"),
+      path: "/ask",
+    },
+    {
+      icon: ScrollText,
+      title: t("হাদীস লাইব্রেরি", "Hadith Library", "مكتبة الحديث"),
+      desc: t("সিহাহ সিত্তাহ — বাংলা অনুবাদ", "Sahih Sittah in Bengali"),
+      path: "/hadith",
+    },
+    {
+      icon: ClipboardCheck,
+      title: t("কাযা ট্র্যাকার", "Qaza Tracker", "تتبع القضاء"),
+      desc: t("ছুটে যাওয়া নামাজ আদায়", "Track missed prayers"),
+      path: "/qaza",
+    },
+    {
+      icon: Bell,
+      title: t("নোটিফিকেশন", "Notifications", "التنبيهات"),
+      desc: t("আযান ও দৈনিক রিমাইন্ডার", "Adhan & daily reminders"),
+      path: "/notifications",
+    },
+    {
       icon: Compass,
       title: t("কিবলা ফাইন্ডার", "Qibla Finder", "مكتشف القبلة"),
       desc: t("কিবলার দিক জানুন", "Find Qibla direction", "اعرف اتجاه القبلة"),
