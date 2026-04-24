@@ -1,47 +1,63 @@
-## Phase 1 — Step 2: Smart Hifz with Spaced Repetition (UI + Cloud Sync)
+## Phase 1 — Step 3: Recitation Coach v2 (word-level stats + heatmap)
 
-Builds on the auth + `hifz_srs` table from Step 1 and the `src/lib/srs.ts` SM-2 module. Adds a working "Today's Review" experience tied to the cloud, plus a one-time migration from the existing `localStorage` Hifz progress.
+Builds on the existing `useArabicRecitationEngine` (untouched — it's load-bearing) and the already-provisioned `recitation_sessions` + `recitation_word_stats` tables.
 
 ### What you'll get
 
-1. A **"Today's Review"** queue at the top of the Hifz Dashboard showing how many ayahs are due, with a one-tap **Start review session** button.
-2. A **Review Session screen** that walks the user through due ayahs one-by-one, hides the Arabic, lets them recall, then asks them to grade themselves: **Again / Hard / Good / Easy** (SM-2 quality 0/3/4/5). Each grade updates `next_review_at` in the cloud.
-3. **Auto-creation of SRS cards** the first time a user marks an ayah as memorized in `HifzView`.
-4. **One-time migration** on first sign-in: existing `localStorage` Hifz progress (`hifz-progress` key) is pushed into `hifz_srs` as new cards due today.
-5. **Signed-out fallback**: dashboard still shows a "Sign in to enable smart review" CTA; existing local Hifz progress UI keeps working unchanged.
+1. **Per-word tracking** of every recitation attempt — correct, errors, and hesitations (>3s pauses on the same word).
+2. **Session logging** to `recitation_sessions` whenever an ayah completes, with accuracy %, duration, and word counts.
+3. A new **Recitation Stats page** at `/recitation/stats` showing:
+   - Recent sessions list (surah/ayah, accuracy, date)
+   - 7-day accuracy trend
+   - **Word heatmap** for any selected ayah — each word shaded green→red by error/hesitation rate
+   - "Weakest words" leaderboard across all your recitation
+4. A small "View stats" link added to the Hifz Dashboard.
+
+### Approach (non-invasive)
+
+The existing engine is wired into Hifz, Recitation Check, and the keep-mic-alive flow. Instead of editing it, add an **observer hook** that reads its state and writes stats on completion. Zero risk to current behaviour.
 
 ### Files to create
 
-- `src/hooks/useHifzSrs.ts` — React Query hooks: `useDueCards()`, `useSrsCard(surah, ayah)`, `useReviewMutation()`, `useUpsertCard()`. Reads/writes `hifz_srs` scoped to `auth.uid()`.
-- `src/lib/hifzMigration.ts` — `migrateLocalHifzToCloud(userId)` — idempotent; reads `localStorage["hifz-progress"]`, upserts cards with `next_review_at = now()`, sets a `localStorage` flag `hifz-srs-migrated-<userId>` so it runs once per user.
-- `src/components/hifz/DueTodayCard.tsx` — Dashboard card showing due count, breakdown (new vs review), and **Start Review** button. Signed-out variant shows sign-in prompt.
-- `src/components/hifz/ReviewSession.tsx` — Full-screen session UI: shows surah/ayah label, hidden Arabic (tap to reveal), translation toggle, then four grading buttons. Progress bar across the queue. On finish, shows summary (X reviewed, next due in Y).
-- `src/pages/HifzReviewPage.tsx` — Route wrapper for the session, route `/hifz/review`.
+- `src/hooks/useRecitationRecorder.ts` — Observer that watches `RecitationState` (`revealedIndex`, `errorIndex`, `isListening`, `totalWords`) and a `completed` boolean. Maintains per-word tallies in a ref, then on completion inserts one row into `recitation_sessions` and merge-upserts rows into `recitation_word_stats` (fetch-existing + add + upsert on `(user_id, surah, ayah, word_index)`).
+- `src/hooks/useRecitationStats.ts` — React Query hooks: `useRecentSessions(limit)`, `useAyahHeatmap(surah, ayah)`, `useWeakestWords(limit)`, `useAccuracyTrend(days)`.
+- `src/components/recitation/WordHeatmap.tsx` — Renders an ayah's words colored by error_rate = `(errors+hesitations)/max(attempts,1)`. Green ≤10%, amber 10–30%, red >30%.
+- `src/components/recitation/SessionList.tsx` — Recent sessions card.
+- `src/components/recitation/AccuracyTrend.tsx` — Simple 7-day bar chart of average accuracy.
+- `src/pages/RecitationStatsPage.tsx` — Page assembling all of the above with surah/ayah selector for the heatmap.
 
 ### Files to edit
 
-- `src/pages/HifzDashboardPage.tsx` — Mount `<DueTodayCard />` above `DailyGoalCard`. Run migration on mount when user is signed in.
-- `src/components/quran/HifzView.tsx` — When `toggleMemorized` adds an ayah and user is signed in, also call `useUpsertCard` to create a default SRS card (due now). No-op when signed out.
-- `src/App.tsx` — Add `/hifz/review` route.
-- `src/contexts/AuthContext.tsx` — On `SIGNED_IN`, schedule `migrateLocalHifzToCloud` via `setTimeout(0)` (avoid blocking the auth callback).
+- `src/components/quran/HifzView.tsx` — Wire `useRecitationRecorder` with `surah`, `ayah`, the engine's `state`, and a `completed` flag set inside `handleRecitationComplete` (already exists). One-line addition; no behaviour change.
+- `src/components/quran/LiveRecitationCheck.tsx` — Same observer hookup so non-Hifz recitation also records stats. Accept optional `surah`/`ayah` props (callers that don't pass them = no recording).
+- `src/pages/HifzDashboardPage.tsx` — Small "View recitation stats" link in the header area.
+- `src/App.tsx` — Add `/recitation/stats` route.
 
 ### Technical details
 
-- **Due query**: `select * from hifz_srs where user_id = auth.uid() and next_review_at <= now() order by next_review_at asc limit 50`. Cached by React Query with key `["hifz-srs", "due"]`; invalidated after each review mutation.
-- **Review mutation**: takes `{ surah, ayah, quality }`, fetches existing card (or `defaultCard()`), runs `reviewCard(card, quality)` from `src/lib/srs.ts`, upserts on `(user_id, surah, ayah)`. **Requires** a unique constraint `(user_id, surah, ayah)` on `hifz_srs` — added via migration.
-- **Migration logic**: for each `(surah, ayah)` in localStorage progress, upsert a card with `repetitions=0, ease=2.5, interval=0, next_review_at=now()` so they appear in today's queue. Skips ayahs that already have a cloud card.
-- **Ayah text source**: session fetches Arabic via existing `useSurahWithTranslations(surah)` hook, picks ayah by `numberInSurah`. Translation toggled via `useLanguage()`.
-- **Grading buttons** use `QUALITY_LABELS` from `src/lib/srs.ts` and show the projected next interval (e.g. "Good → 3d") computed by running `reviewCard` against the current card before commit.
+- **Counting rules** (computed inside the observer):
+  - `correct++` for word index `i` whenever `revealedIndex` advances past it.
+  - `error++` whenever `errorIndex` becomes a new value (deduped).
+  - `hesitation++` if more than 3000ms elapsed since the last advance when the next correct word lands.
+  - `attempts = correct + errors` (per word).
+- **Persistence**: only fires when `completed === true` AND user is signed in AND `recordedRef` is false (one-shot per ayah).
+- **Word heatmap**: needs the ayah's tokenized Arabic — fetched via existing `useSurahWithTranslations` and `tokenizeArabicWords` from `src/utils/arabicUtils.ts`.
+- **Weakest words query**: `select surah, ayah, word_index, errors, hesitations, attempts from recitation_word_stats where user_id = auth.uid() order by (errors+hesitations) desc limit 20`. Display joins surah name + tokenized word client-side (lazy fetch the surah text only for surahs in the result).
+- **Accuracy trend**: groups `recitation_sessions` by day in client (last 7 days, average accuracy, dot-bar chart with semantic tokens).
 
-### Out of scope for this step
+### Database
 
-- Recitation Coach v2 word-level scoring (Step 3).
+No migrations needed — `recitation_sessions` and `recitation_word_stats` are already provisioned with the required unique constraint `(user_id, surah, ayah, word_index)` and RLS scoped to `auth.uid()`.
+
+### Out of scope
+
+- Tarteel-style per-letter tajweed scoring (would need a server-side audio model).
+- Streaming uploads of audio.
 - Tafsir comparison (Step 4).
-- Bookmarks/Qaza migration (separate sync step).
-- Notifications for due reviews (later — `useNotificationScheduler` integration).
 
 ### Acceptance check
 
-- Signed-in user marks 5 ayahs memorized → dashboard shows "5 due today" → tapping Start Review walks through all 5 → grading "Good" pushes them to ~1d/3d → re-opening dashboard shows 0 due.
-- Signed-out user sees prompt; existing Hifz UI still works.
-- User with old localStorage progress signs in once → cards appear in cloud and queue.
+- Sign in, recite an ayah in Hifz mode → `recitation_sessions` gains a row with accuracy and duration; `recitation_word_stats` rows appear for each tokenized word.
+- Recite the same ayah again with mistakes → counters accumulate (not overwritten).
+- Visit `/recitation/stats` → see recent sessions, 7-day trend, weakest words, and a colored heatmap for any ayah you've practiced.
+- Signed-out users see "Sign in to track your recitation" and the engine works as before with no DB writes.
