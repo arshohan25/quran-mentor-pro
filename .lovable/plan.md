@@ -1,63 +1,44 @@
-## Phase 1 — Step 3: Recitation Coach v2 (word-level stats + heatmap)
+## Phase 1 — Step 4: Tafsir Comparison (4 Bengali sources side-by-side)
 
-Builds on the existing `useArabicRecitationEngine` (untouched — it's load-bearing) and the already-provisioned `recitation_sessions` + `recitation_word_stats` tables.
+The 4 Bengali tafsirs (Ibn Kathir, Fathul Majid, Tafhimul Quran, Ahsanul Bayan) are already configured in `src/hooks/useTafsir.ts` but only one is shown at a time. This step adds a multi-source compare view.
 
 ### What you'll get
 
-1. **Per-word tracking** of every recitation attempt — correct, errors, and hesitations (>3s pauses on the same word).
-2. **Session logging** to `recitation_sessions` whenever an ayah completes, with accuracy %, duration, and word counts.
-3. A new **Recitation Stats page** at `/recitation/stats` showing:
-   - Recent sessions list (surah/ayah, accuracy, date)
-   - 7-day accuracy trend
-   - **Word heatmap** for any selected ayah — each word shaded green→red by error/hesitation rate
-   - "Weakest words" leaderboard across all your recitation
-4. A small "View stats" link added to the Hifz Dashboard.
-
-### Approach (non-invasive)
-
-The existing engine is wired into Hifz, Recitation Check, and the keep-mic-alive flow. Instead of editing it, add an **observer hook** that reads its state and writes stats on completion. Zero risk to current behaviour.
+1. **"Compare all tafsirs" button** added to each ayah card in the Translation view (next to the existing single-tafsir accordion).
+2. A bottom sheet that fetches **all 4 Bengali tafsirs in parallel** for the selected ayah and shows them stacked, each in its own card with a colored accent stripe so they're easy to scan.
+3. The Arabic ayah + Bengali translation pinned at the top of the sheet for context.
+4. **Per-tafsir copy button** for each entry.
+5. A **direct-link route** `/tafsir/:surah/:ayah` so any ayah's comparison can be linked or bookmarked.
 
 ### Files to create
 
-- `src/hooks/useRecitationRecorder.ts` — Observer that watches `RecitationState` (`revealedIndex`, `errorIndex`, `isListening`, `totalWords`) and a `completed` boolean. Maintains per-word tallies in a ref, then on completion inserts one row into `recitation_sessions` and merge-upserts rows into `recitation_word_stats` (fetch-existing + add + upsert on `(user_id, surah, ayah, word_index)`).
-- `src/hooks/useRecitationStats.ts` — React Query hooks: `useRecentSessions(limit)`, `useAyahHeatmap(surah, ayah)`, `useWeakestWords(limit)`, `useAccuracyTrend(days)`.
-- `src/components/recitation/WordHeatmap.tsx` — Renders an ayah's words colored by error_rate = `(errors+hesitations)/max(attempts,1)`. Green ≤10%, amber 10–30%, red >30%.
-- `src/components/recitation/SessionList.tsx` — Recent sessions card.
-- `src/components/recitation/AccuracyTrend.tsx` — Simple 7-day bar chart of average accuracy.
-- `src/pages/RecitationStatsPage.tsx` — Page assembling all of the above with surah/ayah selector for the heatmap.
+- `src/hooks/useTafsirCompare.ts` — uses `useQueries` to fan out one fetch per `TAFSIR_EDITIONS` entry against `https://api.quran.com/api/v4/tafsirs/:id/by_ayah/:s::a`. Strips HTML, caches each for 24h. Returns `[{edition, text, isLoading, error}]` aligned with `TAFSIR_EDITIONS`.
+- `src/components/quran/TafsirCompareSheet.tsx` — Bottom sheet (uses existing shadcn `Sheet`) with the ayah header + 4 tafsir cards. Color-coded left borders (emerald / amber / sky / violet), per-card copy button, individual loading/error states so a slow source doesn't block the others.
+- `src/pages/TafsirComparePage.tsx` — Standalone route reading `:surah` / `:ayah` from URL params; renders the same content as the sheet but as a full page with a back button.
 
 ### Files to edit
 
-- `src/components/quran/HifzView.tsx` — Wire `useRecitationRecorder` with `surah`, `ayah`, the engine's `state`, and a `completed` flag set inside `handleRecitationComplete` (already exists). One-line addition; no behaviour change.
-- `src/components/quran/LiveRecitationCheck.tsx` — Same observer hookup so non-Hifz recitation also records stats. Accept optional `surah`/`ayah` props (callers that don't pass them = no recording).
-- `src/pages/HifzDashboardPage.tsx` — Small "View recitation stats" link in the header area.
-- `src/App.tsx` — Add `/recitation/stats` route.
+- `src/components/quran/TranslationView.tsx` — Add a small "Compare all" button (BookText icon + label) under each ayah. Holds local state `{ surah, ayah } | null` for the open sheet. Renders one shared `<TafsirCompareSheet>` driven by that state.
+- `src/components/quran/ReadingView.tsx` — Add the same "Compare all tafsirs" link inside the existing translation popup so users in reading mode can also compare.
+- `src/App.tsx` — Register `/tafsir/:surah/:ayah` route → `TafsirComparePage`.
 
 ### Technical details
 
-- **Counting rules** (computed inside the observer):
-  - `correct++` for word index `i` whenever `revealedIndex` advances past it.
-  - `error++` whenever `errorIndex` becomes a new value (deduped).
-  - `hesitation++` if more than 3000ms elapsed since the last advance when the next correct word lands.
-  - `attempts = correct + errors` (per word).
-- **Persistence**: only fires when `completed === true` AND user is signed in AND `recordedRef` is false (one-shot per ayah).
-- **Word heatmap**: needs the ayah's tokenized Arabic — fetched via existing `useSurahWithTranslations` and `tokenizeArabicWords` from `src/utils/arabicUtils.ts`.
-- **Weakest words query**: `select surah, ayah, word_index, errors, hesitations, attempts from recitation_word_stats where user_id = auth.uid() order by (errors+hesitations) desc limit 20`. Display joins surah name + tokenized word client-side (lazy fetch the surah text only for surahs in the result).
-- **Accuracy trend**: groups `recitation_sessions` by day in client (last 7 days, average accuracy, dot-bar chart with semantic tokens).
-
-### Database
-
-No migrations needed — `recitation_sessions` and `recitation_word_stats` are already provisioned with the required unique constraint `(user_id, surah, ayah, word_index)` and RLS scoped to `auth.uid()`.
+- **Parallel fetch**: `useQueries` runs all 4 requests concurrently with independent cache entries. A 24h `staleTime` matches the existing single-tafsir cache, so opening the compare sheet after viewing a single tafsir reuses the cached result.
+- **HTML scrub**: same `stripHtml` logic already used in `useTafsir.ts`, factored out so both hooks share behaviour.
+- **Layout**: vertical stack, not side-by-side columns — Bengali tafsirs are long-form prose and don't read well in narrow columns on a 390px viewport. Each card has a colored left border for fast visual differentiation.
+- **Direct-link page** uses the same `<TafsirCompareSheet>` content rendered inline (no sheet chrome) by reusing the inner block via shared layout.
+- **No DB changes** — all data is fetched from the public quran.com API.
 
 ### Out of scope
 
-- Tarteel-style per-letter tajweed scoring (would need a server-side audio model).
-- Streaming uploads of audio.
-- Tafsir comparison (Step 4).
+- Cross-tafsir concordance / shared keyword highlighting (would need NLP per language).
+- Saving tafsir notes (deferrable to Phase 2).
+- Arabic tafsirs (the user explicitly chose 4 Bengali sources).
 
 ### Acceptance check
 
-- Sign in, recite an ayah in Hifz mode → `recitation_sessions` gains a row with accuracy and duration; `recitation_word_stats` rows appear for each tokenized word.
-- Recite the same ayah again with mistakes → counters accumulate (not overwritten).
-- Visit `/recitation/stats` → see recent sessions, 7-day trend, weakest words, and a colored heatmap for any ayah you've practiced.
-- Signed-out users see "Sign in to track your recitation" and the engine works as before with no DB writes.
+- Open Translation view → tap "Compare all tafsirs" on any ayah → sheet opens, all 4 tafsirs load in parallel, each with its own loading/error state.
+- Slow source: if one tafsir fails, the other three still render; the failing one shows an inline error.
+- Copy button on each card copies the cleaned text.
+- Visit `/tafsir/2/255` directly → standalone page renders the same comparison.
