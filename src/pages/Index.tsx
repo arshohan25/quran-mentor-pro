@@ -26,7 +26,7 @@ const Index = () => {
     { icon: Calendar, label: t("প্ল্যানার", "Planner", "مخطط"), path: "/planner", gradient: "from-accent/15 to-accent/5" },
   ];
 
-  const sections = [
+  const newSections = [
     {
       icon: MessageCircleQuestion,
       title: t("AI প্রশ্নোত্তর", "Ask AI", "اسأل"),
@@ -51,6 +51,9 @@ const Index = () => {
       desc: t("আযান ও দৈনিক রিমাইন্ডার", "Adhan & daily reminders"),
       path: "/notifications",
     },
+  ];
+
+  const sections = [
     {
       icon: Compass,
       title: t("কিবলা ফাইন্ডার", "Qibla Finder", "مكتشف القبلة"),
@@ -226,6 +229,41 @@ const Index = () => {
               </p>
             </div>
           )}
+        </div>
+
+        {/* New Features */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="w-3.5 h-3.5 text-accent" strokeWidth={2} />
+            <h3 className="text-sm font-bold text-foreground">
+              {t("নতুন ফিচার", "New Features", "ميزات جديدة")}
+            </h3>
+            <span className="text-[9px] font-bold text-accent-foreground bg-accent px-1.5 py-0.5 rounded-full uppercase tracking-wide">
+              {t("নতুন", "New", "جديد")}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2.5">
+            {newSections.map((section) => (
+              <Link
+                key={section.path}
+                to={section.path}
+                className="group premium-card p-3.5 relative overflow-hidden hover:scale-[1.02] active:scale-[0.98] transition-all border border-accent/30"
+              >
+                <span className="absolute top-1.5 right-1.5 text-[8px] font-bold text-accent-foreground bg-accent px-1.5 py-0.5 rounded-full uppercase tracking-wide">
+                  {t("নতুন", "New", "جديد")}
+                </span>
+                <div className="icon-container-gold p-2 mb-2.5 w-fit group-hover:scale-110 transition-transform">
+                  <section.icon className="w-4.5 h-4.5 text-accent" strokeWidth={1.8} />
+                </div>
+                <h4 className="text-[13px] font-bold text-card-foreground mb-0.5 leading-tight">
+                  {section.title}
+                </h4>
+                <p className="text-muted-foreground text-[11px] leading-snug">
+                  {section.desc}
+                </p>
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* More Features */}
