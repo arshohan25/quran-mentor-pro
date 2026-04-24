@@ -1,7 +1,8 @@
 import {
   BookOpen, Mic, Headphones, Clock, BookMarked, Brain, Heart, Calendar,
   ChevronRight, Hash, CalendarDays, Bell, BellOff, ListChecks, Sparkles,
-  Moon, Star, BookText, Volume2, GraduationCap, MapPin, Compass, HandHeart
+  Moon, Star, BookText, Volume2, GraduationCap, MapPin, Compass, HandHeart,
+  ScrollText, ClipboardCheck, MessageCircleQuestion
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
