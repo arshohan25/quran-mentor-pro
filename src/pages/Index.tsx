@@ -9,6 +9,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
 import { surahList } from "@/data/surahList";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import AuthChip from "@/components/AuthChip";
 import DailyAyah from "@/components/DailyAyah";
 import ReadingProgress from "@/components/ReadingProgress";
 import { useDailyDuaNotification } from "@/hooks/useDailyDuaNotification";
@@ -136,7 +137,10 @@ const Index = () => {
                 </p>
               </div>
             </div>
-            <LanguageSwitcher />
+            <div className="flex items-center gap-2">
+              <AuthChip />
+              <LanguageSwitcher />
+            </div>
           </div>
         </div>
       </header>
