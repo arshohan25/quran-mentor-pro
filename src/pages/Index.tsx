@@ -26,7 +26,7 @@ const Index = () => {
     { icon: Calendar, label: t("প্ল্যানার", "Planner", "مخطط"), path: "/planner", gradient: "from-accent/15 to-accent/5" },
   ];
 
-  const sections = [
+  const newSections = [
     {
       icon: MessageCircleQuestion,
       title: t("AI প্রশ্নোত্তর", "Ask AI", "اسأل"),
@@ -51,6 +51,9 @@ const Index = () => {
       desc: t("আযান ও দৈনিক রিমাইন্ডার", "Adhan & daily reminders"),
       path: "/notifications",
     },
+  ];
+
+  const sections = [
     {
       icon: Compass,
       title: t("কিবলা ফাইন্ডার", "Qibla Finder", "مكتشف القبلة"),
