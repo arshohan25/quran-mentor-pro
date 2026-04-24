@@ -32,6 +32,28 @@ export default function HadithPracticeSetupPage() {
     );
   }, [chapters, query]);
 
+  const [last, setLast] = useState(() => getLastHadithSession());
+  const lastBookMeta = last
+    ? HADITH_COLLECTIONS.find((c) => c.id === last.collection)
+    : null;
+
+  const start = () => {
+    if (!book || !chapter) return;
+    navigate(`/hadith/${book}/${chapter}?practice=1`);
+  };
+
+  const resume = () => {
+    if (!last) return;
+    const params = new URLSearchParams({ practice: "1" });
+    if (last.hadithId) params.set("hadith", String(last.hadithId));
+    navigate(`/hadith/${last.collection}/${last.chapter}?${params.toString()}`);
+  };
+
+  const dismissLast = () => {
+    clearLastHadithSession();
+    setLast(null);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24">
       <header className="islamic-header">
