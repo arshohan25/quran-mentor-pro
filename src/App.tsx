@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import PageTransition from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import NotificationSchedulerHost from "@/components/NotificationSchedulerHost";
@@ -31,6 +32,8 @@ import HadithPracticeSetupPage from "./pages/HadithPracticeSetupPage.tsx";
 import QazaPage from "./pages/QazaPage.tsx";
 import NotificationsPage from "./pages/NotificationsPage.tsx";
 import AskPage from "./pages/AskPage.tsx";
+import AuthPage from "./pages/AuthPage.tsx";
+import AccountPage from "./pages/AccountPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -62,6 +65,8 @@ function AnimatedRoutes() {
         <Route path="/qaza" element={<PageTransition><QazaPage /></PageTransition>} />
         <Route path="/notifications" element={<PageTransition><NotificationsPage /></PageTransition>} />
         <Route path="/ask" element={<PageTransition><AskPage /></PageTransition>} />
+        <Route path="/auth" element={<PageTransition><AuthPage /></PageTransition>} />
+        <Route path="/account" element={<PageTransition><AccountPage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
@@ -76,12 +81,14 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <NotificationSchedulerHost />
-            <OfflineBanner />
-            <div className="pb-14">
-              <AnimatedRoutes />
-            </div>
-            <BottomNav />
+            <AuthProvider>
+              <NotificationSchedulerHost />
+              <OfflineBanner />
+              <div className="pb-14">
+                <AnimatedRoutes />
+              </div>
+              <BottomNav />
+            </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>
       </LanguageProvider>
