@@ -14,6 +14,8 @@ import { useArabicRecitationEngine } from "@/hooks/useArabicRecitationEngine";
 import { tokenizeArabicWords } from "@/utils/arabicUtils";
 import type { MatchMode } from "@/utils/arabicUtils";
 import { LINES_PER_PAGE, type QuranSectionProps } from "./types";
+import { useUpsertCard } from "@/hooks/useHifzSrs";
+import { useAuth } from "@/contexts/AuthContext";
 
 const SENSITIVITY_KEY = "hifz-sensitivity-mode";
 
@@ -33,6 +35,8 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
   const [sensitivityMode, setSensitivityMode] = useState<MatchMode>(() => {
     try { return (localStorage.getItem(SENSITIVITY_KEY) as MatchMode) || "balanced"; } catch { return "balanced"; }
   });
+  const { user } = useAuth();
+  const upsertCard = useUpsertCard();
 
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
   const currentSurah = surahList.find((s) => s.number === selectedSurah);
@@ -87,10 +91,15 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
   const toggleMemorized = (surah: number, ayahNum: number) => {
     setHifzProgress(prev => {
       const list = prev[surah] || [];
-      const next = list.includes(ayahNum)
+      const wasMemorized = list.includes(ayahNum);
+      const next = wasMemorized
         ? { ...prev, [surah]: list.filter(a => a !== ayahNum) }
         : { ...prev, [surah]: [...list, ayahNum] };
       localStorage.setItem(HIFZ_KEY, JSON.stringify(next));
+      // When marking as memorized while signed in, create an SRS card
+      if (!wasMemorized && user) {
+        upsertCard.mutate({ surah, ayah: ayahNum });
+      }
       return next;
     });
   };

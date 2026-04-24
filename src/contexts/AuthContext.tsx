@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { migrateLocalHifzToCloud } from "@/lib/hifzMigration";
 
 interface AuthContextValue {
   user: User | null;
@@ -23,15 +24,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // CRITICAL: set up listener BEFORE getSession
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
+      if (event === "SIGNED_IN" && newSession?.user) {
+        const uid = newSession.user.id;
+        setTimeout(() => { migrateLocalHifzToCloud(uid); }, 0);
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session: existing } }) => {
       setSession(existing);
       setUser(existing?.user ?? null);
       setLoading(false);
+      if (existing?.user) {
+        const uid = existing.user.id;
+        setTimeout(() => { migrateLocalHifzToCloud(uid); }, 0);
+      }
     });
 
     return () => subscription.unsubscribe();

@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { getStreakStats } from "@/hooks/useStreakTracker";
 import HifzProgressChart from "@/components/HifzProgressChart";
+import DueTodayCard from "@/components/hifz/DueTodayCard";
 
 interface SrsCard {
   ayahNum: number;
@@ -237,6 +238,7 @@ export default function HifzDashboardPage() {
       </header>
 
       <div className="container py-4 space-y-4">
+        <DueTodayCard />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <DailyGoalCard />
           <StreakCard />
