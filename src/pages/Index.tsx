@@ -226,11 +226,11 @@ const Index = () => {
 
         {/* ============ Today strip (3 stat chips) ============ */}
         <div className="flex gap-2 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
-          <Link to="/hifz" className="stat-chip">
-            <div className="icon-container-gold p-1.5">
+          <Link to="/hifz" className="stat-chip group">
+            <div className="icon-container-gold p-1.5 group-hover:scale-110 transition-transform">
               <Flame className="w-4 h-4 text-accent" strokeWidth={2} />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold leading-none">
                 {t("স্ট্রিক", "Streak", "تتابع")}
               </p>
@@ -238,12 +238,15 @@ const Index = () => {
                 {streak.currentStreak ?? 0} {t("দিন", "d", "ي")}
               </p>
             </div>
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1 group-hover:translate-x-0">
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </div>
           </Link>
-          <Link to="/recitation/stats" className="stat-chip">
-            <div className="icon-container p-1.5">
+          <Link to="/recitation/stats" className="stat-chip group">
+            <div className="icon-container p-1.5 group-hover:scale-110 transition-transform">
               <TrendingUp className="w-4 h-4 text-primary" strokeWidth={2} />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold leading-none">
                 {t("আজ অনুশীলন", "Today", "اليوم")}
               </p>
@@ -251,18 +254,24 @@ const Index = () => {
                 {streak.todayMinutes ?? 0} {t("মিনিট", "min", "د")}
               </p>
             </div>
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1 group-hover:translate-x-0">
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </div>
           </Link>
-          <Link to="/bookmarks" className="stat-chip">
-            <div className="icon-container-gold p-1.5">
+          <Link to="/bookmarks" className="stat-chip group">
+            <div className="icon-container-gold p-1.5 group-hover:scale-110 transition-transform">
               <BookMarked className="w-4 h-4 text-accent" strokeWidth={2} />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold leading-none">
                 {t("বুকমার্ক", "Saved", "محفوظ")}
               </p>
               <p className="text-sm font-bold text-foreground leading-tight mt-0.5">
                 {bookmarkCount}
               </p>
+            </div>
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1 group-hover:translate-x-0">
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </div>
           </Link>
         </div>
