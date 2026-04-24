@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import PageTransition from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
+import NotificationSchedulerHost from "@/components/NotificationSchedulerHost";
 import Index from "./pages/Index.tsx";
 import QuranPage from "./pages/QuranPage.tsx";
 import PracticePage from "./pages/PracticePage.tsx";
@@ -22,6 +23,12 @@ import TasbihPage from "./pages/TasbihPage.tsx";
 import DuaPage from "./pages/DuaPage.tsx";
 import HijriCalendarPage from "./pages/HijriCalendarPage.tsx";
 import DailyAmalPage from "./pages/DailyAmalPage.tsx";
+import HadithPage from "./pages/HadithPage.tsx";
+import HadithCollectionPage from "./pages/HadithCollectionPage.tsx";
+import HadithChapterPage from "./pages/HadithChapterPage.tsx";
+import QazaPage from "./pages/QazaPage.tsx";
+import NotificationsPage from "./pages/NotificationsPage.tsx";
+import AskPage from "./pages/AskPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -46,6 +53,12 @@ function AnimatedRoutes() {
         <Route path="/dua" element={<PageTransition><DuaPage /></PageTransition>} />
         <Route path="/hijri" element={<PageTransition><HijriCalendarPage /></PageTransition>} />
         <Route path="/daily-amal" element={<PageTransition><DailyAmalPage /></PageTransition>} />
+        <Route path="/hadith" element={<PageTransition><HadithPage /></PageTransition>} />
+        <Route path="/hadith/:collection" element={<PageTransition><HadithCollectionPage /></PageTransition>} />
+        <Route path="/hadith/:collection/:chapter" element={<PageTransition><HadithChapterPage /></PageTransition>} />
+        <Route path="/qaza" element={<PageTransition><QazaPage /></PageTransition>} />
+        <Route path="/notifications" element={<PageTransition><NotificationsPage /></PageTransition>} />
+        <Route path="/ask" element={<PageTransition><AskPage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
@@ -60,6 +73,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <NotificationSchedulerHost />
             <div className="pb-14">
               <AnimatedRoutes />
             </div>
