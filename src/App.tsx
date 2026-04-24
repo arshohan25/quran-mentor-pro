@@ -26,6 +26,7 @@ import DailyAmalPage from "./pages/DailyAmalPage.tsx";
 import HadithPage from "./pages/HadithPage.tsx";
 import HadithCollectionPage from "./pages/HadithCollectionPage.tsx";
 import HadithChapterPage from "./pages/HadithChapterPage.tsx";
+import HadithPracticeSetupPage from "./pages/HadithPracticeSetupPage.tsx";
 import QazaPage from "./pages/QazaPage.tsx";
 import NotificationsPage from "./pages/NotificationsPage.tsx";
 import AskPage from "./pages/AskPage.tsx";
@@ -54,6 +55,7 @@ function AnimatedRoutes() {
         <Route path="/hijri" element={<PageTransition><HijriCalendarPage /></PageTransition>} />
         <Route path="/daily-amal" element={<PageTransition><DailyAmalPage /></PageTransition>} />
         <Route path="/hadith" element={<PageTransition><HadithPage /></PageTransition>} />
+        <Route path="/hadith/practice" element={<PageTransition><HadithPracticeSetupPage /></PageTransition>} />
         <Route path="/hadith/:collection" element={<PageTransition><HadithCollectionPage /></PageTransition>} />
         <Route path="/hadith/:collection/:chapter" element={<PageTransition><HadithChapterPage /></PageTransition>} />
         <Route path="/qaza" element={<PageTransition><QazaPage /></PageTransition>} />

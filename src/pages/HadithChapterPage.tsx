@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Mic } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { HADITH_COLLECTIONS } from "@/data/hadithCollections";
 import { useHadithList } from "@/hooks/useHadithApi";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 
 export default function HadithChapterPage() {
   const { collection, chapter } = useParams();
+  const [searchParams] = useSearchParams();
+  const practiceMode = searchParams.get("practice") === "1";
   const { t, language } = useLanguage();
   const [page, setPage] = useState(1);
   const meta = HADITH_COLLECTIONS.find((c) => c.id === collection);
@@ -46,8 +48,24 @@ export default function HadithChapterPage() {
             {t("এই অধ্যায়ে কোনো হাদীস নেই", "No hadith in this chapter")}
           </p>
         )}
-        {data?.data.map((h) => (
-          <HadithCard key={h.id} hadith={h} collectionName={meta?.bnName} />
+        {practiceMode && data && data.data.length > 0 && page === 1 && (
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-2.5 flex items-center gap-2 text-xs">
+            <Mic className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="text-foreground">
+              {t(
+                "অনুশীলন মোড — প্রথম হাদীস স্বয়ংক্রিয়ভাবে খোলা হয়েছে।",
+                "Practice mode — first hadith opened automatically."
+              )}
+            </span>
+          </div>
+        )}
+        {data?.data.map((h, i) => (
+          <HadithCard
+            key={h.id}
+            hadith={h}
+            collectionName={meta?.bnName}
+            defaultPracticeOpen={practiceMode && page === 1 && i === 0}
+          />
         ))}
 
         {data && data.last_page > 1 && (
