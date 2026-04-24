@@ -243,20 +243,30 @@ const Index = () => {
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </div>
           </Link>
-          <Link to="/recitation/stats" className="stat-chip group">
-            <div className="icon-container p-1.5 group-hover:scale-110 transition-transform">
-              <TrendingUp className="w-4 h-4 text-primary" strokeWidth={2} />
+          <Link to="/recitation/stats" className="stat-chip group flex-col items-start gap-2">
+            <div className="flex items-center gap-2 w-full">
+              <div className="icon-container p-1.5 group-hover:scale-110 transition-transform">
+                <TrendingUp className="w-4 h-4 text-primary" strokeWidth={2} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold leading-none">
+                  {t("আজ অনুশীলন", "Today", "اليوم")}
+                </p>
+                <p className="text-sm font-bold text-foreground leading-tight mt-0.5 flex items-center gap-1">
+                  {streak.todayMinutes ?? 0}
+                  <span className="text-[10px] text-muted-foreground font-medium">/ 20 {t("মিনিট", "min", "د")}</span>
+                </p>
+              </div>
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1 group-hover:translate-x-0">
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold leading-none">
-                {t("আজ অনুশীলন", "Today", "اليوم")}
+            {/* Progress bar */}
+            <div className="w-full space-y-1">
+              <Progress value={Math.min(100, ((streak.todayMinutes ?? 0) / 20) * 100)} className="h-1.5" />
+              <p className="text-[10px] text-muted-foreground text-right">
+                {Math.round(Math.min(100, ((streak.todayMinutes ?? 0) / 20) * 100))}%
               </p>
-              <p className="text-sm font-bold text-foreground leading-tight mt-0.5">
-                {streak.todayMinutes ?? 0} {t("মিনিট", "min", "د")}
-              </p>
-            </div>
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1 group-hover:translate-x-0">
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </div>
           </Link>
           <Link to="/bookmarks" className="stat-chip group">
