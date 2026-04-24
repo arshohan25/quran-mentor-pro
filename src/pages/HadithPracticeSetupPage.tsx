@@ -1,13 +1,16 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, BookOpen, Loader2, Mic, Search, History } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Loader2, Mic, Search, History, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { HADITH_COLLECTIONS } from "@/data/hadithCollections";
 import { useHadithChapters } from "@/hooks/useHadithApi";
-import { getAllPracticeSessions } from "@/hooks/useHadithPractice";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  getLastHadithSession,
+  clearLastHadithSession,
+} from "@/lib/hadithLastSession";
 
 export default function HadithPracticeSetupPage() {
   const { t, language } = useLanguage();
