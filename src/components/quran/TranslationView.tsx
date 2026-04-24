@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Star } from "lucide-react";
+import { ArrowLeft, Star, BookText } from "lucide-react";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SurahSelector from "./SurahSelector";
 import SurahHeader from "./SurahHeader";
 import SurahNav from "./SurahNav";
@@ -12,19 +13,32 @@ import PageNav from "./PageNav";
 import SurahInfoCard from "./SurahInfoCard";
 import ReadingSettings from "./ReadingSettings";
 import AyahActions from "./AyahActions";
+import TafsirAccordion from "./TafsirAccordion";
+import { TAFSIR_EDITIONS } from "@/hooks/useTafsir";
 import { LINES_PER_PAGE, type QuranSectionProps } from "./types";
 
+const TAFSIR_KEY = "preferred_tafsir_id";
+
 export default function TranslationView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { toggleFavorite, isFavorite, saveLastRead } = useBookmark();
   const [page, setPage] = useState(0);
   const [arabicFontSize, setArabicFontSize] = useState(() => {
     try { return Number(localStorage.getItem("arabicFontSize")) || 20; } catch { return 20; }
   });
+  const [tafsirId, setTafsirId] = useState<number>(() => {
+    try { return Number(localStorage.getItem(TAFSIR_KEY)) || TAFSIR_EDITIONS[0].id; } catch { return TAFSIR_EDITIONS[0].id; }
+  });
 
   const handleFontSizeChange = (n: number) => {
     setArabicFontSize(n);
     try { localStorage.setItem("arabicFontSize", String(n)); } catch {}
+  };
+
+  const handleTafsirChange = (v: string) => {
+    const n = Number(v);
+    setTafsirId(n);
+    try { localStorage.setItem(TAFSIR_KEY, String(n)); } catch {}
   };
 
   const { data, isLoading } = useSurahWithTranslations(selectedSurah);
@@ -71,6 +85,24 @@ export default function TranslationView({ selectedSurah, setSelectedSurah, onBac
       </header>
 
       <div className="container py-4 max-w-2xl mx-auto">
+        {/* Tafsir edition selector */}
+        <div className="flex items-center gap-2 mb-3">
+          <BookText className="w-3.5 h-3.5 text-primary/70" />
+          <span className="text-[11px] text-muted-foreground">{t("তাফসির:", "Tafsir:")}</span>
+          <Select value={String(tafsirId)} onValueChange={handleTafsirChange}>
+            <SelectTrigger className="h-8 text-xs flex-1 max-w-[220px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TAFSIR_EDITIONS.map((e) => (
+                <SelectItem key={e.id} value={String(e.id)} className="text-xs">
+                  {language === "bn" ? e.bnLabel : e.enLabel}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         {page === 0 && (
           <>
             <SurahInfoCard surahNumber={selectedSurah} />
@@ -117,6 +149,7 @@ export default function TranslationView({ selectedSurah, setSelectedSurah, onBac
                       {englishAyah.text}
                     </p>
                   )}
+                  <TafsirAccordion surah={selectedSurah} ayah={arabicAyah.numberInSurah} tafsirId={tafsirId} />
                 </Card>
               );
             })}
