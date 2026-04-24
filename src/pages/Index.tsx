@@ -6,7 +6,7 @@ import {
   TrendingUp, MapPin, BarChart3, ArrowRight, Target,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
 import { surahList } from "@/data/surahList";
@@ -18,6 +18,18 @@ import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { getStreakStats } from "@/hooks/useStreakTracker";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Slider } from "@/components/ui/slider";
+import { Settings2 } from "lucide-react";
+
+const DAILY_GOAL_KEY = "daily-minutes-goal";
+function loadDailyGoal(): number {
+  try {
+    const raw = localStorage.getItem(DAILY_GOAL_KEY);
+    const n = raw ? parseInt(raw, 10) : NaN;
+    return Number.isFinite(n) && n >= 5 && n <= 120 ? n : 20;
+  } catch { return 20; }
+}
 
 // ---------- helpers ----------
 function getHijriToday(localeBn: boolean): string {
