@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Star, BookText } from "lucide-react";
+import { ArrowLeft, Star, BookText, Layers } from "lucide-react";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
@@ -14,6 +14,7 @@ import SurahInfoCard from "./SurahInfoCard";
 import ReadingSettings from "./ReadingSettings";
 import AyahActions from "./AyahActions";
 import TafsirAccordion from "./TafsirAccordion";
+import TafsirCompareSheet from "./TafsirCompareSheet";
 import { TAFSIR_EDITIONS } from "@/hooks/useTafsir";
 import { LINES_PER_PAGE, type QuranSectionProps } from "./types";
 
@@ -29,6 +30,7 @@ export default function TranslationView({ selectedSurah, setSelectedSurah, onBac
   const [tafsirId, setTafsirId] = useState<number>(() => {
     try { return Number(localStorage.getItem(TAFSIR_KEY)) || TAFSIR_EDITIONS[0].id; } catch { return TAFSIR_EDITIONS[0].id; }
   });
+  const [compareAyah, setCompareAyah] = useState<number | null>(null);
 
   const handleFontSizeChange = (n: number) => {
     setArabicFontSize(n);
@@ -150,11 +152,28 @@ export default function TranslationView({ selectedSurah, setSelectedSurah, onBac
                     </p>
                   )}
                   <TafsirAccordion surah={selectedSurah} ayah={arabicAyah.numberInSurah} tafsirId={tafsirId} />
+                  <button
+                    type="button"
+                    onClick={() => setCompareAyah(arabicAyah.numberInSurah)}
+                    className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <Layers className="w-3 h-3" />
+                    {t("সব তাফসির তুলনা করুন", "Compare all tafsirs", "قارن جميع التفاسير")}
+                  </button>
                 </Card>
               );
             })}
           </div>
         ) : null}
+
+        {compareAyah !== null && (
+          <TafsirCompareSheet
+            open={true}
+            onOpenChange={(o) => { if (!o) setCompareAyah(null); }}
+            surah={selectedSurah}
+            ayah={compareAyah}
+          />
+        )}
 
         <PageNav
           currentPage={page} totalPages={totalPages}

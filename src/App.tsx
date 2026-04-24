@@ -36,6 +36,7 @@ import AskPage from "./pages/AskPage.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
 import RecitationStatsPage from "./pages/RecitationStatsPage.tsx";
+import TafsirComparePage from "./pages/TafsirComparePage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -71,6 +72,7 @@ function AnimatedRoutes() {
         <Route path="/auth" element={<PageTransition><AuthPage /></PageTransition>} />
         <Route path="/account" element={<PageTransition><AccountPage /></PageTransition>} />
         <Route path="/recitation/stats" element={<PageTransition><RecitationStatsPage /></PageTransition>} />
+        <Route path="/tafsir/:surah/:ayah" element={<PageTransition><TafsirComparePage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
