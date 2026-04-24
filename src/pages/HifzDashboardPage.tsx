@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, GraduationCap, BookOpen, Search, Trophy, Flame, TrendingUp, Calendar, Clock, Zap, Target, Settings2, Check } from "lucide-react";
+import { ArrowLeft, GraduationCap, BookOpen, Search, Trophy, Flame, TrendingUp, Calendar, Clock, Zap, Target, Settings2, Check, BarChart3 } from "lucide-react";
 import { surahList } from "@/data/surahList";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
@@ -239,6 +239,16 @@ export default function HifzDashboardPage() {
 
       <div className="container py-4 space-y-4">
         <DueTodayCard />
+        <Link
+          to="/recitation/stats"
+          className="flex items-center justify-between rounded-xl border border-border bg-card p-3 hover:bg-muted/40 transition-colors"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <BarChart3 className="w-4 h-4 text-primary" />
+            View recitation stats
+          </span>
+          <span className="text-xs text-muted-foreground">Heatmap · weak words</span>
+        </Link>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <DailyGoalCard />
           <StreakCard />

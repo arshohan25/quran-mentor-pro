@@ -35,6 +35,7 @@ import NotificationsPage from "./pages/NotificationsPage.tsx";
 import AskPage from "./pages/AskPage.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
+import RecitationStatsPage from "./pages/RecitationStatsPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -69,6 +70,7 @@ function AnimatedRoutes() {
         <Route path="/ask" element={<PageTransition><AskPage /></PageTransition>} />
         <Route path="/auth" element={<PageTransition><AuthPage /></PageTransition>} />
         <Route path="/account" element={<PageTransition><AccountPage /></PageTransition>} />
+        <Route path="/recitation/stats" element={<PageTransition><RecitationStatsPage /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
