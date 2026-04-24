@@ -158,6 +158,25 @@ const Index = () => {
           ))}
         </div>
 
+        {/* New Quick Access Pills */}
+        <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1 scrollbar-none">
+          {[
+            { icon: MessageCircleQuestion, label: t("AI প্রশ্ন", "Ask AI", "اسأل"), path: "/ask" },
+            { icon: ScrollText, label: t("হাদীস প্র্যাকটিস", "Hadith Practice", "تدرب الحديث"), path: "/hadith" },
+            { icon: ClipboardCheck, label: t("কাযা ট্র্যাকার", "Qaza Tracker", "القضاء"), path: "/qaza" },
+            { icon: Bell, label: t("নোটিফিকেশন", "Notifications", "التنبيهات"), path: "/notifications" },
+          ].map((p) => (
+            <Link
+              key={p.path}
+              to={p.path}
+              className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 active:scale-95 transition-all"
+            >
+              <p.icon className="w-3.5 h-3.5" strokeWidth={2} />
+              <span className="text-[11px] font-bold whitespace-nowrap">{p.label}</span>
+            </Link>
+          ))}
+        </div>
+
         {/* Continue Reading */}
         {lastReadSurah && (
           <Link
