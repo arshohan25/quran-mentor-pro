@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ApiHadith } from "@/hooks/useHadithApi";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { CheckCircle2, AlertCircle, Copy } from "lucide-react";
+import { CheckCircle2, AlertCircle, Copy, Mic } from "lucide-react";
 import { toast } from "sonner";
+import HadithPracticeDialog from "./HadithPracticeDialog";
 
 export default function HadithCard({ hadith, collectionName }: { hadith: ApiHadith; collectionName?: string }) {
   const { t, language } = useLanguage();
+  const [practiceOpen, setPracticeOpen] = useState(false);
 
   const text = hadith.hadithBengali || hadith.hadithEnglish || "";
   const grade = (hadith.status || "").toLowerCase();
@@ -33,6 +36,14 @@ export default function HadithCard({ hadith, collectionName }: { hadith: ApiHadi
               {hadith.status}
             </span>
           )}
+          <button
+            onClick={() => setPracticeOpen(true)}
+            className="p-1 hover:bg-muted rounded"
+            aria-label={t("অনুশীলন", "Practice")}
+            title={t("অনুশীলন", "Practice")}
+          >
+            <Mic className="w-3.5 h-3.5 text-primary" />
+          </button>
           <button onClick={copy} className="p-1 hover:bg-muted rounded">
             <Copy className="w-3.5 h-3.5 text-muted-foreground" />
           </button>
@@ -51,6 +62,7 @@ export default function HadithCard({ hadith, collectionName }: { hadith: ApiHadi
       {hadith.englishNarrator && language !== "bn" && (
         <p className="text-[11px] text-muted-foreground/70 italic">— {hadith.englishNarrator}</p>
       )}
+      <HadithPracticeDialog open={practiceOpen} onOpenChange={setPracticeOpen} hadith={hadith} />
     </Card>
   );
 }
