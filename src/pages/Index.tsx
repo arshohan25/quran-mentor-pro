@@ -108,6 +108,13 @@ const Index = () => {
   const bookmarkCount = bookmarks.favorites?.length ?? 0;
   const hijri = getHijriToday(language === "bn");
 
+  const [dailyGoal, setDailyGoal] = useState<number>(loadDailyGoal);
+  useEffect(() => {
+    try { localStorage.setItem(DAILY_GOAL_KEY, String(dailyGoal)); } catch {}
+  }, [dailyGoal]);
+  const todayMinutes = streak.todayMinutes ?? 0;
+  const goalPct = Math.round(Math.min(100, (todayMinutes / dailyGoal) * 100));
+
   // Sections
   const quranTiles: Tile[] = [
     { icon: BookOpen, title: t("কুরআন পড়ুন", "Read Quran", "اقرأ"), desc: t("সব সূরা ও তাফসির", "All surahs & tafsir"), path: "/quran", span: 2 },
