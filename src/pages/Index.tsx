@@ -92,7 +92,7 @@ const Index = () => {
   const streak = useMemo(() => {
     try { return getStreakStats(); } catch { return { currentStreak: 0, todayMinutes: 0 } as any; }
   }, []);
-  const bookmarkCount = bookmarks.ayahs?.length ?? 0;
+  const bookmarkCount = bookmarks.favorites?.length ?? 0;
   const hijri = getHijriToday(language === "bn");
 
   // Sections
