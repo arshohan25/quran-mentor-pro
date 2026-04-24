@@ -1,58 +1,101 @@
 
 
-## Offline caching for home & key pages
+## Advanced features to elevate competitive edge
 
-### Heads-up
-PWA / service-worker support is an advanced feature in Lovable. It works in the **published/deployed** build but **will not activate inside the Lovable editor preview** (preview runs in an iframe where service workers are intentionally disabled to prevent stale builds). You'll need to publish the app to actually feel the offline behavior.
+You're already ahead of most Bengali Islamic apps on AI Q&A, Hadith Practice, Hifz, and offline PWA. The gaps below are where leaders (Tarteel, Quran.com, Muslim Pro, DeenHub) win — and where your Bengali-first positioning lets you leapfrog.
 
-If you'd rather just make the app *installable* on the home screen without offline caching, say the word and I'll do the lighter `manifest.json`-only approach instead.
+### Tier 1 — High impact, builds on what you have
 
-### What you'll get
-- App shell (HTML, JS, CSS, fonts, icons) cached on first visit → instant subsequent loads.
-- Home + the 4 quick-action pages (`/ask`, `/hadith/practice`, `/qaza`, `/notifications`) precached so they open instantly even fully offline.
-- Hadith JSON editions (jsdelivr CDN) cached for 30 days → previously opened books work offline.
-- API GETs (Quran, prayer times, etc.) served stale-while-revalidate so repeat visits load instantly and refresh in the background.
-- A small "You're offline" toast when the network drops.
-- Auto-update: when a new version ships, the SW updates silently on next reload.
+**1. AI Recitation Coach (Tarteel-style mistake detection)**
+You already have `useArabicRecitationEngine` and `LiveRecitationCheck`. Upgrade it into a real coach:
+- Word-level highlight: green = correct, amber = hesitation, red = mistake, with the misread word shown vs. expected.
+- Tajweed mistake categories (madd length, ghunnah, qalqalah) using rule tags from `utils/tajweed.ts`.
+- "Recite from memory" mode: hide the text, reveal only the next word on stumble (Sabina-style but for any ayah).
+- Daily accuracy score + per-surah weak-spot heatmap.
 
-### Changes
+**2. Smart Hifz Plan with spaced repetition (SRS)**
+Hifz dashboard exists but is passive. Add:
+- SM-2 / Anki-style scheduler: every memorized ayah gets reviewed at expanding intervals (1d → 3d → 7d → 21d).
+- "Today's review" queue on home that adapts when you miss days.
+- Murajah (revision) streak separate from new-memorization streak.
+- Weak-ayah drill: ayahs with the most recitation mistakes auto-queue for review.
 
-1. **Add dependency**: `vite-plugin-pwa` (workbox-based, well-supported with Vite).
+**3. Tafsir-on-tap with multi-source comparison**
+You have `useTafsir` and `TafsirAccordion`. Extend to:
+- Tap any word → Bengali word meaning + root + occurrences across Quran (concordance).
+- Side-by-side tafsir: Ibn Kathir, Ma'ariful Quran, Tafhimul Quran, Fi Zilal — toggleable.
+- "Ask AI about this ayah" button piping context (ayah + selected tafsir) into your existing `/ask` edge function for grounded answers.
 
-2. **Edit `vite.config.ts`** — register `VitePWA` plugin:
-   - `registerType: "autoUpdate"`
-   - `devOptions: { enabled: false }` (never run in dev/preview)
-   - `manifest`: name "Islamic Companion", short_name, theme color from design tokens, `display: "standalone"`, icons (use existing favicon as 192/512 placeholder).
-   - `workbox`:
-     - `navigateFallback: "/index.html"` with `navigateFallbackDenylist: [/^\/~oauth/, /^\/api/]`
-     - `runtimeCaching`:
-       - jsdelivr hadith JSONs → `CacheFirst`, 30-day expiry, max 50 entries.
-       - Google Fonts / font CDN → `CacheFirst`, 1-year expiry.
-       - Quran / prayer-time API hosts → `StaleWhileRevalidate`, 7-day expiry.
-       - Images (`/assets/*`, `.png`, `.svg`, `.webp`) → `CacheFirst`, 30-day expiry.
+### Tier 2 — Community & social (huge engagement lift, low complexity)
 
-3. **New file `src/lib/registerSW.ts`** — safe registration:
-   - Detect iframe (`window.self !== window.top`) and Lovable preview hosts (`id-preview--`, `lovableproject.com`, `lovable.app` editor).
-   - In those contexts: unregister any existing SW and **return early** — no registration.
-   - In production/published context only: call `registerSW({ onNeedRefresh, onOfflineReady })` from `virtual:pwa-register`.
-   - Show a sonner toast: "Ready to use offline" on first install; "Update available — reloading…" then auto-update on new version.
+**4. Family / Halaqa group**
+- Create a small group (5–20 people), share Hifz progress, daily Amal completion, Quran reading streak.
+- Leaderboard reset weekly; private by default.
+- "Nudge" a member: sends a dua reminder push, not a guilt trip.
 
-4. **Edit `src/main.tsx`** — import and call `registerSW()` once at startup.
+**5. Khatm (Quran completion) circles**
+- 30 people commit to read 1 juz/day → finish a Khatm together in 30 days.
+- Auto-assigns juz, tracks completion, sends gentle reminders.
+- Great virality: people invite friends/family.
 
-5. **New small hook `src/hooks/useOnlineStatus.ts`** + tiny banner in `src/App.tsx`:
-   - Listens to `online`/`offline` events.
-   - When offline, shows a slim non-blocking pill at the top: "অফলাইন মোড / Offline mode — cached content".
+### Tier 3 — Differentiators no Bengali app has
 
-6. **Edit `index.html`** — add `<link rel="manifest" href="/manifest.webmanifest">` (auto-generated by the plugin) and a `theme-color` meta tag.
+**6. Dars / Khutbah library with AI summaries**
+- Curated Bengali scholar lectures (audio/YouTube embeds) tagged by topic, surah, hadith.
+- AI-generated 60-second Bengali summary + key timestamps using Lovable AI (Gemini Flash).
+- "Continue listening" like Spotify.
 
-### Out of scope
-- No changes to existing routes, data hooks, or UI.
-- No background sync / push notifications (separate feature).
-- Does not cache Lovable AI responses (those need fresh data).
+**7. Halal lifestyle utilities**
+- Mosque finder with prayer times per mosque (community-submitted).
+- Halal restaurant tags (start with Dhaka, Chittagong, Sylhet, then expand).
+- Hijri-aware Islamic event reminders (Laylatul Qadr odd nights, Ayyamul Beed, fasting Mondays/Thursdays) — partially in Hijri page; surface as actionable reminders.
 
-### Verification
-After publishing:
-1. Open the published URL, navigate around the home + 4 quick actions.
-2. Toggle airplane mode / DevTools → Network → Offline.
-3. Reload — home and visited pages still load; previously opened hadith books still display.
+**8. Janazah & inheritance calculator**
+- Mirath (Islamic inheritance) calculator — extremely high search demand, almost no Bengali app does it well.
+- Janazah salah step-by-step guide.
+
+**9. Voice-first Bengali UX**
+- "Hey, what does Surah Mulk verse 14 say?" → reads ayah + Bengali translation.
+- Voice search across Quran, Hadith, Dua.
+- Uses browser SpeechRecognition; falls back to typed search.
+
+### Tier 4 — Monetization & retention infrastructure
+
+**10. Accounts + cross-device sync**
+Currently bookmarks, Hifz progress, Qaza, last-session all live in localStorage. Add Lovable Cloud auth so users don't lose data when switching phones. Foundation for groups (#4, #5) and premium tier.
+
+**11. Premium tier** (optional, only if you want revenue)
+- Free: everything you have today + Tier 1 basics.
+- Premium: advanced AI coach analytics, family groups >5 members, ad-free Dars library, offline audio downloads of full Quran reciters.
+
+### Suggested build order
+
+```text
+Phase 1 (1–2 weeks each):
+  → Spaced-repetition Hifz (#2)
+  → Recitation Coach v2 with word-level scoring (#1)
+  → Tafsir comparison + word concordance (#3)
+
+Phase 2:
+  → Auth + cloud sync (#10)
+  → Family/Halaqa groups (#4)
+  → Khatm circles (#5)
+
+Phase 3:
+  → Mirath calculator + Janazah guide (#8)
+  → Dars library with AI summaries (#6)
+  → Mosque finder (#7)
+  → Voice-first search (#9)
+```
+
+### Why this wins
+
+- **Tarteel** owns recitation coaching but is English-first and paid — #1 + #2 in Bengali is wide-open.
+- **Quran.com** owns tafsir depth but no practice/hifz loop — your existing Practice + #3 closes that gap.
+- **Muslim Pro** owns lifestyle but is shallow on learning — #4–#9 layer lifestyle on top of your already-strong learning core.
+- **No major Bengali app** currently combines AI Q&A + Hadith Practice + spaced-repetition Hifz + Halaqa groups. That's a defensible position.
+
+### Pick what to build next
+
+Tell me which feature (or phase) to plan in detail and I'll produce a build-ready implementation plan with files, data shapes, and edge functions.
 
