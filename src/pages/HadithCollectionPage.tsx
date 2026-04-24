@@ -53,7 +53,14 @@ export default function HadithCollectionPage() {
                 {ch.chapterNumber}
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{ch.chapterEnglish}</p>
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {language === "bn"
+                    ? ch.chapterBengali || ch.chapterEnglish
+                    : ch.chapterEnglish}
+                </p>
+                {language === "bn" && ch.chapterBengali && (
+                  <p className="text-[10px] text-muted-foreground/70 truncate">{ch.chapterEnglish}</p>
+                )}
                 <p className="text-[11px] text-muted-foreground">
                   {ch.hadithCount} {t("হাদীস", "hadith")}
                 </p>

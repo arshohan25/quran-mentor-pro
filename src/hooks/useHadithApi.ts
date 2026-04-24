@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { HADITH_CHAPTER_NAMES_BN } from "@/data/hadithChapterNamesBn";
 
 // Free, no-key Bengali hadith API by fawazahmed0 (CDN-hosted JSON)
 // https://github.com/fawazahmed0/hadith-api
@@ -43,6 +44,7 @@ export interface ApiChapter {
   id: number;
   chapterNumber: string;
   chapterEnglish: string;
+  chapterBengali?: string;
   chapterArabic?: string;
   hadithCount: number;
 }
@@ -67,6 +69,7 @@ function useEdition(prefix: "ben" | "ara" | "eng", book: string, enabled = true)
 
 export function useHadithChapters(bookSlug: string) {
   const { data, isLoading, error } = useEdition("ben", bookSlug);
+  const bnMap = HADITH_CHAPTER_NAMES_BN[bookSlug] || {};
   const chapters: ApiChapter[] | undefined = data
     ? Object.entries(data.metadata.sections)
         .map(([num, name]) => {
@@ -75,7 +78,8 @@ export function useHadithChapters(bookSlug: string) {
           return {
             id: Number(num),
             chapterNumber: num,
-            chapterEnglish: name || `অধ্যায় ${num}`,
+            chapterEnglish: name || `Chapter ${num}`,
+            chapterBengali: bnMap[num],
             hadithCount: Math.max(0, count),
           };
         })
