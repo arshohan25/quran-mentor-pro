@@ -18,6 +18,7 @@ import AudioPage from "./pages/AudioPage.tsx";
 import PrayerPage from "./pages/PrayerPage.tsx";
 import PrayerTimesPage from "./pages/PrayerTimesPage.tsx";
 import HifzDashboardPage from "./pages/HifzDashboardPage.tsx";
+import HifzReviewPage from "./pages/HifzReviewPage.tsx";
 import BookmarksPage from "./pages/BookmarksPage.tsx";
 import QuranPlannerPage from "./pages/QuranPlannerPage.tsx";
 import QiblaPage from "./pages/QiblaPage.tsx";
@@ -51,6 +52,7 @@ function AnimatedRoutes() {
         <Route path="/prayer" element={<PageTransition><PrayerPage /></PageTransition>} />
         <Route path="/prayer-times" element={<PageTransition><PrayerTimesPage /></PageTransition>} />
         <Route path="/hifz" element={<PageTransition><HifzDashboardPage /></PageTransition>} />
+        <Route path="/hifz/review" element={<PageTransition><HifzReviewPage /></PageTransition>} />
         <Route path="/bookmarks" element={<PageTransition><BookmarksPage /></PageTransition>} />
         <Route path="/planner" element={<PageTransition><QuranPlannerPage /></PageTransition>} />
         <Route path="/qibla" element={<PageTransition><QiblaPage /></PageTransition>} />
