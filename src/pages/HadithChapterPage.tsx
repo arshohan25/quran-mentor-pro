@@ -7,14 +7,16 @@ import { useHadithList } from "@/hooks/useHadithApi";
 import HadithCard from "@/components/hadith/HadithCard";
 import { Button } from "@/components/ui/button";
 import { saveLastHadithSession } from "@/lib/hadithLastSession";
+import { toast } from "sonner";
 
 export default function HadithChapterPage() {
   const { collection, chapter } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const practiceMode = searchParams.get("practice") === "1";
   const resumeHadithId = Number(searchParams.get("hadith")) || null;
   const { t, language } = useLanguage();
   const [page, setPage] = useState(1);
+  const [resumeResolved, setResumeResolved] = useState<number | null>(null);
   const meta = HADITH_COLLECTIONS.find((c) => c.id === collection);
   const { data, isLoading, error } = useHadithList(collection || "", chapter || "", page);
 
@@ -25,16 +27,37 @@ export default function HadithChapterPage() {
     }
   }, [collection, chapter]);
 
-  // Scroll to the resumed hadith once it's rendered.
+  // Handle resumed hadith: scroll to it, or fall back gracefully if missing.
   useEffect(() => {
-    if (!resumeHadithId || !data?.data) return;
-    if (!data.data.some((h) => h.id === resumeHadithId)) return;
-    requestAnimationFrame(() => {
-      document
-        .getElementById(`hadith-${resumeHadithId}`)
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }, [resumeHadithId, data]);
+    if (!resumeHadithId || !data?.data || resumeResolved === resumeHadithId) return;
+    const found = data.data.some((h) => h.id === resumeHadithId);
+    if (found) {
+      setResumeResolved(resumeHadithId);
+      requestAnimationFrame(() => {
+        document
+          .getElementById(`hadith-${resumeHadithId}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      return;
+    }
+    // Not on this page — try later pages if available.
+    if (data.last_page > page) {
+      setPage((p) => p + 1);
+      return;
+    }
+    // Exhausted: hadith no longer exists. Notify and fall back.
+    setResumeResolved(resumeHadithId);
+    toast.info(
+      t(
+        "আগের হাদীসটি আর পাওয়া যাচ্ছে না — অধ্যায় খোলা হয়েছে।",
+        "That hadith is no longer available — opened the chapter instead."
+      )
+    );
+    const next = new URLSearchParams(searchParams);
+    next.delete("hadith");
+    setSearchParams(next, { replace: true });
+    setPage(1);
+  }, [resumeHadithId, data, page, resumeResolved, searchParams, setSearchParams, t]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
