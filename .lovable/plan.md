@@ -1,63 +1,58 @@
 
 
-## Add a setup step before Hadith Practice starts
+## Offline caching for home & key pages
 
-### Goal
-When the user opens Hadith Practice from the home quick-actions, instead of dropping straight into the library list, show a short setup screen where they pick a **book (collection)** and a **chapter (topic)**, then start practicing hadith from that selection.
+### Heads-up
+PWA / service-worker support is an advanced feature in Lovable. It works in the **published/deployed** build but **will not activate inside the Lovable editor preview** (preview runs in an iframe where service workers are intentionally disabled to prevent stale builds). You'll need to publish the app to actually feel the offline behavior.
 
-### Flow
+If you'd rather just make the app *installable* on the home screen without offline caching, say the word and I'll do the lighter `manifest.json`-only approach instead.
 
-```text
-Home → "Hadith Practice" pill
-        │
-        ▼
-  /hadith/practice  ← new setup page
-   ┌──────────────────────────────┐
-   │  Step 1 — Choose a book       │
-   │  [Bukhari] [Muslim] [Tirmidhi]│
-   │  [Abu Dawud] [Nasai] [Majah]  │
-   │                              │
-   │  Step 2 — Choose a topic      │
-   │  ▢ ঈমান   (xx হাদীস)         │
-   │  ▢ পবিত্রতা (xx হাদীস)       │
-   │  ▢ সালাত  (xx হাদীস)         │
-   │  …                           │
-   │                              │
-   │  [ Start practicing → ]       │
-   └──────────────────────────────┘
-        │
-        ▼
-  /hadith/<book>/<chapter>?practice=1
-   → first hadith auto-opens in HadithPracticeDialog
-```
+### What you'll get
+- App shell (HTML, JS, CSS, fonts, icons) cached on first visit → instant subsequent loads.
+- Home + the 4 quick-action pages (`/ask`, `/hadith/practice`, `/qaza`, `/notifications`) precached so they open instantly even fully offline.
+- Hadith JSON editions (jsdelivr CDN) cached for 30 days → previously opened books work offline.
+- API GETs (Quran, prayer times, etc.) served stale-while-revalidate so repeat visits load instantly and refresh in the background.
+- A small "You're offline" toast when the network drops.
+- Auto-update: when a new version ships, the SW updates silently on next reload.
 
 ### Changes
 
-1. **New page `src/pages/HadithPracticeSetupPage.tsx`**
-   - Two-step picker: book chips at top (uses `HADITH_COLLECTIONS`), chapter list below (uses `useHadithChapters`).
-   - Bengali names from the new `HADITH_CHAPTER_NAMES_BN` map; English fallback.
-   - Search box to filter chapters by Bengali or English name.
-   - "Start practicing" button enabled once both are chosen → navigates to `/hadith/<book>/<chapter>?practice=1`.
-   - "Resume last session" shortcut at the top if a saved practice session exists in localStorage (read keys via `useHadithPractice` storage prefix).
+1. **Add dependency**: `vite-plugin-pwa` (workbox-based, well-supported with Vite).
 
-2. **Edit `src/App.tsx`** — register `/hadith/practice` route pointing to the new page.
+2. **Edit `vite.config.ts`** — register `VitePWA` plugin:
+   - `registerType: "autoUpdate"`
+   - `devOptions: { enabled: false }` (never run in dev/preview)
+   - `manifest`: name "Islamic Companion", short_name, theme color from design tokens, `display: "standalone"`, icons (use existing favicon as 192/512 placeholder).
+   - `workbox`:
+     - `navigateFallback: "/index.html"` with `navigateFallbackDenylist: [/^\/~oauth/, /^\/api/]`
+     - `runtimeCaching`:
+       - jsdelivr hadith JSONs → `CacheFirst`, 30-day expiry, max 50 entries.
+       - Google Fonts / font CDN → `CacheFirst`, 1-year expiry.
+       - Quran / prayer-time API hosts → `StaleWhileRevalidate`, 7-day expiry.
+       - Images (`/assets/*`, `.png`, `.svg`, `.webp`) → `CacheFirst`, 30-day expiry.
 
-3. **Edit `src/pages/Index.tsx`** — change the "Hadith Practice" quick-action pill's link from `/hadith` to `/hadith/practice`.
+3. **New file `src/lib/registerSW.ts`** — safe registration:
+   - Detect iframe (`window.self !== window.top`) and Lovable preview hosts (`id-preview--`, `lovableproject.com`, `lovable.app` editor).
+   - In those contexts: unregister any existing SW and **return early** — no registration.
+   - In production/published context only: call `registerSW({ onNeedRefresh, onOfflineReady })` from `virtual:pwa-register`.
+   - Show a sonner toast: "Ready to use offline" on first install; "Update available — reloading…" then auto-update on new version.
 
-4. **Edit `src/pages/HadithChapterPage.tsx`**
-   - Read `?practice=1` from the URL.
-   - When the hadith list loads and the flag is set, auto-open `HadithPracticeDialog` on the first hadith of the chapter (clear the flag after opening so navigation back doesn't re-trigger).
-   - Add a small "Practice mode" banner with a "Practice this hadith" button on each card already exists via `HadithCard`, so no card changes needed.
+4. **Edit `src/main.tsx`** — import and call `registerSW()` once at startup.
 
-5. **Edit `src/components/hadith/HadithCard.tsx`** *(only if needed)* — ensure the practice dialog can be opened externally; likely already supports it via existing state. If not, lift a `defaultPracticeOpen` prop so the chapter page can trigger it on the first card.
+5. **New small hook `src/hooks/useOnlineStatus.ts`** + tiny banner in `src/App.tsx`:
+   - Listens to `online`/`offline` events.
+   - When offline, shows a slim non-blocking pill at the top: "অফলাইন মোড / Offline mode — cached content".
 
-### UX details
-- Setup page uses the existing `islamic-header`, `Card`, and chip styling for visual consistency with the rest of the Hadith section.
-- Selected book chip uses `bg-primary text-primary-foreground`; unselected uses `bg-muted`.
-- Chapter rows show: number badge, Bengali name (primary), English name (muted subtitle), hadith count.
-- Empty/loading/error states reuse the same `Loader2` and muted-text patterns as `HadithCollectionPage`.
+6. **Edit `index.html`** — add `<link rel="manifest" href="/manifest.webmanifest">` (auto-generated by the plugin) and a `theme-color` meta tag.
 
 ### Out of scope
-- No changes to the practice dialog logic, persistence, or the underlying API hook.
-- No new dependencies.
+- No changes to existing routes, data hooks, or UI.
+- No background sync / push notifications (separate feature).
+- Does not cache Lovable AI responses (those need fresh data).
+
+### Verification
+After publishing:
+1. Open the published URL, navigate around the home + 4 quick actions.
+2. Toggle airplane mode / DevTools → Network → Offline.
+3. Reload — home and visited pages still load; previously opened hadith books still display.
 
