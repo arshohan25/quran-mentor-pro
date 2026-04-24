@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import PageTransition from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import NotificationSchedulerHost from "@/components/NotificationSchedulerHost";
+import OfflineBanner from "@/components/OfflineBanner";
 import Index from "./pages/Index.tsx";
 import QuranPage from "./pages/QuranPage.tsx";
 import PracticePage from "./pages/PracticePage.tsx";
@@ -76,6 +77,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <NotificationSchedulerHost />
+            <OfflineBanner />
             <div className="pb-14">
               <AnimatedRoutes />
             </div>
