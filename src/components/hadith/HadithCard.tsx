@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ApiHadith } from "@/hooks/useHadithApi";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -6,9 +6,20 @@ import { CheckCircle2, AlertCircle, Copy, Mic } from "lucide-react";
 import { toast } from "sonner";
 import HadithPracticeDialog from "./HadithPracticeDialog";
 
-export default function HadithCard({ hadith, collectionName }: { hadith: ApiHadith; collectionName?: string }) {
+export default function HadithCard({
+  hadith,
+  collectionName,
+  defaultPracticeOpen = false,
+}: {
+  hadith: ApiHadith;
+  collectionName?: string;
+  defaultPracticeOpen?: boolean;
+}) {
   const { t, language } = useLanguage();
-  const [practiceOpen, setPracticeOpen] = useState(false);
+  const [practiceOpen, setPracticeOpen] = useState(defaultPracticeOpen);
+  useEffect(() => {
+    if (defaultPracticeOpen) setPracticeOpen(true);
+  }, [defaultPracticeOpen]);
 
   const text = hadith.hadithBengali || hadith.hadithEnglish || "";
   const grade = (hadith.status || "").toLowerCase();
