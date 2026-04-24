@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import { Mic, MicOff, AlertCircle } from "lucide-react";
 import { useArabicRecitationEngine } from "@/hooks/useArabicRecitationEngine";
+import { useRecitationRecorder } from "@/hooks/useRecitationRecorder";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { MatchMode } from "@/utils/arabicUtils";
 
@@ -8,12 +10,27 @@ interface InlineRecitationProps {
   onComplete: () => void;
   onCancel: () => void;
   mode?: MatchMode;
+  /** Optional — pass surah + ayah (numberInSurah) to record per-word stats */
+  surah?: number;
+  ayah?: number;
 }
 
-export default function LiveRecitationCheck({ ayahText, onComplete, onCancel, mode = "balanced" }: InlineRecitationProps) {
+export default function LiveRecitationCheck({ ayahText, onComplete, onCancel, mode = "balanced", surah, ayah }: InlineRecitationProps) {
   const { t } = useLanguage();
-  const { state, toggleListening, stopListening } = useArabicRecitationEngine(ayahText, mode, onComplete);
+  const [completed, setCompleted] = useState(false);
+  const handleComplete = () => { setCompleted(true); onComplete(); };
+  const { state, toggleListening, stopListening } = useArabicRecitationEngine(ayahText, mode, handleComplete);
   const { words, revealedIndex, errorIndex, isListening, lastSpoken, speechError, totalWords } = state;
+
+  // Reset completion flag whenever the ayah text changes
+  useEffect(() => { setCompleted(false); }, [ayahText]);
+
+  useRecitationRecorder({
+    surah: surah ?? null,
+    ayah: ayah ?? null,
+    state,
+    completed,
+  });
 
   return (
     <div className="space-y-2">

@@ -16,6 +16,7 @@ import type { MatchMode } from "@/utils/arabicUtils";
 import { LINES_PER_PAGE, type QuranSectionProps } from "./types";
 import { useUpsertCard } from "@/hooks/useHifzSrs";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRecitationRecorder } from "@/hooks/useRecitationRecorder";
 
 const SENSITIVITY_KEY = "hifz-sensitivity-mode";
 
@@ -31,6 +32,7 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
   const [showDashboard, setShowDashboard] = useState(false);
   const [hiddenAyahs, setHiddenAyahs] = useState<Set<number>>(new Set());
   const [activeRecitationAyah, setActiveRecitationAyah] = useState<number | null>(null);
+  const [recitationCompleted, setRecitationCompleted] = useState(false);
   const [hifzProgress, setHifzProgress] = useState<Record<number, number[]>>(loadHifzProgress);
   const [sensitivityMode, setSensitivityMode] = useState<MatchMode>(() => {
     try { return (localStorage.getItem(SENSITIVITY_KEY) as MatchMode) || "balanced"; } catch { return "balanced"; }
@@ -59,10 +61,30 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
         }
       }
     }
+    setRecitationCompleted(true);
     setActiveRecitationAyah(null);
   }, [activeRecitationAyah, data, selectedSurah]);
 
   const recitation = useArabicRecitationEngine(recitationAyahText, sensitivityMode, handleRecitationComplete);
+
+  // Resolve numberInSurah for the ayah currently being recited (for stats recording).
+  const recitingAyahInSurah = useMemo(() => {
+    if (activeRecitationAyah === null || !data) return null;
+    const a = data.arabic.ayahs.find(x => x.number === activeRecitationAyah);
+    return a?.numberInSurah ?? null;
+  }, [activeRecitationAyah, data]);
+
+  // Reset completion flag when a new recitation begins.
+  useEffect(() => {
+    if (activeRecitationAyah !== null) setRecitationCompleted(false);
+  }, [activeRecitationAyah]);
+
+  useRecitationRecorder({
+    surah: recitingAyahInSurah !== null ? selectedSurah : null,
+    ayah: recitingAyahInSurah,
+    state: recitation.state,
+    completed: recitationCompleted,
+  });
 
   // Auto-start listening when activeRecitationAyah is set and text is ready
   useEffect(() => {
