@@ -1,13 +1,16 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, BookOpen, Loader2, Mic, Search, History } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Loader2, Mic, Search, History, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { HADITH_COLLECTIONS } from "@/data/hadithCollections";
 import { useHadithChapters } from "@/hooks/useHadithApi";
-import { getAllPracticeSessions } from "@/hooks/useHadithPractice";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  getLastHadithSession,
+  clearLastHadithSession,
+} from "@/lib/hadithLastSession";
 
 export default function HadithPracticeSetupPage() {
   const { t, language } = useLanguage();
@@ -29,11 +32,26 @@ export default function HadithPracticeSetupPage() {
     );
   }, [chapters, query]);
 
-  const lastSession = useMemo(() => getAllPracticeSessions()[0] || null, []);
+  const [last, setLast] = useState(() => getLastHadithSession());
+  const lastBookMeta = last
+    ? HADITH_COLLECTIONS.find((c) => c.id === last.collection)
+    : null;
 
   const start = () => {
     if (!book || !chapter) return;
     navigate(`/hadith/${book}/${chapter}?practice=1`);
+  };
+
+  const resume = () => {
+    if (!last) return;
+    const params = new URLSearchParams({ practice: "1" });
+    if (last.hadithId) params.set("hadith", String(last.hadithId));
+    navigate(`/hadith/${last.collection}/${last.chapter}?${params.toString()}`);
+  };
+
+  const dismissLast = () => {
+    clearLastHadithSession();
+    setLast(null);
   };
 
   return (
@@ -56,23 +74,43 @@ export default function HadithPracticeSetupPage() {
       </header>
 
       <main className="container py-4 max-w-2xl mx-auto space-y-5">
-        {lastSession && (
-          <Card className="p-3 flex items-center gap-3 border-accent/30 bg-accent/5">
-            <History className="w-4 h-4 text-accent shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold">
-                {t("আগের সেশন চালিয়ে যান", "Resume last session")}
-              </p>
-              <p className="text-[10px] text-muted-foreground truncate">
-                {t("হাদীস", "Hadith")} #{lastSession.hadithId} ·{" "}
-                {new Date(lastSession.updatedAt).toLocaleString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            </div>
+        {last && (
+          <Card className="p-3 flex items-center gap-2.5 border-accent/40 bg-accent/5">
+            <button
+              onClick={resume}
+              className="flex items-center gap-2.5 flex-1 min-w-0 text-left"
+            >
+              <History className="w-4 h-4 text-accent shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold">
+                  {t("আগের সেশন চালিয়ে যান", "Resume last session")}
+                </p>
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {lastBookMeta
+                    ? language === "bn"
+                      ? lastBookMeta.bnName
+                      : lastBookMeta.enName
+                    : last.collection}{" "}
+                  · {t("অধ্যায়", "Chapter")} {last.chapter}
+                  {last.hadithNumber ? ` · #${last.hadithNumber}` : ""}
+                  {" · "}
+                  {new Date(last.updatedAt).toLocaleString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-accent shrink-0" />
+            </button>
+            <button
+              onClick={dismissLast}
+              className="p-1 rounded hover:bg-muted shrink-0"
+              aria-label={t("মুছুন", "Clear")}
+            >
+              <X className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
           </Card>
         )}
 

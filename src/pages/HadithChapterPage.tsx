@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Mic } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -6,15 +6,35 @@ import { HADITH_COLLECTIONS } from "@/data/hadithCollections";
 import { useHadithList } from "@/hooks/useHadithApi";
 import HadithCard from "@/components/hadith/HadithCard";
 import { Button } from "@/components/ui/button";
+import { saveLastHadithSession } from "@/lib/hadithLastSession";
 
 export default function HadithChapterPage() {
   const { collection, chapter } = useParams();
   const [searchParams] = useSearchParams();
   const practiceMode = searchParams.get("practice") === "1";
+  const resumeHadithId = Number(searchParams.get("hadith")) || null;
   const { t, language } = useLanguage();
   const [page, setPage] = useState(1);
   const meta = HADITH_COLLECTIONS.find((c) => c.id === collection);
   const { data, isLoading, error } = useHadithList(collection || "", chapter || "", page);
+
+  // Remember the user's last book + chapter so "Resume" can return here.
+  useEffect(() => {
+    if (collection && chapter) {
+      saveLastHadithSession({ collection, chapter });
+    }
+  }, [collection, chapter]);
+
+  // Scroll to the resumed hadith once it's rendered.
+  useEffect(() => {
+    if (!resumeHadithId || !data?.data) return;
+    if (!data.data.some((h) => h.id === resumeHadithId)) return;
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`hadith-${resumeHadithId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [resumeHadithId, data]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -60,12 +80,16 @@ export default function HadithChapterPage() {
           </div>
         )}
         {data?.data.map((h, i) => (
-          <HadithCard
-            key={h.id}
-            hadith={h}
-            collectionName={meta?.bnName}
-            defaultPracticeOpen={practiceMode && page === 1 && i === 0}
-          />
+          <div key={h.id} id={`hadith-${h.id}`}>
+            <HadithCard
+              hadith={h}
+              collectionName={meta?.bnName}
+              defaultPracticeOpen={
+                (practiceMode && page === 1 && i === 0) ||
+                resumeHadithId === h.id
+              }
+            />
+          </div>
         ))}
 
         {data && data.last_page > 1 && (
