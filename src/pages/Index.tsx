@@ -3,7 +3,7 @@ import {
   ChevronRight, Hash, CalendarDays, Bell, BellOff, ListChecks, Sparkles,
   Moon, BookText, Volume2, GraduationCap, Compass, HandHeart,
   ScrollText, ClipboardCheck, MessageCircleQuestion, Layers, Flame,
-  TrendingUp, MapPin, BarChart3, ArrowRight,
+  TrendingUp, MapPin, BarChart3, ArrowRight, Target,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMemo } from "react";
@@ -17,6 +17,7 @@ import { useDailyDuaNotification } from "@/hooks/useDailyDuaNotification";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { getStreakStats } from "@/hooks/useStreakTracker";
 import { Switch } from "@/components/ui/switch";
+import { Progress } from "@/components/ui/progress";
 
 // ---------- helpers ----------
 function getHijriToday(localeBn: boolean): string {
