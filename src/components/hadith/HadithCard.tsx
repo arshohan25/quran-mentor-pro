@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { ApiHadith } from "@/hooks/useHadithApi";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { CheckCircle2, AlertCircle, Copy, Mic } from "lucide-react";
 import { toast } from "sonner";
 import HadithPracticeDialog from "./HadithPracticeDialog";
+import { saveLastHadithSession } from "@/lib/hadithLastSession";
 
 export default function HadithCard({
   hadith,
@@ -16,10 +18,23 @@ export default function HadithCard({
   defaultPracticeOpen?: boolean;
 }) {
   const { t, language } = useLanguage();
+  const { collection, chapter } = useParams();
   const [practiceOpen, setPracticeOpen] = useState(defaultPracticeOpen);
   useEffect(() => {
     if (defaultPracticeOpen) setPracticeOpen(true);
   }, [defaultPracticeOpen]);
+
+  // When practice opens for this hadith, remember it as the resume target.
+  useEffect(() => {
+    if (practiceOpen && collection && chapter) {
+      saveLastHadithSession({
+        collection,
+        chapter,
+        hadithId: hadith.id,
+        hadithNumber: hadith.hadithNumber,
+      });
+    }
+  }, [practiceOpen, collection, chapter, hadith.id, hadith.hadithNumber]);
 
   const text = hadith.hadithBengali || hadith.hadithEnglish || "";
   const grade = (hadith.status || "").toLowerCase();

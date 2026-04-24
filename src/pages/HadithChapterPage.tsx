@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Mic } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -6,6 +6,7 @@ import { HADITH_COLLECTIONS } from "@/data/hadithCollections";
 import { useHadithList } from "@/hooks/useHadithApi";
 import HadithCard from "@/components/hadith/HadithCard";
 import { Button } from "@/components/ui/button";
+import { saveLastHadithSession } from "@/lib/hadithLastSession";
 
 export default function HadithChapterPage() {
   const { collection, chapter } = useParams();
@@ -15,6 +16,13 @@ export default function HadithChapterPage() {
   const [page, setPage] = useState(1);
   const meta = HADITH_COLLECTIONS.find((c) => c.id === collection);
   const { data, isLoading, error } = useHadithList(collection || "", chapter || "", page);
+
+  // Remember the user's last book + chapter so "Resume" can return here.
+  useEffect(() => {
+    if (collection && chapter) {
+      saveLastHadithSession({ collection, chapter });
+    }
+  }, [collection, chapter]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
