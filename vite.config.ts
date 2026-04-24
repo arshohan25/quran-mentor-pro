@@ -70,10 +70,10 @@ export default defineConfig(({ mode }) => ({
           },
           {
             // Quran / prayer-time / generic third-party API JSON
-            urlPattern: ({ url, request }) =>
+            urlPattern: ({ url, request, sameOrigin }: { url: URL; request: Request; sameOrigin: boolean }) =>
               request.destination === "" &&
               /\.(json)$/i.test(url.pathname) &&
-              url.origin !== self.location.origin,
+              !sameOrigin,
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "api-json",
