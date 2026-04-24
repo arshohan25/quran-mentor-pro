@@ -190,10 +190,18 @@ export default function HadithPracticeDialog({ open, onOpenChange, hadith }: Pro
     next();
   };
 
-  const clearMarks = () => setWrong({});
+  const clearMarks = () => {
+    setWrong({});
+    setActiveSection(0);
+    clear();
+    toast.success(t("সেশন রিসেট হয়েছে", "Session reset"));
+  };
 
   const totalWrong = Object.values(wrong).reduce((sum, s) => sum + s.size, 0);
   const totalWords = sections.reduce((s, sec) => s + sec.words.length, 0);
+  const lastSaved = session?.updatedAt
+    ? new Date(session.updatedAt).toLocaleString(undefined, { hour: "2-digit", minute: "2-digit", month: "short", day: "numeric" })
+    : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
