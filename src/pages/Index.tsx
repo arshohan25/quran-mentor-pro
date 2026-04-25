@@ -360,6 +360,7 @@ const Index = () => {
         {/* ============ Daily Ayah + Daily Dua ============ */}
         <div className="grid md:grid-cols-2 gap-4">
           <DailyAyah />
+          <DailyAmalSummaryCard />
 
           <div className="premium-card p-4 space-y-3">
             <div className="flex items-center justify-between">
