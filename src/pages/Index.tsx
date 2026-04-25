@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
 import { surahList } from "@/data/surahList";
@@ -300,7 +301,12 @@ const Index = () => {
                 </div>
                 <Slider
                   value={[dailyGoal]}
-                  onValueChange={([v]) => setDailyGoal(v)}
+                  onValueChange={([v]) => {
+                    setDailyGoal(v);
+                    toast.success(t("লক্ষ্য আপডেট হয়েছে", "Goal updated", "تم تحديث الهدف"), {
+                      description: t(`নতুন লক্ষ্য: ${v} মিনিট`, `New goal: ${v} min`, `الهدف الجديد: ${v} د`),
+                    });
+                  }}
                   min={5}
                   max={120}
                   step={5}
