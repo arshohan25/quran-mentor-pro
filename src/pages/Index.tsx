@@ -14,6 +14,7 @@ import { surahList } from "@/data/surahList";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import AuthChip from "@/components/AuthChip";
 import DailyAyah from "@/components/DailyAyah";
+import DailyAmalSummaryCard from "@/components/DailyAmalSummaryCard";
 import { useDailyDuaNotification } from "@/hooks/useDailyDuaNotification";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { getStreakStats } from "@/hooks/useStreakTracker";
