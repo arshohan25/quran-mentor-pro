@@ -63,10 +63,18 @@ export default function DailyAmalReminder() {
     typeof Notification !== "undefined" ? Notification.permission : "denied"
   );
   const [customTime, setCustomTime] = useState<string>("");
+  const [loadedAt] = useState<Date>(() => new Date());
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const isFirstRun = useRef(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     saveSettings(settings);
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+    setSavedAt(new Date());
   }, [settings]);
 
   useEffect(() => {
