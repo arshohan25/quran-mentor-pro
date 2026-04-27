@@ -349,6 +349,89 @@ export default function AdminRecitationPage() {
       </div>
 
       <div className="rounded-xl border bg-card p-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+          <div>
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+              Commonly failed ayahs by mode
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive">
+                <Radio className={`h-3 w-3 ${livePulse ? "animate-ping" : ""}`} />
+                Live · {liveWrongCount.toLocaleString()} wrong
+              </span>
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Ayahs with the most failed attempts (last {range} days). Click to open in the Quran reader.
+            </p>
+          </div>
+        </div>
+        <Tabs defaultValue="practice">
+          <TabsList>
+            {MODES.map((m) => {
+              const total = wrongByMode[m].reduce((sum, w) => sum + w.failures, 0);
+              return (
+                <TabsTrigger key={m} value={m} className="gap-2">
+                  {MODE_LABELS[m]}
+                  <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-semibold">{total}</Badge>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+          {MODES.map((m) => {
+            const list = wrongByMode[m];
+            const maxFails = list.reduce((mx, w) => Math.max(mx, w.failures), 1);
+            return (
+              <TabsContent key={m} value={m} className="mt-3">
+                {list.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic text-center py-8">
+                    No failed ayahs recorded for {MODE_LABELS[m]} mode in this window.
+                  </p>
+                ) : (
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {list.map((w) => {
+                      const sName = surahList.find((s) => s.number === w.surah)?.englishName ?? `Surah ${w.surah}`;
+                      const intensity = w.failures / maxFails;
+                      const sev = w.failRate >= 0.7
+                        ? "hsl(var(--destructive))"
+                        : w.failRate >= 0.4
+                        ? "hsl(28 80% 55%)"
+                        : "hsl(45 70% 55%)";
+                      return (
+                        <li key={`${w.surah}:${w.ayah}`}>
+                          <Link
+                            to={`/quran?surah=${w.surah}&ayah=${w.ayah}`}
+                            className="group block rounded-lg border bg-background/40 p-3 hover:bg-muted/40 transition-colors"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ background: sev }} aria-hidden />
+                                <div className="min-w-0">
+                                  <div className="text-sm font-medium truncate text-foreground group-hover:text-primary">
+                                    {sName} · Ayah {w.ayah}
+                                  </div>
+                                  <div className="text-[11px] text-muted-foreground">
+                                    {w.failures} fails / {w.attempts} attempts · {w.totalErrors} word errors
+                                  </div>
+                                </div>
+                              </div>
+                              <Badge className="shrink-0 text-[10px] font-semibold border-0" style={{ background: sev, color: "white" }}>
+                                {Math.round(w.failRate * 100)}%
+                              </Badge>
+                            </div>
+                            <div className="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${Math.max(6, intensity * 100)}%`, background: sev }} />
+                            </div>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </TabsContent>
+            );
+          })}
+        </Tabs>
+      </div>
+
+      <div className="rounded-xl border bg-card p-4">
         <h3 className="text-sm font-bold text-foreground mb-3">Top surahs by session count</h3>
         <div className="h-72">
           <ResponsiveContainer>
