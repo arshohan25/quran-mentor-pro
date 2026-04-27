@@ -1,68 +1,89 @@
-## Premium Home Redesign
+# Professional Admin Panel
 
-A cohesive, editorial-feeling home built entirely from existing semantic tokens (emerald `--primary` + gold `--accent` + parchment `--background`). Every feature in the app is surfaced from the home in a clean bento layout, organized by intent.
+A secure, role-gated admin dashboard at `/admin` to control users, content, settings, and view analytics across the app.
 
-### What changes
+## 1. Secure roles foundation (database)
 
-**Removed clutter**: the duplicated "Quick Actions" grid + "Quick Access Pills" row + ad-hoc "New Features" / "More Features" sections collapse into a single, organized bento.
+Create proper server-side role infrastructure (never trust client/localStorage for admin checks).
 
-**New hero band** (replaces the current header chrome):
-- Deep emerald gradient with a faint Bismillah watermark and a soft gold radial glow (already supported by `.islamic-header`).
-- Two compact info chips inline: **Hijri date** (today) and **Next prayer + countdown** (uses existing prayer-times data; falls back gracefully if location is missing → links to `/prayer-times`).
-- Right side: `AuthChip` + `LanguageSwitcher` (unchanged).
+**Migration:**
+- `app_role` enum: `admin`, `moderator`, `user`
+- `user_roles` table: `id`, `user_id` (→ auth.users, cascade), `role app_role`, `assigned_at`, `assigned_by`; unique `(user_id, role)`; RLS enabled
+- SECURITY DEFINER function `public.has_role(_user_id uuid, _role app_role) returns boolean` (avoids recursive RLS)
+- RLS policies on `user_roles`:
+  - Users can SELECT their own roles
+  - Only admins can INSERT/UPDATE/DELETE (`has_role(auth.uid(),'admin')`)
+- Bootstrap: insert `admin` role for the first registered user (or via SQL after you confirm your `user_id`)
+- Tighten existing tables: add admin-override SELECT policies on `profiles`, `bookmarks_sync`, `hifz_srs`, `qaza_sync`, `recitation_sessions`, `recitation_word_stats`, `user_settings` so admins can read all rows
 
-**"Continue" hero card** (only when there's a last-read ayah):
-- Full-width premium card with the Arabic ayah preview if available, surah name, and a strong "Resume" CTA. Pulses gently on first load.
+## 2. Auth + role hooks
 
-**Today strip** (always visible, 3 small stat chips):
-- **Streak** (from `getStreakStats`) · **Hifz mastered** (from existing local count) · **Bookmarks** count.
-- Each chip is a tiny tappable card linking to the relevant page.
+- New `src/hooks/useUserRole.ts` — fetches current user's roles via `user_roles` select; exposes `isAdmin`, `isModerator`, `loading`
+- New `src/components/admin/RequireAdmin.tsx` — route guard; redirects non-admins to `/` with a toast
 
-**Daily Ayah** + **Daily Dua** kept as twin premium cards, side by side on tablet, stacked on mobile. Existing `<DailyAyah />` and the inline dua block are reused as-is.
+## 3. Admin shell & navigation
 
-**Bento sections** (ordered by daily use):
+- New layout `src/components/admin/AdminShell.tsx` using shadcn `Sidebar` (collapsible icon mode)
+  - Sections: Dashboard, Users, Content, Recitation, Hadith QA, Settings, Logs
+  - Persistent header with `SidebarTrigger`, breadcrumb, theme/lang switch, "Exit admin" button
+- Route: `/admin/*` wrapped in `<RequireAdmin>`; nested routes for each section
+- Hidden from `BottomNav`; entry point added in `AccountPage` (visible only when `isAdmin`)
 
-1. **কুরআন · Quran**
-   - Read Quran (large 2-col tile) · Audio · Hifz · Bookmarks · Practice · Tafsir Compare (`/tafsir/1/1` quick start) · Recitation Stats · Planner
-2. **নামাজ · Prayer**
-   - Prayer Times · Qibla · Prayer Guide · Qaza Tracker
-3. **যিকর ও দোয়া · Dhikr & Dua**
-   - Tasbih · Duas & Azkar · Daily Amal · Hijri Calendar
-4. **শিখুন ও জিজ্ঞাসা · Learn & Ask**
-   - Hadith Library · Hadith Practice · Ask AI · Notifications
+## 4. Admin pages
 
-Each tile uses a **uniform aesthetic card** with:
-- Rounded-2xl, subtle gold border (matches `.premium-card`)
-- Icon in a softly-tinted square (emerald or gold variant, alternating per tile for rhythm)
-- Bold title (Bengali display), small muted subtitle
-- A whisper of inner gradient via existing tokens (no new colors)
-- Motion: 250ms ease entrance with stagger; 1.02 hover lift, 0.98 active
+**Dashboard (`/admin`)**
+- KPI cards: total users (last 7/30d), active today, total recitation sessions, avg accuracy, total bookmarks, total hifz cards due
+- Charts (recharts): signups over time, recitation accuracy trend, daily active users
+- Recent activity feed (latest sessions / new users)
 
-A **"NEW" pill** marks recently-added features (Tafsir Compare, Recitation Stats, Hifz Review).
+**Users (`/admin/users`)**
+- Searchable, paginated table (shadcn `Table` + `Input`): email (from auth via edge function), display_name, role badges, created_at, last activity
+- Row actions: view profile drawer, assign/remove roles (admin/moderator), reset display name, view their stats
+- Bulk select + bulk role assign
 
-A subtle **decorative gold divider** with `✦` between sections (already exists).
+**Content moderation (`/admin/content`)**
+- Tabs: Bookmarks, Hifz cards, Qaza records
+- Per-user filter, view/delete entries, export CSV
 
-### Files
+**Recitation analytics (`/admin/recitation`)**
+- Aggregate accuracy trends, weakest words across all users, top reciters leaderboard, session count by surah heatmap
 
-- **Edit** `src/pages/Index.tsx` — full rewrite of the home layout (keeps `<DailyAyah />`, `<ReadingProgress />`, `<AuthChip />`, `<LanguageSwitcher />`, daily-dua block).
-- **Edit** `src/index.css` — add three small token-based utility classes:
-  - `.bento-tile` — base premium tile, alternating accent rail
-  - `.bento-tile-wide` — 2-col span variant
-  - `.section-eyebrow` — small "category label + line" header style used between bento sections
-- **No new files**, no DB changes, no dependencies.
+**Hadith QA logs (`/admin/ask`)**
+- View `islamic-qa` edge function logs (via supabase analytics) — questions asked, response times, errors
 
-### Technical details
+**App settings (`/admin/settings`)**
+- Global feature flags stored in a new `app_settings` table (singleton row, jsonb): toggle features (Sabina, Live recitation, AI Ask), default daily goal minutes, announcement banner text
+- Banner reads from this table on `Index.tsx`
 
-- Hero "Next prayer" uses the existing prayer-times hook (`usePrayerTimes` if present in repo — will inspect; otherwise reads from cached localStorage and degrades to a neutral "Set your location" link). I'll wire it conditionally so the home never shows a broken state.
-- Hijri date computed client-side via `Intl.DateTimeFormat('en-u-ca-islamic-umalqura', …)` (no API).
-- Streak / Hifz counts read via existing helpers; falls back to 0 if storage is empty.
-- Layout: 4-col grid on `md+`, 2-col on mobile. Wide tiles use `col-span-2`. Cards keep equal heights via `min-h` + flex.
-- No framer-motion for entrance to keep bundle lean — uses Tailwind `animate-in fade-in-0 slide-in-from-bottom-2` with delay utilities.
-- All colors via HSL tokens (`hsl(var(--primary))` etc.). No custom hex.
+**Audit logs (`/admin/logs`)**
+- New `audit_logs` table: `actor_id`, `action`, `target_type`, `target_id`, `metadata jsonb`, `created_at`
+- Trigger inserts on role changes, content deletions
+- Read-only filterable table
 
-### Acceptance check
+## 5. Edge function for admin-only operations
 
-- Home shows: hero with hijri + next-prayer chips, optional "Resume" card, today strip, daily ayah, daily dua, then 4 categorized bento sections covering every feature already routed in `App.tsx`.
-- Looks consistent in light + dark mode.
-- No regressions: language switcher, auth chip, daily-dua notification toggle, last-read deep link still work.
-- Mobile (390px) and tablet both look clean — tiles align to a uniform grid with breathing room.
+`supabase/functions/admin-users/index.ts` (verify_jwt = true)
+- Verifies caller is admin via `has_role`
+- Endpoints: `list_users` (paginated, joins auth.users emails using service role), `delete_user`, `set_role`
+- Avoids exposing service role key client-side
+
+## 6. Polish
+
+- Consistent admin styling: denser table, status badges, skeleton loaders, empty states
+- All destructive actions behind `AlertDialog` confirmation
+- Toast feedback on every mutation
+- Mobile-responsive (sidebar collapses to sheet)
+- Bilingual labels (bn/en) using existing `useLanguage`
+
+## Deliverables
+- 1 migration (roles + audit + app_settings + admin-override policies)
+- 1 edge function (`admin-users`)
+- 1 hook (`useUserRole`)
+- ~10 new components/pages under `src/components/admin/` and `src/pages/admin/`
+- Updates to `App.tsx` (routes) and `AccountPage.tsx` (admin entry link)
+
+## Security guarantees
+- Roles stored in dedicated `user_roles` table (never on profiles)
+- All admin checks via SECURITY DEFINER `has_role` function
+- RLS enforces admin-only mutations server-side
+- Service-role operations isolated to edge function with JWT verification
