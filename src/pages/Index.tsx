@@ -290,22 +290,24 @@ const Index = () => {
 
         {/* ============ Today strip (3 stat chips) ============ */}
         <div className="flex gap-2 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
-          <Link to="/hifz" className="stat-chip group">
-            <div className="icon-container-gold p-1.5 group-hover:scale-110 transition-transform">
-              <Flame className="w-4 h-4 text-accent" strokeWidth={2} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold leading-none">
-                {t("স্ট্রিক", "Streak", "تتابع")}
-              </p>
-              <p className="text-sm font-bold text-foreground leading-tight mt-0.5">
-                {streak.currentStreak ?? 0} {t("দিন", "d", "ي")}
-              </p>
-            </div>
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1 group-hover:translate-x-0">
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            </div>
-          </Link>
+          {visible("card:streak_chip") && (
+            <Link to="/hifz" className="stat-chip group">
+              <div className="icon-container-gold p-1.5 group-hover:scale-110 transition-transform">
+                <Flame className="w-4 h-4 text-accent" strokeWidth={2} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold leading-none">
+                  {t("স্ট্রিক", "Streak", "تتابع")}
+                </p>
+                <p className="text-sm font-bold text-foreground leading-tight mt-0.5">
+                  {streak.currentStreak ?? 0} {t("দিন", "d", "ي")}
+                </p>
+              </div>
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1 group-hover:translate-x-0">
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </div>
+            </Link>
+          )}
           <div className="stat-chip group flex-col items-start gap-2 relative">
             <Link to="/recitation/stats" className="flex items-center gap-2 w-full">
               <div className="icon-container p-1.5 group-hover:scale-110 transition-transform">
