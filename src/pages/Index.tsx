@@ -403,7 +403,7 @@ const Index = () => {
 
         {/* ============ Daily Ayah + Daily Dua ============ */}
         <div className="grid md:grid-cols-2 gap-4">
-          {visible("card:daily_ayah") && ui.show_daily_ayah && <DailyAyah />}
+          {visible("card:daily_ayah") && <DailyAyah />}
           {visible("card:daily_amal_summary") && <DailyAmalSummaryCard />}
 
           {visible("card:daily_dua") && (
