@@ -1,11 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Cell } from "recharts";
 import StatCard from "@/components/admin/StatCard";
-import { Mic, Activity, AlertTriangle, Hash } from "lucide-react";
+import { Mic, Activity, AlertTriangle, Hash, Radio } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { surahList } from "@/data/surahList";
+
+const MODES = ["practice", "hifz", "live", "lesson"] as const;
+type Mode = (typeof MODES)[number];
+
+const MODE_LABELS: Record<Mode, string> = {
+  practice: "Practice",
+  hifz: "Hifz",
+  live: "Live",
+  lesson: "Lesson",
+};
+
+interface WrongAyah {
+  surah: number;
+  ayah: number;
+  failures: number;
+  attempts: number;
+  totalErrors: number;
+  failRate: number;
+}
 
 type RangeDays = 7 | 30 | 90;
 
