@@ -164,7 +164,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {showAnnouncement && (
+      {visible("card:announcement") && showAnnouncement && (
         <div
           role="status"
           className={`px-4 py-2.5 flex items-center gap-2.5 text-sm border-b ${
