@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { qariList } from "@/data/prayerData";
 
 const STORAGE_KEY = "selected_qari_id";
@@ -16,11 +17,23 @@ function readStored(): string {
   return DEFAULT_RECITER;
 }
 
+function nameFor(id: string): string {
+  return qariList.find((q) => q.id === id)?.name ?? id;
+}
+
+/**
+ * Module-level guard so the cross-tab toast fires once per change even when
+ * multiple components mount this hook simultaneously (e.g. AudioView +
+ * HifzView visible at the same time).
+ */
+let lastToastedValue: string | null = null;
+
 /**
  * App-wide selected qari/reciter, persisted to localStorage and synced across
- * tabs / components via a custom "selected-reciter-changed" event. All players
- * (audio + practice/hifz/live recitation) share this so the value flowing into
- * `useRecitationRecorder` matches what the user actually sees.
+ * tabs / components via:
+ *  - a custom "selected-reciter-changed" event (same-tab updates)
+ *  - the native "storage" event (cross-tab updates; fires only in *other*
+ *    tabs by spec, so we use it to surface a toast notification).
  */
 export function useSelectedReciter(): {
   reciterId: string;
@@ -30,12 +43,29 @@ export function useSelectedReciter(): {
   const [reciterId, setReciterIdState] = useState<string>(readStored);
 
   useEffect(() => {
-    const handler = () => setReciterIdState(readStored());
-    window.addEventListener("selected-reciter-changed", handler);
-    window.addEventListener("storage", handler);
+    const handleSameTab = () => setReciterIdState(readStored());
+
+    const handleCrossTab = (e: StorageEvent) => {
+      // Filter to our key so unrelated localStorage writes don't trigger work.
+      if (e.key !== null && e.key !== STORAGE_KEY) return;
+      const next = readStored();
+      setReciterIdState((prev) => {
+        if (prev !== next && lastToastedValue !== next) {
+          lastToastedValue = next;
+          toast(`Reciter changed to ${nameFor(next)}`, {
+            description: "Updated from another tab",
+            duration: 3000,
+          });
+        }
+        return next;
+      });
+    };
+
+    window.addEventListener("selected-reciter-changed", handleSameTab);
+    window.addEventListener("storage", handleCrossTab);
     return () => {
-      window.removeEventListener("selected-reciter-changed", handler);
-      window.removeEventListener("storage", handler);
+      window.removeEventListener("selected-reciter-changed", handleSameTab);
+      window.removeEventListener("storage", handleCrossTab);
     };
   }, []);
 
@@ -46,12 +76,14 @@ export function useSelectedReciter(): {
     } catch {
       /* ignore */
     }
+    // Suppress the cross-tab toast for our own write (storage event won't
+    // fire in this tab anyway, but keep the guard consistent).
+    lastToastedValue = safe;
     setReciterIdState(safe);
     window.dispatchEvent(new Event("selected-reciter-changed"));
   }, []);
 
-  const reciterName =
-    qariList.find((q) => q.id === reciterId)?.name ?? reciterId;
+  const reciterName = nameFor(reciterId);
 
   return { reciterId, reciterName, setReciterId };
 }
