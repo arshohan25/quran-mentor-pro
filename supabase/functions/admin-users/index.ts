@@ -53,12 +53,7 @@ Deno.serve(async (req) => {
       _user_id: callerId,
       _role: "admin",
     });
-    if (roleErr || !isAdminData) {
-      return new Response(JSON.stringify({ error: "Forbidden — admin only" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const callerIsAdmin = !roleErr && !!isAdminData;
 
     // Service-role client for privileged ops
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -66,6 +61,43 @@ Deno.serve(async (req) => {
     });
 
     const body = (await req.json()) as Body;
+
+    // Any mutation (set_role / remove_role / delete_user) requires admin.
+    // Moderators are explicitly forbidden from changing roles or deleting users.
+    const isMutation =
+      body.action === "set_role" ||
+      body.action === "remove_role" ||
+      body.action === "delete_user";
+
+    if (isMutation && !callerIsAdmin) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden — only admins can change roles or delete users" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Listing users is allowed for admins and moderators (read-only).
+    if (body.action === "list_users" && !callerIsAdmin) {
+      const { data: isModData } = await userClient.rpc("has_role", {
+        _user_id: callerId,
+        _role: "moderator",
+      });
+      if (!isModData) {
+        return new Response(JSON.stringify({ error: "Forbidden — admin or moderator only" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Helper: count current admins
+    const countAdmins = async () => {
+      const { count } = await admin
+        .from("user_roles")
+        .select("*", { count: "exact", head: true })
+        .eq("role", "admin");
+      return count ?? 0;
+    };
 
     if (body.action === "list_users") {
       const page = Math.max(1, body.page ?? 1);
@@ -128,6 +160,13 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      // Only admins can grant the admin role (defence in depth — already gated above).
+      if (body.role === "admin" && !callerIsAdmin) {
+        return new Response(JSON.stringify({ error: "Only admins can grant admin role" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const { error } = await admin
         .from("user_roles")
         .insert({ user_id: body.user_id, role: body.role, assigned_by: callerId });
@@ -143,6 +182,23 @@ Deno.serve(async (req) => {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
+      }
+      // Prevent removing your own admin role (lockout protection).
+      if (body.role === "admin" && body.user_id === callerId) {
+        return new Response(
+          JSON.stringify({ error: "You cannot revoke your own admin role" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      // Prevent removing the last remaining admin in the system.
+      if (body.role === "admin") {
+        const adminCount = await countAdmins();
+        if (adminCount <= 1) {
+          return new Response(
+            JSON.stringify({ error: "Cannot revoke the last remaining admin" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
       }
       const { error } = await admin
         .from("user_roles")
