@@ -69,6 +69,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     show_qibla_tile: true,
     show_hijri_tile: true,
     compact_home: false,
+    tiles: {},
   },
 };
 
