@@ -23,6 +23,15 @@ export default function AdminRecitationPage() {
   const [byReciter, setByReciter] = useState<BreakdownRow[]>([]);
   const [byLessonType, setByLessonType] = useState<BreakdownRow[]>([]);
   const [weakest, setWeakest] = useState<any[]>([]);
+  const [byGrade, setByGrade] = useState<{ grade: string; label: string; attempts: number; fill: string }[]>([]);
+
+  const GRADE_BUCKETS: { grade: string; label: string; min: number; max: number; fill: string }[] = [
+    { grade: "A", label: "A · 90–100%", min: 0.9, max: 1.0001, fill: "hsl(152 55% 38%)" },
+    { grade: "B", label: "B · 75–89%", min: 0.75, max: 0.9, fill: "hsl(152 45% 50%)" },
+    { grade: "C", label: "C · 60–74%", min: 0.6, max: 0.75, fill: "hsl(45 70% 55%)" },
+    { grade: "D", label: "D · 40–59%", min: 0.4, max: 0.6, fill: "hsl(28 80% 55%)" },
+    { grade: "F", label: "F · <40%", min: 0, max: 0.4, fill: "hsl(var(--destructive))" },
+  ];
 
   useEffect(() => {
     (async () => {
