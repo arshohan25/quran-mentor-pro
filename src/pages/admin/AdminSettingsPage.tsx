@@ -34,7 +34,7 @@ export default function AdminSettingsPage() {
       .maybeSingle()
       .then(({ data, error }) => {
         if (error) toast.error(error.message);
-        setSettings((data?.settings as Settings) ?? null);
+        setSettings((data?.settings as unknown as Settings) ?? null);
         setLoading(false);
       });
   }, []);
