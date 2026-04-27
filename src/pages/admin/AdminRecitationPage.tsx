@@ -47,6 +47,28 @@ interface BreakdownRow {
   avgAccuracy: number;
 }
 
+/**
+ * Normalize a reciter value from the DB into a consistent chart key.
+ * Treats null/empty/whitespace and known sentinel placeholders as "unknown"
+ * so historical rows (pre-validation) and new rows render under one bucket.
+ */
+const RECITER_UNKNOWN_KEY = "unknown";
+const RECITER_SENTINELS = new Set(["", "unknown", "null", "undefined", "(unspecified)", "n/a", "na"]);
+function normalizeReciterKey(input: unknown): string {
+  if (typeof input !== "string") return RECITER_UNKNOWN_KEY;
+  const trimmed = input.trim();
+  if (!trimmed) return RECITER_UNKNOWN_KEY;
+  if (RECITER_SENTINELS.has(trimmed.toLowerCase())) return RECITER_UNKNOWN_KEY;
+  return trimmed.slice(0, 100);
+}
+function normalizeLessonKey(input: unknown): string {
+  if (typeof input !== "string") return RECITER_UNKNOWN_KEY;
+  const trimmed = input.trim();
+  if (!trimmed) return RECITER_UNKNOWN_KEY;
+  if (RECITER_SENTINELS.has(trimmed.toLowerCase())) return RECITER_UNKNOWN_KEY;
+  return trimmed.slice(0, 50);
+}
+
 export default function AdminRecitationPage() {
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<RangeDays>(30);
