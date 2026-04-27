@@ -194,6 +194,54 @@ export default function AdminRecitationPage() {
 
 
       <div className="rounded-xl border bg-card p-4">
+        <div className="flex items-baseline justify-between gap-3 flex-wrap mb-3">
+          <div>
+            <h3 className="text-sm font-bold text-foreground">Attempts by accuracy grade</h3>
+            <p className="text-xs text-muted-foreground">
+              Distribution of sessions across performance bands (last {range} days).
+            </p>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {totals.sessions.toLocaleString()} total · avg {totals.avgAccuracy}%
+          </div>
+        </div>
+        <div className="h-64">
+          <ResponsiveContainer>
+            <BarChart data={byGrade}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+              <Tooltip
+                formatter={(val: any) => [
+                  `${val} (${totals.sessions > 0 ? Math.round((Number(val) / totals.sessions) * 100) : 0}%)`,
+                  "Attempts",
+                ]}
+              />
+              <Bar dataKey="attempts" radius={[4, 4, 0, 0]}>
+                {byGrade.map((g) => (
+                  <Cell key={g.grade} fill={g.fill} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px]">
+          {byGrade.map((g) => {
+            const pct = totals.sessions > 0 ? Math.round((g.attempts / totals.sessions) * 100) : 0;
+            return (
+              <div key={g.grade} className="rounded-md border bg-background/40 px-2 py-1.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: g.fill }} />
+                  <span className="font-semibold text-foreground">{g.grade}</span>
+                </div>
+                <div className="text-muted-foreground">{g.attempts} · {pct}%</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-card p-4">
         <h3 className="text-sm font-bold text-foreground mb-3">Top surahs by session count</h3>
         <div className="h-72">
           <ResponsiveContainer>
