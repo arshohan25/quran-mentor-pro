@@ -558,6 +558,103 @@ export default function AdminRolesPage() {
         )}
       </Card>
 
+      <Dialog open={!!reviewRequest} onOpenChange={(o) => !o && setReviewRequest(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" /> Review admin promotion
+            </DialogTitle>
+            <DialogDescription>
+              {reviewRequest && (() => {
+                const target = userById(reviewRequest.target_user_id);
+                const requester = userById(reviewRequest.requested_by);
+                const need = reviewRequest.required_approvals ?? requiredApprovals;
+                return (
+                  <span className="block space-y-1">
+                    <span className="block">
+                      Promote{" "}
+                      <span className="font-medium text-foreground">
+                        {target?.display_name ?? target?.email ?? reviewRequest.target_user_id.slice(0, 8)}
+                      </span>{" "}
+                      to <Badge className={ROLE_COLORS.admin}>admin</Badge>
+                    </span>
+                    <span className="block text-xs">
+                      Requested by {requester?.email ?? reviewRequest.requested_by.slice(0, 8)} ·{" "}
+                      {reviewRequest.approval_count}/{need} approvals so far
+                    </span>
+                  </span>
+                );
+              })()}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setReviewDecision("approve")}
+                className={`rounded-lg border px-3 py-2 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+                  reviewDecision === "approve"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:bg-muted"
+                }`}
+              >
+                <Check className="h-4 w-4" /> Approve
+              </button>
+              <button
+                type="button"
+                onClick={() => setReviewDecision("deny")}
+                className={`rounded-lg border px-3 py-2 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+                  reviewDecision === "deny"
+                    ? "border-destructive bg-destructive/10 text-destructive"
+                    : "border-border hover:bg-muted"
+                }`}
+              >
+                <X className="h-4 w-4" /> Deny
+              </button>
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="review-reason" className="text-xs font-medium text-foreground">
+                Reason {reviewDecision === "deny" ? <span className="text-destructive">*required</span> : <span className="text-muted-foreground">(optional)</span>}
+              </label>
+              <Textarea
+                id="review-reason"
+                value={reviewReason}
+                onChange={(e) => setReviewReason(e.target.value.slice(0, 500))}
+                placeholder={
+                  reviewDecision === "approve"
+                    ? "Optional context, e.g. 'Verified identity in #ops on Slack'"
+                    : "Why are you denying this promotion? This is logged for audit."
+                }
+                className="min-h-[88px]"
+              />
+              <p className="text-[10px] text-muted-foreground text-right">{reviewReason.length}/500</p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setReviewRequest(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={submitReview}
+              disabled={requestBusy === reviewRequest?.id}
+              variant={reviewDecision === "deny" ? "destructive" : "default"}
+            >
+              {requestBusy === reviewRequest?.id ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              ) : reviewDecision === "approve" ? (
+                <Check className="h-4 w-4 mr-1" />
+              ) : (
+                <X className="h-4 w-4 mr-1" />
+              )}
+              {reviewDecision === "approve" ? "Confirm approval" : "Confirm denial"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <FilterableAuditLog
         logs={logs}
         loading={logsLoading}
