@@ -67,10 +67,14 @@ export default function AdminRolesPage() {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [requests, setRequests] = useState<PromotionRequest[]>([]);
+  const [requiredApprovals, setRequiredApprovals] = useState(2);
   const [loading, setLoading] = useState(true);
   const [logsLoading, setLogsLoading] = useState(true);
+  const [requestsLoading, setRequestsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [requestBusy, setRequestBusy] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -91,9 +95,16 @@ export default function AdminRolesPage() {
     const { data, error } = await supabase
       .from("audit_logs")
       .select("*")
-      .in("action", ["role.assigned", "role.revoked"])
+      .in("action", [
+        "role.assigned",
+        "role.revoked",
+        "admin_request.created",
+        "admin_request.approved",
+        "admin_request.applied",
+        "admin_request.cancelled",
+      ])
       .order("created_at", { ascending: false })
-      .limit(50);
+      .limit(100);
     if (error) {
       toast.error("Failed to load audit logs");
     } else {
@@ -102,8 +113,23 @@ export default function AdminRolesPage() {
     setLogsLoading(false);
   }, []);
 
+  const fetchRequests = useCallback(async () => {
+    setRequestsLoading(true);
+    const { data, error } = await supabase.functions.invoke("admin-users", {
+      body: { action: "list_admin_requests" },
+    });
+    if (error) {
+      toast.error("Failed to load admin requests");
+    } else {
+      setRequests(((data as any)?.requests ?? []) as PromotionRequest[]);
+      setRequiredApprovals((data as any)?.required_approvals ?? 2);
+    }
+    setRequestsLoading(false);
+  }, []);
+
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
+  useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
   const adminCount = useMemo(
     () => users.filter((u) => u.roles.includes("admin")).length,
@@ -111,6 +137,12 @@ export default function AdminRolesPage() {
   );
   const isLastAdmin = (u: AdminUser) =>
     u.roles.includes("admin") && adminCount <= 1;
+
+  const pendingRequestForUser = useCallback(
+    (userId: string) =>
+      requests.find((r) => r.target_user_id === userId && r.status === "pending"),
+    [requests]
+  );
 
   const changeRole = async (target: AdminUser, newRole: AppRole) => {
     const current = highestRole(target.roles);
@@ -126,9 +158,33 @@ export default function AdminRolesPage() {
       return;
     }
 
+    // Two-admin approval is required for granting admin
+    if (newRole === "admin") {
+      const existing = pendingRequestForUser(target.id);
+      if (existing) {
+        toast.info("A pending admin request already exists for this user");
+        return;
+      }
+      setBusy(target.id);
+      try {
+        const { error } = await supabase.functions.invoke("admin-users", {
+          body: { action: "request_admin", user_id: target.id },
+        });
+        if (error) throw error;
+        toast.success(
+          `Promotion request created — needs ${requiredApprovals} admin approvals`
+        );
+        await Promise.all([fetchRequests(), fetchLogs()]);
+      } catch (e: any) {
+        toast.error(e?.message ?? "Failed to create request");
+      } finally {
+        setBusy(null);
+      }
+      return;
+    }
+
     setBusy(target.id);
     try {
-      // Remove existing privileged roles (admin/moderator) other than the target
       const toRemove = (target.roles ?? []).filter(
         (r) => (r === "admin" || r === "moderator") && r !== newRole
       );
@@ -138,7 +194,6 @@ export default function AdminRolesPage() {
         });
         if (error) throw error;
       }
-      // Assign the new role (skip when it's the implicit "user")
       if (newRole !== "user" && !target.roles.includes(newRole)) {
         const { error } = await supabase.functions.invoke("admin-users", {
           body: { action: "set_role", user_id: target.id, role: newRole },
@@ -151,6 +206,45 @@ export default function AdminRolesPage() {
       toast.error(e?.message ?? "Failed to update role");
     } finally {
       setBusy(null);
+    }
+  };
+
+  const approveRequest = async (req: PromotionRequest) => {
+    setRequestBusy(req.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: { action: "approve_admin", request_id: req.id },
+      });
+      if (error) throw error;
+      const applied = (data as any)?.applied;
+      const count = (data as any)?.approval_count ?? 0;
+      const need = (data as any)?.required_approvals ?? requiredApprovals;
+      toast.success(
+        applied
+          ? "Approval applied — user is now an admin"
+          : `Approval recorded (${count}/${need})`
+      );
+      await Promise.all([fetchRequests(), fetchUsers(), fetchLogs()]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to approve");
+    } finally {
+      setRequestBusy(null);
+    }
+  };
+
+  const cancelRequest = async (req: PromotionRequest) => {
+    setRequestBusy(req.id);
+    try {
+      const { error } = await supabase.functions.invoke("admin-users", {
+        body: { action: "cancel_admin_request", request_id: req.id },
+      });
+      if (error) throw error;
+      toast.success("Request cancelled");
+      await Promise.all([fetchRequests(), fetchLogs()]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to cancel");
+    } finally {
+      setRequestBusy(null);
     }
   };
 
