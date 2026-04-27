@@ -764,10 +764,18 @@ function FilterableAuditLog({
     const q = targetSearch.trim().toLowerCase();
     return logs.filter((log) => {
       const role = log.metadata?.role as AppRole | undefined;
-      const assigned = log.action === "role.assigned";
 
-      if (actionFilter === "assigned" && !assigned) return false;
-      if (actionFilter === "revoked" && assigned) return false;
+      if (actionFilter !== "all") {
+        const matchByFilter: Record<Exclude<ActionFilter, "all">, string> = {
+          assigned: "role.assigned",
+          revoked: "role.revoked",
+          request_created: "admin_request.created",
+          request_approved: "admin_request.approved",
+          request_applied: "admin_request.applied",
+          request_cancelled: "admin_request.cancelled",
+        };
+        if (log.action !== matchByFilter[actionFilter]) return false;
+      }
       if (roleFilter !== "all" && role !== roleFilter) return false;
 
       if (q) {
