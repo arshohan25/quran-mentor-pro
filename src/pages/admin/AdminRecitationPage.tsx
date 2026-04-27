@@ -1,11 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Cell } from "recharts";
 import StatCard from "@/components/admin/StatCard";
-import { Mic, Activity, AlertTriangle, Hash } from "lucide-react";
+import { Mic, Activity, AlertTriangle, Hash, Radio } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { surahList } from "@/data/surahList";
+
+const MODES = ["practice", "hifz", "live", "lesson"] as const;
+type Mode = (typeof MODES)[number];
+
+const MODE_LABELS: Record<Mode, string> = {
+  practice: "Practice",
+  hifz: "Hifz",
+  live: "Live",
+  lesson: "Lesson",
+};
+
+interface WrongAyah {
+  surah: number;
+  ayah: number;
+  failures: number;
+  attempts: number;
+  totalErrors: number;
+  failRate: number;
+}
 
 type RangeDays = 7 | 30 | 90;
 
@@ -24,6 +46,11 @@ export default function AdminRecitationPage() {
   const [byLessonType, setByLessonType] = useState<BreakdownRow[]>([]);
   const [weakest, setWeakest] = useState<any[]>([]);
   const [byGrade, setByGrade] = useState<{ grade: string; label: string; attempts: number; fill: string }[]>([]);
+  const [wrongByMode, setWrongByMode] = useState<Record<Mode, WrongAyah[]>>({
+    practice: [], hifz: [], live: [], lesson: [],
+  });
+  const [liveWrongCount, setLiveWrongCount] = useState(0);
+  const [livePulse, setLivePulse] = useState(false);
 
   const GRADE_BUCKETS: { grade: string; label: string; min: number; max: number; fill: string }[] = [
     { grade: "A", label: "A · 90–100%", min: 0.9, max: 1.0001, fill: "hsl(152 55% 38%)" },
@@ -42,7 +69,7 @@ export default function AdminRecitationPage() {
       const [sessionsRes, weakRes] = await Promise.all([
         supabase
           .from("recitation_sessions")
-          .select("surah, accuracy, error_words, hesitation_words, reciter, lesson_type, created_at")
+          .select("surah, ayah, accuracy, error_words, hesitation_words, reciter, lesson_type, mode, created_at")
           .gte("created_at", since.toISOString())
           .limit(10000),
         supabase
@@ -107,6 +134,40 @@ export default function AdminRecitationPage() {
         }).length,
       }));
       setByGrade(gradeCounts);
+
+      // Wrong-ayah aggregation per mode (a "wrong" attempt = at least 1 error word)
+      const perMode: Record<Mode, Map<string, WrongAyah>> = {
+        practice: new Map(), hifz: new Map(), live: new Map(), lesson: new Map(),
+      };
+      let liveWrong = 0;
+      sessions.forEach((s: any) => {
+        const m = (MODES as readonly string[]).includes(s.mode) ? (s.mode as Mode) : "practice";
+        const errs = s.error_words ?? 0;
+        const isWrong = errs > 0;
+        if (m === "live" && isWrong) liveWrong += 1;
+        if (s.ayah == null) return;
+        const key = `${s.surah}:${s.ayah}`;
+        const bucket = perMode[m].get(key) ?? {
+          surah: s.surah, ayah: s.ayah, failures: 0, attempts: 0, totalErrors: 0, failRate: 0,
+        };
+        bucket.attempts += 1;
+        if (isWrong) bucket.failures += 1;
+        bucket.totalErrors += errs;
+        perMode[m].set(key, bucket);
+      });
+      const wrong: Record<Mode, WrongAyah[]> = {
+        practice: [], hifz: [], live: [], lesson: [],
+      };
+      (Object.keys(perMode) as Mode[]).forEach((m) => {
+        wrong[m] = Array.from(perMode[m].values())
+          .map((w) => ({ ...w, failRate: w.attempts > 0 ? w.failures / w.attempts : 0 }))
+          .filter((w) => w.failures > 0)
+          .sort((a, b) => b.failures - a.failures || b.failRate - a.failRate)
+          .slice(0, 25);
+      });
+      setWrongByMode(wrong);
+      setLiveWrongCount(liveWrong);
+
       setTotals({
         sessions: sessions.length,
         avgAccuracy: accN > 0 ? Math.round((accSum / accN) * 100) : 0,
@@ -117,6 +178,52 @@ export default function AdminRecitationPage() {
       setLoading(false);
     })();
   }, [range]);
+
+  // Realtime: bump live counter when new wrong sessions arrive
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-recitation-live")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "recitation_sessions" },
+        (payload) => {
+          const s: any = payload.new;
+          if ((s?.error_words ?? 0) > 0) {
+            setLiveWrongCount((c) => c + 1);
+            setLivePulse(true);
+            setTimeout(() => setLivePulse(false), 800);
+            // Merge into the right mode bucket if ayah is known
+            if (s.ayah != null) {
+              const m = (MODES as readonly string[]).includes(s.mode) ? (s.mode as Mode) : "practice";
+              setWrongByMode((prev) => {
+                const list = [...prev[m]];
+                const idx = list.findIndex((w) => w.surah === s.surah && w.ayah === s.ayah);
+                if (idx >= 0) {
+                  const cur = list[idx];
+                  list[idx] = {
+                    ...cur,
+                    attempts: cur.attempts + 1,
+                    failures: cur.failures + 1,
+                    totalErrors: cur.totalErrors + (s.error_words ?? 0),
+                    failRate: (cur.failures + 1) / (cur.attempts + 1),
+                  };
+                } else {
+                  list.unshift({
+                    surah: s.surah, ayah: s.ayah,
+                    attempts: 1, failures: 1,
+                    totalErrors: s.error_words ?? 0, failRate: 1,
+                  });
+                }
+                list.sort((a, b) => b.failures - a.failures || b.failRate - a.failRate);
+                return { ...prev, [m]: list.slice(0, 25) };
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const hasReciterData = useMemo(
     () => byReciter.some((r) => r.key !== "(unspecified)"),
@@ -239,6 +346,89 @@ export default function AdminRecitationPage() {
             );
           })}
         </div>
+      </div>
+
+      <div className="rounded-xl border bg-card p-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+          <div>
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+              Commonly failed ayahs by mode
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive">
+                <Radio className={`h-3 w-3 ${livePulse ? "animate-ping" : ""}`} />
+                Live · {liveWrongCount.toLocaleString()} wrong
+              </span>
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Ayahs with the most failed attempts (last {range} days). Click to open in the Quran reader.
+            </p>
+          </div>
+        </div>
+        <Tabs defaultValue="practice">
+          <TabsList>
+            {MODES.map((m) => {
+              const total = wrongByMode[m].reduce((sum, w) => sum + w.failures, 0);
+              return (
+                <TabsTrigger key={m} value={m} className="gap-2">
+                  {MODE_LABELS[m]}
+                  <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-semibold">{total}</Badge>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+          {MODES.map((m) => {
+            const list = wrongByMode[m];
+            const maxFails = list.reduce((mx, w) => Math.max(mx, w.failures), 1);
+            return (
+              <TabsContent key={m} value={m} className="mt-3">
+                {list.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic text-center py-8">
+                    No failed ayahs recorded for {MODE_LABELS[m]} mode in this window.
+                  </p>
+                ) : (
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {list.map((w) => {
+                      const sName = surahList.find((s) => s.number === w.surah)?.englishName ?? `Surah ${w.surah}`;
+                      const intensity = w.failures / maxFails;
+                      const sev = w.failRate >= 0.7
+                        ? "hsl(var(--destructive))"
+                        : w.failRate >= 0.4
+                        ? "hsl(28 80% 55%)"
+                        : "hsl(45 70% 55%)";
+                      return (
+                        <li key={`${w.surah}:${w.ayah}`}>
+                          <Link
+                            to={`/quran?surah=${w.surah}&ayah=${w.ayah}`}
+                            className="group block rounded-lg border bg-background/40 p-3 hover:bg-muted/40 transition-colors"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ background: sev }} aria-hidden />
+                                <div className="min-w-0">
+                                  <div className="text-sm font-medium truncate text-foreground group-hover:text-primary">
+                                    {sName} · Ayah {w.ayah}
+                                  </div>
+                                  <div className="text-[11px] text-muted-foreground">
+                                    {w.failures} fails / {w.attempts} attempts · {w.totalErrors} word errors
+                                  </div>
+                                </div>
+                              </div>
+                              <Badge className="shrink-0 text-[10px] font-semibold border-0" style={{ background: sev, color: "white" }}>
+                                {Math.round(w.failRate * 100)}%
+                              </Badge>
+                            </div>
+                            <div className="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${Math.max(6, intensity * 100)}%`, background: sev }} />
+                            </div>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </TabsContent>
+            );
+          })}
+        </Tabs>
       </div>
 
       <div className="rounded-xl border bg-card p-4">
