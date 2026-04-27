@@ -235,7 +235,7 @@ export default function AdminSettingsPage() {
         {/* UI Toggles */}
         <TabsContent value="ui" className="space-y-4">
           <Section title="Home & UI toggles" onReset={() => resetSection("ui")}>
-            {(Object.keys(UI_LABELS) as (keyof AppSettings["ui"])[]).map((k) => (
+            {(Object.keys(UI_LABELS) as SimpleUiKey[]).map((k) => (
               <Row key={k} label={UI_LABELS[k]}>
                 <Switch
                   checked={draft.ui[k]}
@@ -243,6 +243,57 @@ export default function AdminSettingsPage() {
                 />
               </Row>
             ))}
+          </Section>
+
+          <Section title="Home tiles & cards (per-item visibility)">
+            <p className="text-xs text-muted-foreground -mt-1 mb-2">
+              Toggle off to hide an item from every user's home page. Changes push live instantly.
+            </p>
+            {SECTION_ORDER.map((section) => {
+              const items = HOME_TILE_MANIFEST.filter((m) => m.section === section);
+              if (items.length === 0) return null;
+              const tilesMap = draft.ui.tiles ?? {};
+              const allOn = items.every((it) => isTileVisibleIn(tilesMap, it.path));
+              const setAll = (on: boolean) => {
+                const next = { ...tilesMap };
+                items.forEach((it) => { next[it.path] = on; });
+                updateNested("ui", "tiles", next);
+              };
+              return (
+                <div key={section} className="space-y-2 pt-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {SECTION_LABELS[section as HomeTileSection]}
+                    </h4>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => setAll(!allOn)}
+                    >
+                      {allOn ? "Hide all" : "Show all"}
+                    </Button>
+                  </div>
+                  {items.map((it) => (
+                    <Row key={it.path} label={`${it.label}`}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground/70 font-mono">
+                          {it.path}
+                        </span>
+                        <Switch
+                          checked={isTileVisibleIn(tilesMap, it.path)}
+                          onCheckedChange={(v) => {
+                            const next = { ...tilesMap, [it.path]: v };
+                            updateNested("ui", "tiles", next);
+                          }}
+                        />
+                      </div>
+                    </Row>
+                  ))}
+                </div>
+              );
+            })}
           </Section>
         </TabsContent>
       </Tabs>
