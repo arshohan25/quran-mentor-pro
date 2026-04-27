@@ -376,6 +376,8 @@ Deno.serve(async (req) => {
         );
       }
 
+      const reasonText = typeof body.reason === "string" ? body.reason.trim().slice(0, 500) : null;
+
       const { error: aErr } = await admin
         .from("admin_promotion_approvals")
         .insert({ request_id: body.request_id, approver_id: callerId });
@@ -387,6 +389,17 @@ Deno.serve(async (req) => {
           );
         }
         throw aErr;
+      }
+
+      // Audit-log the approval reason (if provided) so reviewers can trace decisions
+      if (reasonText) {
+        await admin.from("audit_logs").insert({
+          actor_id: callerId,
+          action: "admin_request.approval_reason",
+          target_type: "user",
+          target_id: reqRow.target_user_id,
+          metadata: { request_id: body.request_id, reason: reasonText },
+        });
       }
 
       const { count: approvalCount } = await admin
@@ -449,6 +462,7 @@ Deno.serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+      const denyReason = typeof body.reason === "string" ? body.reason.trim().slice(0, 500) : null;
       const { error } = await admin
         .from("admin_promotion_requests")
         .update({
@@ -458,6 +472,17 @@ Deno.serve(async (req) => {
         })
         .eq("id", body.request_id);
       if (error) throw error;
+
+      if (denyReason) {
+        await admin.from("audit_logs").insert({
+          actor_id: callerId,
+          action: "admin_request.deny_reason",
+          target_type: "user",
+          target_id: null,
+          metadata: { request_id: body.request_id, reason: denyReason },
+        });
+      }
+
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

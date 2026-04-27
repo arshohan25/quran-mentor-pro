@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search, Shield, ShieldCheck, ShieldOff, Loader2, RefreshCw, ScrollText, UserCog, AlertTriangle, Check, X, Hourglass } from "lucide-react";
+import { Search, Shield, ShieldCheck, ShieldOff, Loader2, RefreshCw, ScrollText, UserCog, AlertTriangle, Check, X, Hourglass, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,10 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 type AppRole = "admin" | "moderator" | "user";
@@ -75,6 +79,9 @@ export default function AdminRolesPage() {
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [requestBusy, setRequestBusy] = useState<string | null>(null);
+  const [reviewRequest, setReviewRequest] = useState<PromotionRequest | null>(null);
+  const [reviewDecision, setReviewDecision] = useState<"approve" | "deny">("approve");
+  const [reviewReason, setReviewReason] = useState("");
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -102,6 +109,8 @@ export default function AdminRolesPage() {
         "admin_request.approved",
         "admin_request.applied",
         "admin_request.cancelled",
+        "admin_request.approval_reason",
+        "admin_request.deny_reason",
       ])
       .order("created_at", { ascending: false })
       .limit(100);
@@ -209,11 +218,11 @@ export default function AdminRolesPage() {
     }
   };
 
-  const approveRequest = async (req: PromotionRequest) => {
+  const approveRequest = async (req: PromotionRequest, reason?: string) => {
     setRequestBusy(req.id);
     try {
       const { data, error } = await supabase.functions.invoke("admin-users", {
-        body: { action: "approve_admin", request_id: req.id },
+        body: { action: "approve_admin", request_id: req.id, reason: reason ?? null },
       });
       if (error) throw error;
       const applied = (data as any)?.applied;
@@ -232,19 +241,41 @@ export default function AdminRolesPage() {
     }
   };
 
-  const cancelRequest = async (req: PromotionRequest) => {
+  const cancelRequest = async (req: PromotionRequest, reason?: string) => {
     setRequestBusy(req.id);
     try {
       const { error } = await supabase.functions.invoke("admin-users", {
-        body: { action: "cancel_admin_request", request_id: req.id },
+        body: { action: "cancel_admin_request", request_id: req.id, reason: reason ?? null },
       });
       if (error) throw error;
-      toast.success("Request cancelled");
+      toast.success(reason ? "Request denied" : "Request cancelled");
       await Promise.all([fetchRequests(), fetchLogs()]);
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to cancel");
     } finally {
       setRequestBusy(null);
+    }
+  };
+
+  const openReview = (req: PromotionRequest) => {
+    setReviewRequest(req);
+    setReviewDecision("approve");
+    setReviewReason("");
+  };
+
+  const submitReview = async () => {
+    if (!reviewRequest) return;
+    const trimmed = reviewReason.trim();
+    if (reviewDecision === "deny" && trimmed.length === 0) {
+      toast.error("A reason is required when denying a request");
+      return;
+    }
+    const req = reviewRequest;
+    setReviewRequest(null);
+    if (reviewDecision === "approve") {
+      await approveRequest(req, trimmed || undefined);
+    } else {
+      await cancelRequest(req, trimmed);
     }
   };
 
@@ -498,26 +529,29 @@ export default function AdminRolesPage() {
                     <div className="flex items-center gap-1">
                       <Button
                         size="sm"
-                        onClick={() => approveRequest(r)}
+                        onClick={() => openReview(r)}
                         disabled={cannotApprove || requestBusy === r.id}
-                        title={cannotApprove ? reason : "Approve promotion"}
+                        title={cannotApprove ? reason : "Review and approve or deny with a reason"}
                       >
                         {requestBusy === r.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : (
-                          <Check className="h-3.5 w-3.5" />
+                          <MessageSquare className="h-3.5 w-3.5" />
                         )}
-                        <span className="ml-1">Approve</span>
+                        <span className="ml-1">Review</span>
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => cancelRequest(r)}
-                        disabled={requestBusy === r.id}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                        <span className="ml-1">Cancel</span>
-                      </Button>
+                      {isOwnRequest && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => cancelRequest(r)}
+                          disabled={requestBusy === r.id}
+                          title="Withdraw your own request"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                          <span className="ml-1">Withdraw</span>
+                        </Button>
+                      )}
                     </div>
                   </li>
                 );
@@ -525,6 +559,103 @@ export default function AdminRolesPage() {
           </ul>
         )}
       </Card>
+
+      <Dialog open={!!reviewRequest} onOpenChange={(o) => !o && setReviewRequest(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" /> Review admin promotion
+            </DialogTitle>
+            <DialogDescription>
+              {reviewRequest && (() => {
+                const target = userById(reviewRequest.target_user_id);
+                const requester = userById(reviewRequest.requested_by);
+                const need = reviewRequest.required_approvals ?? requiredApprovals;
+                return (
+                  <span className="block space-y-1">
+                    <span className="block">
+                      Promote{" "}
+                      <span className="font-medium text-foreground">
+                        {target?.display_name ?? target?.email ?? reviewRequest.target_user_id.slice(0, 8)}
+                      </span>{" "}
+                      to <Badge className={ROLE_COLORS.admin}>admin</Badge>
+                    </span>
+                    <span className="block text-xs">
+                      Requested by {requester?.email ?? reviewRequest.requested_by.slice(0, 8)} ·{" "}
+                      {reviewRequest.approval_count}/{need} approvals so far
+                    </span>
+                  </span>
+                );
+              })()}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setReviewDecision("approve")}
+                className={`rounded-lg border px-3 py-2 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+                  reviewDecision === "approve"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:bg-muted"
+                }`}
+              >
+                <Check className="h-4 w-4" /> Approve
+              </button>
+              <button
+                type="button"
+                onClick={() => setReviewDecision("deny")}
+                className={`rounded-lg border px-3 py-2 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+                  reviewDecision === "deny"
+                    ? "border-destructive bg-destructive/10 text-destructive"
+                    : "border-border hover:bg-muted"
+                }`}
+              >
+                <X className="h-4 w-4" /> Deny
+              </button>
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="review-reason" className="text-xs font-medium text-foreground">
+                Reason {reviewDecision === "deny" ? <span className="text-destructive">*required</span> : <span className="text-muted-foreground">(optional)</span>}
+              </label>
+              <Textarea
+                id="review-reason"
+                value={reviewReason}
+                onChange={(e) => setReviewReason(e.target.value.slice(0, 500))}
+                placeholder={
+                  reviewDecision === "approve"
+                    ? "Optional context, e.g. 'Verified identity in #ops on Slack'"
+                    : "Why are you denying this promotion? This is logged for audit."
+                }
+                className="min-h-[88px]"
+              />
+              <p className="text-[10px] text-muted-foreground text-right">{reviewReason.length}/500</p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setReviewRequest(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={submitReview}
+              disabled={requestBusy === reviewRequest?.id}
+              variant={reviewDecision === "deny" ? "destructive" : "default"}
+            >
+              {requestBusy === reviewRequest?.id ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              ) : reviewDecision === "approve" ? (
+                <Check className="h-4 w-4 mr-1" />
+              ) : (
+                <X className="h-4 w-4 mr-1" />
+              )}
+              {reviewDecision === "approve" ? "Confirm approval" : "Confirm denial"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <FilterableAuditLog
         logs={logs}
