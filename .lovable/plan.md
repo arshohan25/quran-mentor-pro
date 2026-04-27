@@ -1,92 +1,90 @@
-# Admin Content Management — Reciters, Lessons, Country Translations
+## Goal
+Turn the existing `AdminSettingsPage` into a complete, app-wide settings control center that:
+- Lets admins configure default reciter, practice/live limits, and UI feature toggles
+- Pushes changes to all user devices instantly via Supabase Realtime
+- Has a single source of truth (`app_settings.settings` JSONB) consumed everywhere
 
-## What's already in place
-- **Reciters CMS** — `AdminRecitersPage` (`/admin/reciters`) already lets you add/edit/reorder/delete qaris, set the default, and toggle `enabled`. The `reciters` table is wired into the user-facing picker via `usePublicAppConfig` + `useSelectedReciter`. ✅ No changes needed here — the page already meets the request.
-- **Content strings** — `AdminContentStringsPage` (`/admin/strings`) exists with bn/en/ar editing. We will extend it for country variants below.
+## Current State
+- `app_settings` table exists with a JSONB `settings` column and admin-only update RLS (anon read allowed). ✅
+- `AdminSettingsPage.tsx` already edits `announcement`, `features` (4 flags), and `defaults.daily_minutes_goal`. ❌ No realtime, no consumer hook on the user app — settings are written but never read.
+- No `useAppSettings` hook anywhere; features are not gated.
 
-## What's missing — build now
+## Plan
 
-### 1. Lesson items library (new)
-Today `recitation_sessions.lesson_type` is a free-text column. There's no curated list — the user just gets whatever string the code passes. We'll add a managed library so admins can publish lesson templates that show up in Live/Hifz.
+### 1. Schema (migration — additive only, no data wipe)
+Expand the JSONB default to the full shape and seed missing keys on the existing row 1:
+```jsonc
+{
+  "announcement": { "enabled": false, "text": "", "level": "info" },
+  "features": {
+    "ask_ai": true, "live_recitation": true, "hifz_srs": true,
+    "tafsir_compare": true, "word_meanings": true, "tajweed": true,
+    "audio_player": true, "bookmarks": true
+  },
+  "defaults": {
+    "daily_minutes_goal": 20,
+    "default_reciter_id": null,         // overrides reciters.is_default if set
+    "default_translation": "bn.bengali",
+    "default_arabic_font_size": 28
+  },
+  "limits": {
+    "practice_max_seconds": 300,        // hard cap on a single practice session
+    "live_max_seconds": 600,            // hard cap on a live recitation session
+    "live_min_accuracy_to_save": 0,     // % threshold under which sessions are discarded
+    "hifz_daily_review_cap": 50,        // max SRS cards/day
+    "ask_ai_daily_quota": 20            // per-user/day
+  },
+  "ui": {
+    "show_streak_chip": true,
+    "show_daily_ayah": true,
+    "show_daily_hadith": true,
+    "show_daily_dua": true,
+    "show_qibla_tile": true,
+    "show_hijri_tile": true,
+    "compact_home": false
+  }
+}
+```
+- Migration: `UPDATE app_settings SET settings = jsonb_strip_nulls('{...defaults...}'::jsonb || settings) WHERE id = 1;` (preserves any admin edits).
+- Add `app_settings` to `supabase_realtime` publication.
 
-**Schema migration** — new table `lesson_items`:
-- `id` text PK (slug, e.g. `tajweed-basics`)
-- `enabled` boolean default true
-- `sort_order` int default 0
-- `category` text (e.g. `tajweed`, `memorization`, `tarteel`)
-- `title_bn`, `title_en`, `title_ar` text
-- `description_bn`, `description_en`, `description_ar` text
-- `target_surah` int nullable, `target_ayah_start` int nullable, `target_ayah_end` int nullable
-- `recommended_reciter_id` text nullable (FK soft ref to `reciters.id`)
-- `created_at`, `updated_at`
-- RLS: anon/authenticated SELECT; admin INSERT/UPDATE/DELETE (mirrors `reciters` policies)
-- Realtime: `ALTER PUBLICATION supabase_realtime ADD TABLE lesson_items`
-- Audit trigger using existing `audit_admin_table_change()`
+### 2. New hook: `src/hooks/useAppSettings.ts`
+- Module-level cache + subscriber pattern (mirrors `usePublicAppConfig`).
+- One-time bootstrap: fetch row, then subscribe to `postgres_changes` on `app_settings`.
+- Exports:
+  - `useAppSettings()` → full settings object + `loading`
+  - `useFeatureFlag(key)` → boolean (defaults true if missing)
+  - `useLimit(key)` → number
+  - `useUiToggle(key)` → boolean
+- Safe defaults baked in so app never breaks if DB row is missing.
 
-**Admin page** — `src/pages/admin/AdminLessonsPage.tsx`
-- Pattern mirrors `AdminRecitersPage` (list cards, reorder via up/down arrows, enable switch, save & publish button).
-- Trilingual title + description fields, category select, optional surah/ayah range, optional recommended reciter dropdown (sourced from `usePublicAppConfig().reciters`).
-- Add/delete with confirmation.
+### 3. Admin UI rewrite: `src/pages/admin/AdminSettingsPage.tsx`
+Tabbed layout (Tabs primitive): **Announcement · Features · Defaults · Limits · UI Toggles**.
+- **Defaults tab** — `default_reciter_id` uses a `Select` populated from `reciters` table (the same source as `usePublicAppConfig.reciters`); shows current `is_default` reciter if unset.
+- **Limits tab** — sliders/inputs for each cap with min/max validation.
+- **Features / UI tabs** — list of switches generated from the JSON keys with human-readable labels.
+- Sticky save bar; toast on success; optimistic UI; "Reset section to defaults" buttons.
+- All writes go to `app_settings.id=1` via existing admin RLS — Realtime broadcasts to every connected client within ~1 s.
 
-**Wiring**
-- Add `lessonItems: LessonItem[]` to `usePublicAppConfig.ts` state, fetch + subscribe like the other tables.
-- Add nav entry in `AdminShell.tsx` (`{ title: "Lessons", url: "/admin/lessons", icon: BookOpen }`) and route in `App.tsx`.
-- User-facing pick-up: small `LessonPicker` component in `src/components/quran/LessonPicker.tsx` that lists enabled lessons; integrate in `LiveRecitationCheck.tsx` and `HifzView.tsx` so selecting a lesson sets `lessonType` passed to `useRecitationRecorder` (existing prop).
+### 4. Wire consumers (minimal, surgical)
+- **`useSelectedReciter.ts`** — when no per-user choice is stored, fall back to `app_settings.defaults.default_reciter_id` instead of the hardcoded constant.
+- **`useRecitationRecorder.ts`** — read `limits.practice_max_seconds` / `limits.live_max_seconds` and auto-stop; gate save by `live_min_accuracy_to_save`.
+- **`useHifzSrs.ts`** — clamp daily due queue to `limits.hifz_daily_review_cap`.
+- **`AskPage.tsx`** — enforce `limits.ask_ai_daily_quota` (count today's queries in localStorage).
+- **`Index.tsx` (home)** — hide tiles based on `ui.show_*` flags; render announcement banner from `announcement` when `enabled`.
+- **Routes/nav guards** — hide menu entries and 404 routes when matching `features.*` flag is off (`live_recitation`, `hifz_srs`, `tafsir_compare`, `ask_ai`).
+- **`ReadingSettings.tsx`** — initial font size pulls from `defaults.default_arabic_font_size` if user hasn't set one.
 
-### 2. Country-aware translation overrides (new)
-Extend the existing string CMS so admins can ship copy that varies per country (e.g. Bangla wording for BD vs IN, English wording for US vs UK).
+### 5. Realtime push verification
+- `useAppSettings` already subscribes; no extra plumbing needed.
+- Add a tiny "Last updated" stamp + "Live" indicator on the admin page so admins see broadcasts working.
 
-**Schema migration** — new table `content_item_locales` (sibling to `content_items`):
-- `id` uuid PK
-- `key` text references `content_items.key`-equivalent (use text, not FK, to allow lazy creation)
-- `language` text (`bn`|`en`|`ar`)
-- `country` text (ISO 3166-1 alpha-2, lowercase, e.g. `bd`, `in`, `us`, `gb`, `sa`, `ae`)
-- `value` text
-- `enabled` boolean default true
-- `updated_at`, `updated_by`
-- UNIQUE (`key`, `language`, `country`)
-- Same RLS pattern as `content_items` (public read, admin write); realtime + audit trigger.
+## Files
+**New:** `src/hooks/useAppSettings.ts`
+**Edited:** `src/pages/admin/AdminSettingsPage.tsx`, `src/hooks/useSelectedReciter.ts`, `src/hooks/useRecitationRecorder.ts`, `src/hooks/useHifzSrs.ts`, `src/pages/AskPage.tsx`, `src/pages/Index.tsx`, `src/components/quran/ReadingSettings.tsx`, `src/App.tsx` (route gating)
+**Migration:** one new SQL file (additive JSON merge + realtime publication).
 
-**Admin UI** — extend `AdminContentStringsPage.tsx`
-- Each item card gains an expandable "Country overrides" section.
-- Inside: a small table — pick language, pick country (preset list of common targets: BD, IN, PK, US, GB, SA, AE, MY, ID, EG, TR + free-text), enter value, enable toggle, delete row.
-- Save persists overrides through `content_item_locales`.
-
-**Resolver update** — `src/hooks/useContentString.ts` and `usePublicAppConfig.ts`
-- Load `content_item_locales` and group by key → language → country.
-- New helper `resolveContentString(key, language, country)`:
-  1. Try `locales[key][language][country]` if enabled
-  2. Fall back to `locales[key][language]['*']` (any global override)
-  3. Fall back to `contentItems[key][language]` (current behavior)
-  4. Fall back to provided `fallback`
-- Add `country` to user/visitor context: detect via `navigator.language` region tag (e.g. `bn-BD` → `bd`) on first load, persist in `localStorage` as `user_country`, expose via new `useUserCountry()` hook with a manual override (Account page settings + admin can force a default in `app_branding.default_country`).
-
-**Branding extension** — add `default_country` text column to `app_branding` (nullable). Admin branding page gets a country select.
-
-### 3. User-facing country picker
-- New small component in `src/components/CountrySwitcher.tsx` similar to `LanguageSwitcher.tsx`.
-- Surface in `AccountPage.tsx` so users can manually override the auto-detected country.
-
-## Files to create
-- `supabase/migrations/<ts>_lessons_and_country_locales.sql` — `lesson_items`, `content_item_locales`, `app_branding.default_country`, RLS, realtime, audit triggers.
-- `src/pages/admin/AdminLessonsPage.tsx`
-- `src/components/quran/LessonPicker.tsx`
-- `src/components/CountrySwitcher.tsx`
-- `src/hooks/useUserCountry.ts`
-
-## Files to edit
-- `src/hooks/usePublicAppConfig.ts` — add `lessonItems`, `contentLocales`, subscribe to new tables.
-- `src/hooks/useContentString.ts` — country-aware resolver.
-- `src/pages/admin/AdminContentStringsPage.tsx` — country override editor per row.
-- `src/pages/admin/AdminBrandingPage.tsx` — add default-country select.
-- `src/components/admin/AdminShell.tsx` — add "Lessons" nav entry.
-- `src/App.tsx` — register `/admin/lessons` route.
-- `src/components/quran/LiveRecitationCheck.tsx` and `src/components/quran/HifzView.tsx` — render `LessonPicker`, pass selected lesson into `useRecitationRecorder`.
-- `src/pages/AccountPage.tsx` — surface `CountrySwitcher`.
-
-## Out of scope (already shipped)
-- Reciter CRUD page (already at `/admin/reciters`).
-- Branding, home sections, nav, daily content overrides (Phase 1 work).
-
-## Open question
-Default country list to seed in the admin override picker — confirmed BD, IN, PK, US, GB, SA, AE, MY, ID, EG, TR. Add/remove if you want a different set before I start.
+## Out of scope (can follow up)
+- Per-country setting overrides (could reuse the `content_item_locales` pattern later).
+- Versioning / rollback of settings (Phase 4 of the earlier roadmap).
+- A/B targeting by user role.

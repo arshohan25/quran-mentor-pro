@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { getAppSettingsSnapshot } from "@/hooks/useAppSettings";
 import type { RecitationState } from "./useArabicRecitationEngine";
 
 export type RecitationMode = "practice" | "hifz" | "live" | "lesson";
@@ -142,6 +143,24 @@ export function useRecitationRecorder({ surah, ayah, state, completed, mode = "p
           : "practice";
         const safeReciter = normalizeReciter(reciter);
         const safeLessonType = normalizeLessonType(lessonType);
+
+        // Admin-controlled limits (live snapshot).
+        const { limits } = getAppSettingsSnapshot();
+        const cap =
+          safeMode === "live" ? limits.live_max_seconds : limits.practice_max_seconds;
+        if (cap > 0 && duration > cap * 1000 * 1.5) {
+          // Runaway / background-tab session — drop instead of polluting stats.
+          console.warn("[recitationRecorder] dropping over-cap session", { duration, cap });
+          return;
+        }
+        if (
+          safeMode === "live" &&
+          limits.live_min_accuracy_to_save > 0 &&
+          accuracy * 100 < limits.live_min_accuracy_to_save
+        ) {
+          console.info("[recitationRecorder] live session below min accuracy, not saved");
+          return;
+        }
 
         await supabase.from("recitation_sessions").insert({
           user_id: user.id,

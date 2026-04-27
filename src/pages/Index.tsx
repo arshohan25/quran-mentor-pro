@@ -22,7 +22,8 @@ import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
-import { Settings2 } from "lucide-react";
+import { Settings2, Megaphone, AlertTriangle, CheckCircle2, X } from "lucide-react";
+import { useAppSettings } from "@/hooks/useAppSettings";
 
 const DAILY_GOAL_KEY = "daily-minutes-goal";
 function loadDailyGoal(): number {
@@ -93,12 +94,21 @@ type Tile = {
   span?: 1 | 2;
 };
 
+const ANNOUNCEMENT_DISMISS_KEY = "announcement-dismissed-text";
+
 const Index = () => {
   const { t, language } = useLanguage();
   const { bookmarks } = useBookmark();
   const { enabled: duaNotifEnabled, toggleEnabled: toggleDuaNotif, todaysDua, permission: duaPerm, requestPermission: requestDuaPerm } =
     useDailyDuaNotification();
   const nextPrayer = useNextPrayer();
+  const { settings: appSettings } = useAppSettings();
+  const ui = appSettings.ui;
+  const announcement = appSettings.announcement;
+  const [dismissedAnnouncement, setDismissedAnnouncement] = useState<string | null>(() => {
+    try { return localStorage.getItem(ANNOUNCEMENT_DISMISS_KEY); } catch { return null; }
+  });
+  const showAnnouncement = announcement.enabled && announcement.text && dismissedAnnouncement !== announcement.text;
 
   const lastReadSurah = bookmarks.lastRead
     ? surahList.find((s) => s.number === bookmarks.lastRead!.surah)
@@ -131,7 +141,7 @@ const Index = () => {
 
   const prayerTiles: Tile[] = [
     { icon: Clock, title: t("নামাজের সময়", "Prayer Times", "أوقات الصلاة"), desc: t("লোকেশন অনুযায়ী", "Location-based"), path: "/prayer-times", span: 2 },
-    { icon: Compass, title: t("কিবলা", "Qibla", "القبلة"), desc: t("দিকনির্দেশ", "Direction"), path: "/qibla", gold: true },
+    ...(ui.show_qibla_tile ? [{ icon: Compass, title: t("কিবলা", "Qibla", "القبلة"), desc: t("দিকনির্দেশ", "Direction"), path: "/qibla", gold: true } as Tile] : []),
     { icon: BookText, title: t("নামাজ শিক্ষা", "Prayer Guide", "دليل الصلاة"), desc: t("৪ মাযহাব", "4 Madhabs"), path: "/prayer" },
     { icon: ClipboardCheck, title: t("কাযা ট্র্যাকার", "Qaza Tracker", "القضاء"), desc: t("ছুটে যাওয়া নামাজ", "Missed prayers"), path: "/qaza", isNew: true },
   ];
@@ -140,7 +150,7 @@ const Index = () => {
     { icon: Hash, title: t("তাসবিহ", "Tasbih", "تسبيح"), desc: t("ডিজিটাল কাউন্টার", "Digital counter"), path: "/tasbih" },
     { icon: HandHeart, title: t("দোয়া ও যিকর", "Duas & Azkar", "أدعية"), desc: t("দৈনন্দিন সংগ্রহ", "Daily collection"), path: "/dua", gold: true },
     { icon: ListChecks, title: t("দৈনিক আমল", "Daily Amal", "أعمال يومية"), desc: t("ফযিলতসহ", "With virtues"), path: "/daily-amal" },
-    { icon: CalendarDays, title: t("হিজরি ক্যালেন্ডার", "Hijri Calendar", "التقويم"), desc: t("ইসলামিক তারিখ", "Islamic dates"), path: "/hijri", gold: true },
+    ...(ui.show_hijri_tile ? [{ icon: CalendarDays, title: t("হিজরি ক্যালেন্ডার", "Hijri Calendar", "التقويم"), desc: t("ইসলামিক তারিখ", "Islamic dates"), path: "/hijri", gold: true } as Tile] : []),
   ];
 
   const learnTiles: Tile[] = [
@@ -151,6 +161,33 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {showAnnouncement && (
+        <div
+          role="status"
+          className={`px-4 py-2.5 flex items-center gap-2.5 text-sm border-b ${
+            announcement.level === "warn"
+              ? "bg-destructive/10 text-destructive border-destructive/20"
+              : announcement.level === "success"
+                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                : "bg-primary/10 text-primary border-primary/20"
+          }`}
+        >
+          {announcement.level === "warn" ? <AlertTriangle className="w-4 h-4 shrink-0" /> :
+           announcement.level === "success" ? <CheckCircle2 className="w-4 h-4 shrink-0" /> :
+           <Megaphone className="w-4 h-4 shrink-0" />}
+          <span className="flex-1 truncate">{announcement.text}</span>
+          <button
+            onClick={() => {
+              try { localStorage.setItem(ANNOUNCEMENT_DISMISS_KEY, announcement.text); } catch {}
+              setDismissedAnnouncement(announcement.text);
+            }}
+            aria-label="Dismiss announcement"
+            className="opacity-70 hover:opacity-100"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       {/* ============ Premium Hero ============ */}
       <header className="islamic-header relative">
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none select-none">
@@ -359,7 +396,7 @@ const Index = () => {
 
         {/* ============ Daily Ayah + Daily Dua ============ */}
         <div className="grid md:grid-cols-2 gap-4">
-          <DailyAyah />
+          {ui.show_daily_ayah && <DailyAyah />}
           <DailyAmalSummaryCard />
 
           <div className="premium-card p-4 space-y-3">

@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { qariList } from "@/data/prayerData";
+import { getAppSettingsSnapshot, useAppSettings } from "@/hooks/useAppSettings";
 
 const STORAGE_KEY = "selected_qari_id";
-const DEFAULT_RECITER = qariList[0]?.id ?? "ar.alafasy";
+const HARDCODED_DEFAULT = qariList[0]?.id ?? "ar.alafasy";
 
 const validIds = new Set(qariList.map((q) => q.id));
+
+/** Resolve the active default — admin override (if valid) else hardcoded. */
+function resolveDefault(): string {
+  const admin = getAppSettingsSnapshot().defaults.default_reciter_id;
+  if (admin && validIds.has(admin)) return admin;
+  return HARDCODED_DEFAULT;
+}
 
 function readStored(): string {
   try {
@@ -14,7 +22,7 @@ function readStored(): string {
   } catch {
     /* ignore */
   }
-  return DEFAULT_RECITER;
+  return resolveDefault();
 }
 
 function nameFor(id: string): string {
@@ -41,6 +49,14 @@ export function useSelectedReciter(): {
   setReciterId: (id: string) => void;
 } {
   const [reciterId, setReciterIdState] = useState<string>(readStored);
+  // Re-resolve when admin pushes a new default via realtime (only matters when
+  // user has no localStorage choice — readStored handles that path).
+  const { settings: appSettings } = useAppSettings();
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(STORAGE_KEY)) setReciterIdState(resolveDefault());
+    } catch { /* ignore */ }
+  }, [appSettings.defaults.default_reciter_id]);
 
   useEffect(() => {
     const handleSameTab = () => setReciterIdState(readStored());
@@ -70,7 +86,7 @@ export function useSelectedReciter(): {
   }, []);
 
   const setReciterId = useCallback((id: string) => {
-    const safe = validIds.has(id) ? id : DEFAULT_RECITER;
+    const safe = validIds.has(id) ? id : resolveDefault();
     try {
       localStorage.setItem(STORAGE_KEY, safe);
     } catch {
@@ -88,4 +104,6 @@ export function useSelectedReciter(): {
   return { reciterId, reciterName, setReciterId };
 }
 
-export const DEFAULT_RECITER_ID = DEFAULT_RECITER;
+/** Note: this is the build-time hardcoded default. Runtime callers should use
+ *  `useSelectedReciter()` so admin overrides via app_settings apply. */
+export const DEFAULT_RECITER_ID = HARDCODED_DEFAULT;
