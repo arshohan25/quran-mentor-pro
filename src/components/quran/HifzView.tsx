@@ -18,6 +18,7 @@ import { useUpsertCard } from "@/hooks/useHifzSrs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRecitationRecorder } from "@/hooks/useRecitationRecorder";
 import { useSelectedReciter } from "@/hooks/useSelectedReciter";
+import SessionReciterPicker from "./SessionReciterPicker";
 
 const SENSITIVITY_KEY = "hifz-sensitivity-mode";
 
