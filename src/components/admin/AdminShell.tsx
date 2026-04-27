@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-do
 import {
   LayoutDashboard,
   Users,
+  UserCog,
   Database,
   Mic,
   MessageCircleQuestion,
@@ -32,6 +33,7 @@ import { toast } from "sonner";
 const NAV = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, end: true },
   { title: "Users", url: "/admin/users", icon: Users },
+  { title: "Roles", url: "/admin/roles", icon: UserCog },
   { title: "Content", url: "/admin/content", icon: Database },
   { title: "Recitation", url: "/admin/recitation", icon: Mic },
   { title: "AI Q&A", url: "/admin/ask", icon: MessageCircleQuestion },

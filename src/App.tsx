@@ -41,6 +41,7 @@ import RequireAdmin from "@/components/admin/RequireAdmin";
 import AdminShell from "@/components/admin/AdminShell";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage.tsx";
 import AdminUsersPage from "./pages/admin/AdminUsersPage.tsx";
+import AdminRolesPage from "./pages/admin/AdminRolesPage.tsx";
 import AdminContentPage from "./pages/admin/AdminContentPage.tsx";
 import AdminRecitationPage from "./pages/admin/AdminRecitationPage.tsx";
 import AdminAskPage from "./pages/admin/AdminAskPage.tsx";
@@ -85,6 +86,7 @@ function AnimatedRoutes() {
         <Route path="/admin" element={<RequireAdmin><AdminShell /></RequireAdmin>}>
           <Route index element={<AdminDashboardPage />} />
           <Route path="users" element={<AdminUsersPage />} />
+          <Route path="roles" element={<AdminRolesPage />} />
           <Route path="content" element={<AdminContentPage />} />
           <Route path="recitation" element={<AdminRecitationPage />} />
           <Route path="ask" element={<AdminAskPage />} />
