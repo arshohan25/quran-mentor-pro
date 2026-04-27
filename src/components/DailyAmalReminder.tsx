@@ -227,6 +227,25 @@ export default function DailyAmalReminder() {
             </p>
           )}
 
+          {/* Status indicator */}
+          <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-border/50 text-[10px]">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <CheckCircle2 className="w-3 h-3 text-primary" />
+              <span>
+                {savedAt
+                  ? t(`সেভ হয়েছে ${savedAt.toLocaleTimeString(language === "bn" ? "bn-BD" : language === "ar" ? "ar" : "en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`,
+                      `Saved ${savedAt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`,
+                      `حُفظ ${savedAt.toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`)
+                  : t(`লোড ${loadedAt.toLocaleTimeString(language === "bn" ? "bn-BD" : "en-US", { hour: "2-digit", minute: "2-digit" })}`,
+                      `Loaded ${loadedAt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`,
+                      `حُمّل ${loadedAt.toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" })}`)}
+              </span>
+            </div>
+            <span className="font-semibold text-accent tabular-nums">
+              {t("থ্রেশহোল্ড", "Threshold", "الحد")}: {Math.ceil(TOTAL_AMALS * settings.smartThreshold)}/{TOTAL_AMALS}
+            </span>
+          </div>
+
           {/* Smart "forgot" reminder */}
           <div className="space-y-2 p-3 rounded-lg border border-accent/30 bg-accent/5">
             <div className="flex items-center justify-between">
