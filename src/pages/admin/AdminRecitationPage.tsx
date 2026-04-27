@@ -1,28 +1,41 @@
-import { useEffect, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { useEffect, useMemo, useState } from "react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import StatCard from "@/components/admin/StatCard";
 import { Mic, Activity, AlertTriangle, Hash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+type RangeDays = 7 | 30 | 90;
+
+interface BreakdownRow {
+  key: string;
+  attempts: number;
+  avgAccuracy: number;
+}
 
 export default function AdminRecitationPage() {
   const [loading, setLoading] = useState(true);
+  const [range, setRange] = useState<RangeDays>(30);
   const [totals, setTotals] = useState({ sessions: 0, avgAccuracy: 0, totalErrors: 0, weakestN: 0 });
   const [bySurah, setBySurah] = useState<{ surah: number; n: number }[]>([]);
+  const [byReciter, setByReciter] = useState<BreakdownRow[]>([]);
+  const [byLessonType, setByLessonType] = useState<BreakdownRow[]>([]);
   const [weakest, setWeakest] = useState<any[]>([]);
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
       const since = new Date();
-      since.setDate(since.getDate() - 30);
+      since.setDate(since.getDate() - range);
 
       const [sessionsRes, weakRes] = await Promise.all([
         supabase
           .from("recitation_sessions")
-          .select("surah, accuracy, error_words, hesitation_words, created_at")
+          .select("surah, accuracy, error_words, hesitation_words, reciter, lesson_type, created_at")
           .gte("created_at", since.toISOString())
-          .limit(5000),
+          .limit(10000),
         supabase
           .from("recitation_word_stats")
           .select("surah, ayah, word_index, errors, attempts")
@@ -33,19 +46,47 @@ export default function AdminRecitationPage() {
 
       const sessions = sessionsRes.data ?? [];
       const surahMap: Record<number, number> = {};
+      const reciterMap = new Map<string, { attempts: number; accSum: number; accN: number }>();
+      const lessonMap = new Map<string, { attempts: number; accSum: number; accN: number }>();
       let accSum = 0, accN = 0, errSum = 0;
       sessions.forEach((s: any) => {
         surahMap[s.surah] = (surahMap[s.surah] ?? 0) + 1;
         accSum += s.accuracy ?? 0;
         accN += 1;
         errSum += s.error_words ?? 0;
+
+        const rKey = (s.reciter as string | null) ?? "(unspecified)";
+        const r = reciterMap.get(rKey) ?? { attempts: 0, accSum: 0, accN: 0 };
+        r.attempts += 1;
+        r.accSum += s.accuracy ?? 0;
+        r.accN += 1;
+        reciterMap.set(rKey, r);
+
+        const lKey = (s.lesson_type as string | null) ?? "(unspecified)";
+        const l = lessonMap.get(lKey) ?? { attempts: 0, accSum: 0, accN: 0 };
+        l.attempts += 1;
+        l.accSum += s.accuracy ?? 0;
+        l.accN += 1;
+        lessonMap.set(lKey, l);
       });
       const bySurahArr = Object.entries(surahMap)
         .map(([s, n]) => ({ surah: +s, n }))
         .sort((a, b) => b.n - a.n)
         .slice(0, 12);
 
+      const toRows = (m: Map<string, { attempts: number; accSum: number; accN: number }>): BreakdownRow[] =>
+        Array.from(m.entries())
+          .map(([key, v]) => ({
+            key,
+            attempts: v.attempts,
+            avgAccuracy: v.accN > 0 ? Math.round((v.accSum / v.accN) * 100) : 0,
+          }))
+          .sort((a, b) => b.attempts - a.attempts)
+          .slice(0, 12);
+
       setBySurah(bySurahArr);
+      setByReciter(toRows(reciterMap));
+      setByLessonType(toRows(lessonMap));
       setTotals({
         sessions: sessions.length,
         avgAccuracy: accN > 0 ? Math.round((accSum / accN) * 100) : 0,
@@ -55,7 +96,16 @@ export default function AdminRecitationPage() {
       setWeakest(weakRes.data ?? []);
       setLoading(false);
     })();
-  }, []);
+  }, [range]);
+
+  const hasReciterData = useMemo(
+    () => byReciter.some((r) => r.key !== "(unspecified)"),
+    [byReciter]
+  );
+  const hasLessonData = useMemo(
+    () => byLessonType.some((r) => r.key !== "(unspecified)"),
+    [byLessonType]
+  );
 
   if (loading) return <Skeleton className="h-96" />;
 
