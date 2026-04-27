@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell, BellOff, Clock, Sparkles, X, Plus } from "lucide-react";
+import { Bell, BellOff, Clock, Sparkles, X, Plus, CheckCircle2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
