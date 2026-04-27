@@ -244,6 +244,159 @@ export default function AdminRecitationPage() {
     [byLessonType]
   );
 
+  const surahName = (n: number) =>
+    surahList.find((s) => s.number === n)?.englishName ?? `Surah ${n}`;
+
+  const exportCsv = () => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    const lines: string[] = [];
+    const push = (row: (string | number)[] = []) =>
+      lines.push(row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","));
+
+    push([`Recitation Report - last ${range} days`]);
+    push([`Generated`, new Date().toISOString()]);
+    push();
+    push(["Totals"]);
+    push(["Sessions", totals.sessions]);
+    push(["Avg accuracy %", totals.avgAccuracy]);
+    push(["Total errors", totals.totalErrors]);
+    push(["Tracked weak words", totals.weakestN]);
+    push();
+    push(["Attempts by accuracy grade"]);
+    push(["Grade", "Attempts"]);
+    byGrade.forEach((g) => push([g.label, g.attempts]));
+    push();
+    push(["Top surahs by sessions"]);
+    push(["Surah", "Sessions"]);
+    bySurah.forEach((r) => push([surahName(r.surah), r.n]));
+    push();
+    push(["Attempts by reciter"]);
+    push(["Reciter", "Attempts", "Avg accuracy %"]);
+    byReciter.forEach((r) => push([r.key, r.attempts, r.avgAccuracy]));
+    push();
+    push(["Attempts by lesson type"]);
+    push(["Lesson type", "Attempts", "Avg accuracy %"]);
+    byLessonType.forEach((r) => push([r.key, r.attempts, r.avgAccuracy]));
+    push();
+    push(["Commonly failed ayahs by mode"]);
+    push(["Mode", "Surah", "Ayah", "Failures", "Attempts", "Total errors", "Fail rate %"]);
+    (Object.keys(wrongByMode) as Mode[]).forEach((m) => {
+      wrongByMode[m].forEach((w) =>
+        push([
+          MODE_LABELS[m],
+          surahName(w.surah),
+          w.ayah,
+          w.failures,
+          w.attempts,
+          w.totalErrors,
+          Math.round(w.failRate * 100),
+        ])
+      );
+    });
+
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `recitation-report-${range}d-${stamp}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "CSV exported", description: `Last ${range} days` });
+  };
+
+  const exportPdf = () => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    doc.setFontSize(18);
+    doc.text("Recitation Analytics Report", 40, 50);
+    doc.setFontSize(10);
+    doc.setTextColor(120);
+    doc.text(`Range: last ${range} days`, 40, 68);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 40, 82);
+    doc.setTextColor(0);
+
+    autoTable(doc, {
+      startY: 100,
+      head: [["Metric", "Value"]],
+      body: [
+        ["Sessions", String(totals.sessions)],
+        ["Avg accuracy", `${totals.avgAccuracy}%`],
+        ["Total errors", String(totals.totalErrors)],
+        ["Tracked weak words", String(totals.weakestN)],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: [40, 100, 70] },
+      styles: { fontSize: 10 },
+    });
+
+    autoTable(doc, {
+      head: [["Accuracy grade", "Attempts"]],
+      body: byGrade.map((g) => [g.label, String(g.attempts)]),
+      theme: "striped",
+      headStyles: { fillColor: [40, 100, 70] },
+      styles: { fontSize: 10 },
+    });
+
+    autoTable(doc, {
+      head: [["Surah", "Sessions"]],
+      body: bySurah.map((r) => [surahName(r.surah), String(r.n)]),
+      theme: "striped",
+      headStyles: { fillColor: [40, 100, 70] },
+      styles: { fontSize: 10 },
+    });
+
+    if (byReciter.length) {
+      autoTable(doc, {
+        head: [["Reciter", "Attempts", "Avg accuracy %"]],
+        body: byReciter.map((r) => [r.key, String(r.attempts), String(r.avgAccuracy)]),
+        theme: "striped",
+        headStyles: { fillColor: [40, 100, 70] },
+        styles: { fontSize: 10 },
+      });
+    }
+
+    if (byLessonType.length) {
+      autoTable(doc, {
+        head: [["Lesson type", "Attempts", "Avg accuracy %"]],
+        body: byLessonType.map((r) => [r.key, String(r.attempts), String(r.avgAccuracy)]),
+        theme: "striped",
+        headStyles: { fillColor: [40, 100, 70] },
+        styles: { fontSize: 10 },
+      });
+    }
+
+    (Object.keys(wrongByMode) as Mode[]).forEach((m) => {
+      const rows = wrongByMode[m];
+      if (!rows.length) return;
+      autoTable(doc, {
+        head: [[`Failed ayahs - ${MODE_LABELS[m]}`, "Failures", "Attempts", "Errors", "Fail %"]],
+        body: rows.map((w) => [
+          `${surahName(w.surah)} - Ayah ${w.ayah}`,
+          String(w.failures),
+          String(w.attempts),
+          String(w.totalErrors),
+          `${Math.round(w.failRate * 100)}%`,
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [180, 60, 60] },
+        styles: { fontSize: 9 },
+      });
+    });
+
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(`Page ${i} of ${pageCount}`, pageWidth - 80, doc.internal.pageSize.getHeight() - 20);
+    }
+
+    doc.save(`recitation-report-${range}d-${stamp}.pdf`);
+    toast({ title: "PDF exported", description: `Last ${range} days` });
+  };
+
   if (loading) return <Skeleton className="h-96" />;
 
   return (
