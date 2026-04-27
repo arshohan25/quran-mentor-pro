@@ -17,6 +17,7 @@ import { LINES_PER_PAGE, type QuranSectionProps } from "./types";
 import { useUpsertCard } from "@/hooks/useHifzSrs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRecitationRecorder } from "@/hooks/useRecitationRecorder";
+import { useSelectedReciter } from "@/hooks/useSelectedReciter";
 
 const SENSITIVITY_KEY = "hifz-sensitivity-mode";
 
@@ -79,12 +80,14 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
     if (activeRecitationAyah !== null) setRecitationCompleted(false);
   }, [activeRecitationAyah]);
 
+  const { reciterId } = useSelectedReciter();
   useRecitationRecorder({
     surah: recitingAyahInSurah !== null ? selectedSurah : null,
     ayah: recitingAyahInSurah,
     state: recitation.state,
     completed: recitationCompleted,
     mode: "hifz",
+    reciter: reciterId,
   });
 
   // Auto-start listening when activeRecitationAyah is set and text is ready
