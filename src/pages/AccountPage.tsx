@@ -2,19 +2,21 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { ArrowLeft, LogOut, Loader2 } from "lucide-react";
+import { ArrowLeft, LogOut, Loader2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function AccountPage() {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
   const { language } = useLanguage();
+  const { isAdmin } = useUserRole();
   const isBn = language === "bn";
 
   const [displayName, setDisplayName] = useState("");
@@ -94,6 +96,17 @@ export default function AccountPage() {
             {isBn ? "সংরক্ষণ করুন" : "Save"}
           </Button>
         </Card>
+
+        {isAdmin && (
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => navigate("/admin")}
+          >
+            <Shield className="h-4 w-4 mr-2" />
+            {isBn ? "অ্যাডমিন প্যানেল" : "Admin Panel"}
+          </Button>
+        )}
 
         <Button
           variant="outline"

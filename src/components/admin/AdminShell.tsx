@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -85,7 +85,7 @@ function AdminSidebar() {
   );
 }
 
-export default function AdminShell({ children }: { children: ReactNode }) {
+export default function AdminShell({ children }: { children?: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut, user } = useAuth();
@@ -131,7 +131,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           </header>
 
           <main className="flex-1 p-4 sm:p-6 overflow-auto">
-            <div className="max-w-7xl mx-auto">{children}</div>
+            <div className="max-w-7xl mx-auto">{children ?? <Outlet />}</div>
           </main>
         </div>
       </div>

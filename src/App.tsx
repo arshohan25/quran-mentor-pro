@@ -37,6 +37,15 @@ import AuthPage from "./pages/AuthPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
 import RecitationStatsPage from "./pages/RecitationStatsPage.tsx";
 import TafsirComparePage from "./pages/TafsirComparePage.tsx";
+import RequireAdmin from "@/components/admin/RequireAdmin";
+import AdminShell from "@/components/admin/AdminShell";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage.tsx";
+import AdminUsersPage from "./pages/admin/AdminUsersPage.tsx";
+import AdminContentPage from "./pages/admin/AdminContentPage.tsx";
+import AdminRecitationPage from "./pages/admin/AdminRecitationPage.tsx";
+import AdminAskPage from "./pages/admin/AdminAskPage.tsx";
+import AdminSettingsPage from "./pages/admin/AdminSettingsPage.tsx";
+import AdminLogsPage from "./pages/admin/AdminLogsPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -73,6 +82,15 @@ function AnimatedRoutes() {
         <Route path="/account" element={<PageTransition><AccountPage /></PageTransition>} />
         <Route path="/recitation/stats" element={<PageTransition><RecitationStatsPage /></PageTransition>} />
         <Route path="/tafsir/:surah/:ayah" element={<PageTransition><TafsirComparePage /></PageTransition>} />
+        <Route path="/admin" element={<RequireAdmin><AdminShell /></RequireAdmin>}>
+          <Route index element={<AdminDashboardPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="content" element={<AdminContentPage />} />
+          <Route path="recitation" element={<AdminRecitationPage />} />
+          <Route path="ask" element={<AdminAskPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="logs" element={<AdminLogsPage />} />
+        </Route>
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
