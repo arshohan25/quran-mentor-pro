@@ -82,13 +82,16 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
   }, [activeRecitationAyah]);
 
   const { reciterId } = useSelectedReciter();
+  // Session-scoped override for the qari attached to recorded sessions.
+  // null = follow the app-wide selection.
+  const [sessionReciter, setSessionReciter] = useState<string | null>(null);
   useRecitationRecorder({
     surah: recitingAyahInSurah !== null ? selectedSurah : null,
     ayah: recitingAyahInSurah,
     state: recitation.state,
     completed: recitationCompleted,
     mode: "hifz",
-    reciter: reciterId,
+    reciter: sessionReciter ?? reciterId,
   });
 
   // Auto-start listening when activeRecitationAyah is set and text is ready
