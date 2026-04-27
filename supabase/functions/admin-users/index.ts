@@ -17,7 +17,19 @@ interface Body {
     | "approve_admin"
     | "cancel_admin_request"
     | "list_admin_requests"
-    | "validate_recitation_reciters";
+    | "validate_recitation_reciters"
+    | "update_row"
+    | "update_user_profile"
+    | "update_user_settings"
+    | "set_default_reciter";
+  /** update_row: target table (allowlisted) */
+  table?: string;
+  /** update_row: row id */
+  row_id?: string;
+  /** update_row / update_user_profile / update_user_settings: patch payload */
+  patch?: Record<string, unknown>;
+  /** set_default_reciter: reciter id */
+  reciter_id?: string;
   page?: number;
   perPage?: number;
   search?: string;
