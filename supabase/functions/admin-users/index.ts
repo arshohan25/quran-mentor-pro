@@ -177,12 +177,14 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      // Only admins can grant the admin role (defence in depth — already gated above).
-      if (body.role === "admin" && !callerIsAdmin) {
-        return new Response(JSON.stringify({ error: "Only admins can grant admin role" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      // Granting the admin role MUST go through the two-admin approval flow.
+      if (body.role === "admin") {
+        return new Response(
+          JSON.stringify({
+            error: `Granting the admin role requires ${REQUIRED_ADMIN_APPROVALS} admin approvals. Use request_admin / approve_admin instead.`,
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
       const { error } = await admin
         .from("user_roles")
