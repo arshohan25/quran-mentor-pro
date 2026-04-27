@@ -30,6 +30,7 @@ export default function LiveRecitationCheck({ ayahText, onComplete, onCancel, mo
     ayah: ayah ?? null,
     state,
     completed,
+    mode: "live",
   });
 
   return (

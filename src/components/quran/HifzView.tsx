@@ -84,6 +84,7 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
     ayah: recitingAyahInSurah,
     state: recitation.state,
     completed: recitationCompleted,
+    mode: "hifz",
   });
 
   // Auto-start listening when activeRecitationAyah is set and text is ready

@@ -3,12 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { RecitationState } from "./useArabicRecitationEngine";
 
+export type RecitationMode = "practice" | "hifz" | "live" | "lesson";
+
 interface UseRecitationRecorderOpts {
   surah: number | null;
   ayah: number | null;
   state: RecitationState;
   /** Set true exactly once when the ayah is fully completed */
   completed: boolean;
+  /** Tagging the attempt: defaults to "practice" */
+  mode?: RecitationMode;
 }
 
 interface WordTally {
@@ -27,7 +31,7 @@ interface WordTally {
  *  - errors++   : whenever errorIndex hits a new word
  *  - hesitations++ : if more than 3s elapsed since last advance
  */
-export function useRecitationRecorder({ surah, ayah, state, completed }: UseRecitationRecorderOpts) {
+export function useRecitationRecorder({ surah, ayah, state, completed, mode = "practice" }: UseRecitationRecorderOpts) {
   const { user } = useAuth();
   const startRef = useRef<number | null>(null);
   const wordsRef = useRef<Map<number, WordTally>>(new Map());
@@ -113,7 +117,8 @@ export function useRecitationRecorder({ surah, ayah, state, completed }: UseReci
           hesitation_words: hesitations,
           accuracy,
           duration_ms: duration,
-        });
+          mode,
+        } as any);
 
         const wordRows = Array.from(wordsRef.current.entries()).map(([word_index, t]) => ({
           user_id: user.id,
