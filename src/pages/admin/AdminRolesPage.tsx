@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Search, Shield, ShieldCheck, ShieldOff, Loader2, RefreshCw, ScrollText, UserCog } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Search, Shield, ShieldCheck, ShieldOff, Loader2, RefreshCw, ScrollText, UserCog, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
