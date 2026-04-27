@@ -5,6 +5,31 @@ import type { RecitationState } from "./useArabicRecitationEngine";
 
 export type RecitationMode = "practice" | "hifz" | "live" | "lesson";
 
+/** Stored when no reciter is selected anywhere in the UI / settings. */
+export const DEFAULT_RECITER_ID = "unknown";
+
+/**
+ * Normalize a reciter identifier so the database column always carries a
+ * meaningful, queryable value. Trims, length-caps, and falls back to
+ * `DEFAULT_RECITER_ID` for empty/missing/invalid input. Exported so other
+ * call sites (admin tools, importers) can use the same rules.
+ */
+export function normalizeReciter(input: unknown): string {
+  if (typeof input !== "string") return DEFAULT_RECITER_ID;
+  const trimmed = input.trim();
+  if (!trimmed) return DEFAULT_RECITER_ID;
+  // Reasonable upper bound to avoid runaway values from misconfigured selectors.
+  return trimmed.slice(0, 100);
+}
+
+/** Same idea for lesson_type — keep it short and predictable, or null. */
+export function normalizeLessonType(input: unknown): string | null {
+  if (typeof input !== "string") return null;
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, 50);
+}
+
 interface UseRecitationRecorderOpts {
   surah: number | null;
   ayah: number | null;
