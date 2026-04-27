@@ -22,6 +22,9 @@ interface InlineRecitationProps {
 export default function LiveRecitationCheck({ ayahText, onComplete, onCancel, mode = "balanced", surah, ayah, reciter }: InlineRecitationProps) {
   const { t } = useLanguage();
   const { reciterId } = useSelectedReciter();
+  // Session-scoped override: null = follow app-wide selection (or the
+  // explicit `reciter` prop, if a parent passed one).
+  const [sessionReciter, setSessionReciter] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
   const handleComplete = () => { setCompleted(true); onComplete(); };
   const { state, toggleListening, stopListening } = useArabicRecitationEngine(ayahText, mode, handleComplete);
@@ -30,13 +33,15 @@ export default function LiveRecitationCheck({ ayahText, onComplete, onCancel, mo
   // Reset completion flag whenever the ayah text changes
   useEffect(() => { setCompleted(false); }, [ayahText]);
 
+  const effectiveReciter = sessionReciter ?? reciter ?? reciterId;
+
   useRecitationRecorder({
     surah: surah ?? null,
     ayah: ayah ?? null,
     state,
     completed,
     mode: "live",
-    reciter: reciter ?? reciterId,
+    reciter: effectiveReciter,
   });
 
   return (
