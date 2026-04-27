@@ -478,17 +478,36 @@ export default function AdminRolesPage() {
           </Button>
         </div>
 
-        {requestsLoading ? (
-          <Skeleton className="h-20 w-full" />
-        ) : requests.filter((r) => r.status === "pending").length === 0 ? (
-          <p className="text-sm text-muted-foreground italic px-1 py-4 text-center">
-            No pending admin promotion requests.
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {requests
-              .filter((r) => r.status === "pending")
-              .map((r) => {
+        {(() => {
+          const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+          const now = Date.now();
+          const visible = requests
+            .filter((r) => {
+              if (r.status === "pending") return true;
+              const settledAt = r.applied_at ?? r.cancelled_at ?? r.created_at;
+              return now - new Date(settledAt).getTime() < SEVEN_DAYS;
+            })
+            .sort((a, b) => {
+              // pending first, then most-recently-settled
+              if (a.status === "pending" && b.status !== "pending") return -1;
+              if (b.status === "pending" && a.status !== "pending") return 1;
+              const aT = new Date(a.applied_at ?? a.cancelled_at ?? a.created_at).getTime();
+              const bT = new Date(b.applied_at ?? b.cancelled_at ?? b.created_at).getTime();
+              return bT - aT;
+            });
+
+          if (requestsLoading) return <Skeleton className="h-20 w-full" />;
+          if (visible.length === 0) {
+            return (
+              <p className="text-sm text-muted-foreground italic px-1 py-4 text-center">
+                No pending or recent admin promotion requests.
+              </p>
+            );
+          }
+
+          return (
+            <ul className="space-y-2">
+              {visible.map((r) => {
                 const target = userById(r.target_user_id);
                 const requester = userById(r.requested_by);
                 const youApproved = r.approvals.some(
@@ -504,60 +523,108 @@ export default function AdminRolesPage() {
                   : youApproved
                   ? "You already approved"
                   : "";
-                const remaining = Math.max(
-                  0,
-                  (r.required_approvals ?? requiredApprovals) - r.approval_count
-                );
+                const required = r.required_approvals ?? requiredApprovals;
+                const remaining = Math.max(0, required - r.approval_count);
+                const lastApproval = r.approvals.length
+                  ? r.approvals
+                      .map((a) => a.created_at)
+                      .sort()
+                      .slice(-1)[0]
+                  : null;
+
+                const statusMeta =
+                  r.status === "approved"
+                    ? {
+                        label: "Approved",
+                        className: "bg-primary text-primary-foreground",
+                        icon: <ShieldCheck className="h-3 w-3" />,
+                        timeLabel: "Applied",
+                        timeValue: r.applied_at,
+                      }
+                    : r.status === "cancelled"
+                    ? {
+                        label: r.cancelled_by === r.requested_by ? "Withdrawn" : "Denied",
+                        className: "bg-destructive text-destructive-foreground",
+                        icon: <X className="h-3 w-3" />,
+                        timeLabel: r.cancelled_by === r.requested_by ? "Withdrawn" : "Denied",
+                        timeValue: r.cancelled_at,
+                      }
+                    : {
+                        label: "Pending",
+                        className: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30",
+                        icon: <Hourglass className="h-3 w-3" />,
+                        timeLabel: "Awaiting review",
+                        timeValue: null as string | null,
+                      };
+
                 return (
                   <li
                     key={r.id}
-                    className="rounded-lg border bg-background/40 p-3 flex flex-wrap items-center gap-3"
+                    className="rounded-lg border bg-background/40 p-3 flex flex-wrap items-start gap-3"
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 text-sm font-medium">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center gap-2 text-sm font-medium flex-wrap">
+                        <Badge className={`${statusMeta.className} gap-1`}>
+                          {statusMeta.icon}
+                          {statusMeta.label}
+                        </Badge>
                         <span>{target?.display_name ?? target?.email ?? r.target_user_id.slice(0, 8)}</span>
                         <Badge className={ROLE_COLORS.admin}>→ admin</Badge>
                       </div>
-                      <p className="text-[11px] text-muted-foreground">
-                        Requested by {requester?.email ?? r.requested_by.slice(0, 8)} · {fmtTime(r.created_at)}
-                      </p>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      {r.approval_count}/{r.required_approvals ?? requiredApprovals} approvals
-                      {remaining > 0 && ` · ${remaining} more needed`}
-                    </Badge>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="sm"
-                        onClick={() => openReview(r)}
-                        disabled={cannotApprove || requestBusy === r.id}
-                        title={cannotApprove ? reason : "Review and approve or deny with a reason"}
-                      >
-                        {requestBusy === r.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <MessageSquare className="h-3.5 w-3.5" />
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+                        <span>
+                          Created {fmtTime(r.created_at)} by{" "}
+                          {requester?.email ?? r.requested_by.slice(0, 8)}
+                        </span>
+                        {lastApproval && (
+                          <span>· Last approval {fmtTime(lastApproval)}</span>
                         )}
-                        <span className="ml-1">Review</span>
-                      </Button>
-                      {isOwnRequest && (
+                        {statusMeta.timeValue && (
+                          <span>
+                            · {statusMeta.timeLabel} {fmtTime(statusMeta.timeValue)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-xs whitespace-nowrap">
+                      {r.approval_count}/{required} approvals
+                      {r.status === "pending" && remaining > 0 && ` · ${remaining} more needed`}
+                    </Badge>
+                    {r.status === "pending" && (
+                      <div className="flex items-center gap-1">
                         <Button
                           size="sm"
-                          variant="outline"
-                          onClick={() => cancelRequest(r)}
-                          disabled={requestBusy === r.id}
-                          title="Withdraw your own request"
+                          onClick={() => openReview(r)}
+                          disabled={cannotApprove || requestBusy === r.id}
+                          title={cannotApprove ? reason : "Review and approve or deny with a reason"}
                         >
-                          <X className="h-3.5 w-3.5" />
-                          <span className="ml-1">Withdraw</span>
+                          {requestBusy === r.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <MessageSquare className="h-3.5 w-3.5" />
+                          )}
+                          <span className="ml-1">Review</span>
                         </Button>
-                      )}
-                    </div>
+                        {isOwnRequest && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => cancelRequest(r)}
+                            disabled={requestBusy === r.id}
+                            title="Withdraw your own request"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                            <span className="ml-1">Withdraw</span>
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </li>
                 );
               })}
-          </ul>
-        )}
+            </ul>
+          );
+        })()}
       </Card>
 
       <Dialog open={!!reviewRequest} onOpenChange={(o) => !o && setReviewRequest(null)}>
@@ -676,7 +743,14 @@ interface FilterableAuditLogProps {
   fmtTime: (s: string) => string;
 }
 
-type ActionFilter = "all" | "assigned" | "revoked";
+type ActionFilter =
+  | "all"
+  | "assigned"
+  | "revoked"
+  | "request_created"
+  | "request_approved"
+  | "request_applied"
+  | "request_cancelled";
 type RoleFilter = "all" | AppRole;
 
 function FilterableAuditLog({
@@ -690,10 +764,18 @@ function FilterableAuditLog({
     const q = targetSearch.trim().toLowerCase();
     return logs.filter((log) => {
       const role = log.metadata?.role as AppRole | undefined;
-      const assigned = log.action === "role.assigned";
 
-      if (actionFilter === "assigned" && !assigned) return false;
-      if (actionFilter === "revoked" && assigned) return false;
+      if (actionFilter !== "all") {
+        const matchByFilter: Record<Exclude<ActionFilter, "all">, string> = {
+          assigned: "role.assigned",
+          revoked: "role.revoked",
+          request_created: "admin_request.created",
+          request_approved: "admin_request.approved",
+          request_applied: "admin_request.applied",
+          request_cancelled: "admin_request.cancelled",
+        };
+        if (log.action !== matchByFilter[actionFilter]) return false;
+      }
       if (roleFilter !== "all" && role !== roleFilter) return false;
 
       if (q) {
@@ -743,11 +825,15 @@ function FilterableAuditLog({
             Action
           </label>
           <Select value={actionFilter} onValueChange={(v) => setActionFilter(v as ActionFilter)}>
-            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All actions</SelectItem>
-              <SelectItem value="assigned">Assigned</SelectItem>
-              <SelectItem value="revoked">Revoked</SelectItem>
+              <SelectItem value="assigned">Role assigned</SelectItem>
+              <SelectItem value="revoked">Role revoked</SelectItem>
+              <SelectItem value="request_created">Request created</SelectItem>
+              <SelectItem value="request_approved">Approval recorded</SelectItem>
+              <SelectItem value="request_applied">Request applied</SelectItem>
+              <SelectItem value="request_cancelled">Request cancelled</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -801,6 +887,7 @@ function FilterableAuditLog({
           <TableHeader>
             <TableRow>
               <TableHead>When</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Action</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Target user</TableHead>
@@ -811,12 +898,12 @@ function FilterableAuditLog({
             {loading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell colSpan={5}><Skeleton className="h-6 w-full" /></TableCell>
+                  <TableCell colSpan={6}><Skeleton className="h-6 w-full" /></TableCell>
                 </TableRow>
               ))
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-6">
+                <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-6">
                   {logs.length === 0
                     ? "No role changes yet"
                     : "No entries match the current filters"}
@@ -827,17 +914,81 @@ function FilterableAuditLog({
                 const target = userById(log.target_id);
                 const actor = userById(log.actor_id);
                 const role = log.metadata?.role as AppRole | undefined;
-                const assigned = log.action === "role.assigned";
+
+                const meta: {
+                  status: string;
+                  statusClass: string;
+                  action: string;
+                } = (() => {
+                  switch (log.action) {
+                    case "role.assigned":
+                      return {
+                        status: "Applied",
+                        statusClass: "bg-primary text-primary-foreground",
+                        action: "Role assigned",
+                      };
+                    case "role.revoked":
+                      return {
+                        status: "Revoked",
+                        statusClass: "bg-destructive text-destructive-foreground",
+                        action: "Role revoked",
+                      };
+                    case "admin_request.created":
+                      return {
+                        status: "Pending",
+                        statusClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30",
+                        action: "Promotion requested",
+                      };
+                    case "admin_request.approved":
+                      return {
+                        status: "Approval recorded",
+                        statusClass: "bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30",
+                        action: "Approval added",
+                      };
+                    case "admin_request.applied":
+                      return {
+                        status: "Approved",
+                        statusClass: "bg-primary text-primary-foreground",
+                        action: "Promotion applied",
+                      };
+                    case "admin_request.cancelled":
+                      return {
+                        status: "Cancelled",
+                        statusClass: "bg-destructive text-destructive-foreground",
+                        action: "Request cancelled",
+                      };
+                    default:
+                      return {
+                        status: log.action,
+                        statusClass: "bg-muted text-muted-foreground",
+                        action: log.action,
+                      };
+                  }
+                })();
+
+                const ts = new Date(log.created_at);
                 return (
                   <TableRow key={log.id}>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                      {fmtTime(log.created_at)}
+                      <div className="flex flex-col">
+                        <span>{fmtTime(log.created_at)}</span>
+                        <span className="text-[10px] font-mono">
+                          {ts.toLocaleString(undefined, {
+                            year: "numeric",
+                            month: "short",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={assigned ? "default" : "outline"}>
-                        {assigned ? "assigned" : "revoked"}
+                      <Badge className={`${meta.statusClass} whitespace-nowrap`}>
+                        {meta.status}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-sm whitespace-nowrap">{meta.action}</TableCell>
                     <TableCell>
                       {role ? <Badge className={ROLE_COLORS[role]}>{role}</Badge> : "—"}
                     </TableCell>

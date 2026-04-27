@@ -40,6 +40,7 @@ export default defineConfig(({ mode }) => ({
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/~oauth/, /^\/api/, /^\/functions\//],
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff,woff2}"],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
