@@ -136,6 +136,13 @@ export function useRecitationRecorder({ surah, ayah, state, completed, mode = "p
 
     (async () => {
       try {
+        const VALID_MODES: RecitationMode[] = ["practice", "hifz", "live", "lesson"];
+        const safeMode: RecitationMode = VALID_MODES.includes(mode as RecitationMode)
+          ? (mode as RecitationMode)
+          : "practice";
+        const safeReciter = normalizeReciter(reciter);
+        const safeLessonType = normalizeLessonType(lessonType);
+
         await supabase.from("recitation_sessions").insert({
           user_id: user.id,
           surah,
@@ -146,9 +153,9 @@ export function useRecitationRecorder({ surah, ayah, state, completed, mode = "p
           hesitation_words: hesitations,
           accuracy,
           duration_ms: duration,
-          mode,
-          reciter,
-          lesson_type: lessonType,
+          mode: safeMode,
+          reciter: safeReciter,
+          lesson_type: safeLessonType,
         } as any);
 
         const wordRows = Array.from(wordsRef.current.entries()).map(([word_index, t]) => ({
