@@ -406,13 +406,31 @@ export default function AdminRecitationPage() {
           <h1 className="text-2xl font-bold text-foreground">Recitation Analytics</h1>
           <p className="text-sm text-muted-foreground">Aggregate trends across all users (last {range} days).</p>
         </div>
-        <Tabs value={String(range)} onValueChange={(v) => setRange(Number(v) as RangeDays)}>
-          <TabsList>
-            <TabsTrigger value="7">7d</TabsTrigger>
-            <TabsTrigger value="30">30d</TabsTrigger>
-            <TabsTrigger value="90">90d</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Tabs value={String(range)} onValueChange={(v) => setRange(Number(v) as RangeDays)}>
+            <TabsList>
+              <TabsTrigger value="7">7d</TabsTrigger>
+              <TabsTrigger value="30">30d</TabsTrigger>
+              <TabsTrigger value="90">90d</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export report
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportPdf} className="gap-2">
+                <FileText className="h-4 w-4" /> PDF (.pdf)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportCsv} className="gap-2">
+                <FileSpreadsheet className="h-4 w-4" /> CSV (.csv)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
