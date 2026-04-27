@@ -431,6 +431,101 @@ export default function AdminRolesPage() {
         </div>
       </Card>
 
+      <Card className="p-4 space-y-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Hourglass className="h-4 w-4 text-primary" /> Pending admin promotions
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Granting admin requires {requiredApprovals} distinct admin approvals.
+              Requesters cannot approve their own request.
+            </p>
+          </div>
+          <Button variant="outline" size="icon" onClick={fetchRequests} aria-label="Refresh requests">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {requestsLoading ? (
+          <Skeleton className="h-20 w-full" />
+        ) : requests.filter((r) => r.status === "pending").length === 0 ? (
+          <p className="text-sm text-muted-foreground italic px-1 py-4 text-center">
+            No pending admin promotion requests.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {requests
+              .filter((r) => r.status === "pending")
+              .map((r) => {
+                const target = userById(r.target_user_id);
+                const requester = userById(r.requested_by);
+                const youApproved = r.approvals.some(
+                  (a) => a.approver_id === currentUser?.id
+                );
+                const isOwnRequest = r.requested_by === currentUser?.id;
+                const isOwnTarget = r.target_user_id === currentUser?.id;
+                const cannotApprove = youApproved || isOwnRequest || isOwnTarget;
+                const reason = isOwnRequest
+                  ? "You created this request"
+                  : isOwnTarget
+                  ? "You are the target of this request"
+                  : youApproved
+                  ? "You already approved"
+                  : "";
+                const remaining = Math.max(
+                  0,
+                  (r.required_approvals ?? requiredApprovals) - r.approval_count
+                );
+                return (
+                  <li
+                    key={r.id}
+                    className="rounded-lg border bg-background/40 p-3 flex flex-wrap items-center gap-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <span>{target?.display_name ?? target?.email ?? r.target_user_id.slice(0, 8)}</span>
+                        <Badge className={ROLE_COLORS.admin}>→ admin</Badge>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Requested by {requester?.email ?? r.requested_by.slice(0, 8)} · {fmtTime(r.created_at)}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {r.approval_count}/{r.required_approvals ?? requiredApprovals} approvals
+                      {remaining > 0 && ` · ${remaining} more needed`}
+                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        onClick={() => approveRequest(r)}
+                        disabled={cannotApprove || requestBusy === r.id}
+                        title={cannotApprove ? reason : "Approve promotion"}
+                      >
+                        {requestBusy === r.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Check className="h-3.5 w-3.5" />
+                        )}
+                        <span className="ml-1">Approve</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => cancelRequest(r)}
+                        disabled={requestBusy === r.id}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        <span className="ml-1">Cancel</span>
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+          </ul>
+        )}
+      </Card>
+
       <FilterableAuditLog
         logs={logs}
         loading={logsLoading}
