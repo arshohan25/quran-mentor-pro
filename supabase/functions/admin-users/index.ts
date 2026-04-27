@@ -108,7 +108,11 @@ Deno.serve(async (req) => {
       body.action === "delete_user" ||
       body.action === "request_admin" ||
       body.action === "approve_admin" ||
-      body.action === "cancel_admin_request";
+      body.action === "cancel_admin_request" ||
+      body.action === "update_row" ||
+      body.action === "update_user_profile" ||
+      body.action === "update_user_settings" ||
+      body.action === "set_default_reciter";
 
     if (isMutation && !callerIsAdmin) {
       return new Response(
