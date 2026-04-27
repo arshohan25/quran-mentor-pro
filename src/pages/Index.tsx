@@ -140,27 +140,27 @@ const Index = () => {
     { icon: Layers, title: t("তাফসির তুলনা", "Tafsir Compare", "مقارنة التفسير"), desc: t("৪টি বাংলা তাফসির", "4 Bengali tafsirs"), path: "/tafsir/1/1", isNew: true },
     { icon: Heart, title: t("বুকমার্ক", "Bookmarks", "المحفوظات"), desc: t("সেভ করা আয়াত", "Saved ayahs"), path: "/bookmarks" },
     { icon: Calendar, title: t("প্ল্যানার", "Planner", "مخطط"), desc: t("দৈনিক টার্গেট", "Daily target"), path: "/planner", gold: true },
-  ].filter((tile) => visible(tile.path));
+  ].filter((tile) => visible(tile.path)) as Tile[];
 
   const prayerTiles: Tile[] = [
     { icon: Clock, title: t("নামাজের সময়", "Prayer Times", "أوقات الصلاة"), desc: t("লোকেশন অনুযায়ী", "Location-based"), path: "/prayer-times", span: 2 },
     { icon: Compass, title: t("কিবলা", "Qibla", "القبلة"), desc: t("দিকনির্দেশ", "Direction"), path: "/qibla", gold: true },
     { icon: BookText, title: t("নামাজ শিক্ষা", "Prayer Guide", "دليل الصلاة"), desc: t("৪ মাযহাব", "4 Madhabs"), path: "/prayer" },
     { icon: ClipboardCheck, title: t("কাযা ট্র্যাকার", "Qaza Tracker", "القضاء"), desc: t("ছুটে যাওয়া নামাজ", "Missed prayers"), path: "/qaza", isNew: true },
-  ].filter((tile) => visible(tile.path));
+  ].filter((tile) => visible(tile.path)) as Tile[];
 
   const dhikrTiles: Tile[] = [
     { icon: Hash, title: t("তাসবিহ", "Tasbih", "تسبيح"), desc: t("ডিজিটাল কাউন্টার", "Digital counter"), path: "/tasbih" },
     { icon: HandHeart, title: t("দোয়া ও যিকর", "Duas & Azkar", "أدعية"), desc: t("দৈনন্দিন সংগ্রহ", "Daily collection"), path: "/dua", gold: true },
     { icon: ListChecks, title: t("দৈনিক আমল", "Daily Amal", "أعمال يومية"), desc: t("ফযিলতসহ", "With virtues"), path: "/daily-amal" },
     { icon: CalendarDays, title: t("হিজরি ক্যালেন্ডার", "Hijri Calendar", "التقويم"), desc: t("ইসলামিক তারিখ", "Islamic dates"), path: "/hijri", gold: true },
-  ].filter((tile) => visible(tile.path));
+  ].filter((tile) => visible(tile.path)) as Tile[];
 
   const learnTiles: Tile[] = [
     { icon: ScrollText, title: t("হাদীস লাইব্রেরি", "Hadith Library", "الحديث"), desc: t("সিহাহ সিত্তাহ", "Sahih Sittah"), path: "/hadith", span: 2 },
     { icon: MessageCircleQuestion, title: t("AI প্রশ্ন", "Ask AI", "اسأل"), desc: t("বাংলা Q&A", "Bengali Q&A"), path: "/ask", gold: true, isNew: true },
     { icon: Bell, title: t("নোটিফিকেশন", "Notifications", "تنبيهات"), desc: t("আযান ও রিমাইন্ডার", "Adhan & reminders"), path: "/notifications" },
-  ].filter((tile) => visible(tile.path));
+  ].filter((tile) => visible(tile.path)) as Tile[];
 
   return (
     <div className="min-h-screen bg-background">
