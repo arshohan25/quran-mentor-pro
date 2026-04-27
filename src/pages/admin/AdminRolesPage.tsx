@@ -90,12 +90,24 @@ export default function AdminRolesPage() {
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
+  const adminCount = useMemo(
+    () => users.filter((u) => u.roles.includes("admin")).length,
+    [users]
+  );
+  const isLastAdmin = (u: AdminUser) =>
+    u.roles.includes("admin") && adminCount <= 1;
+
   const changeRole = async (target: AdminUser, newRole: AppRole) => {
     const current = highestRole(target.roles);
     if (current === newRole) return;
 
     if (target.id === currentUser?.id && current === "admin" && newRole !== "admin") {
       toast.error("You cannot demote yourself from admin");
+      return;
+    }
+
+    if (current === "admin" && newRole !== "admin" && isLastAdmin(target)) {
+      toast.error("Cannot revoke admin — this is the last remaining admin");
       return;
     }
 
