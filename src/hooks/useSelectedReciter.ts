@@ -49,6 +49,14 @@ export function useSelectedReciter(): {
   setReciterId: (id: string) => void;
 } {
   const [reciterId, setReciterIdState] = useState<string>(readStored);
+  // Re-resolve when admin pushes a new default via realtime (only matters when
+  // user has no localStorage choice — readStored handles that path).
+  const { settings: appSettings } = useAppSettings();
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(STORAGE_KEY)) setReciterIdState(resolveDefault());
+    } catch { /* ignore */ }
+  }, [appSettings.defaults.default_reciter_id]);
 
   useEffect(() => {
     const handleSameTab = () => setReciterIdState(readStored());
