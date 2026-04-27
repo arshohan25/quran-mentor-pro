@@ -16,7 +16,7 @@ interface Branding {
   tagline_bn: string; tagline_en: string; tagline_ar: string;
   logo_url: string | null;
   primary_hsl: string; accent_hsl: string; gold_hsl: string;
-  default_language: string; default_theme: string;
+  default_language: string; default_theme: string; default_country: string | null;
 }
 
 export default function AdminBrandingPage() {
@@ -159,6 +159,16 @@ export default function AdminBrandingPage() {
                 <SelectItem value="dark">Dark</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-1.5 md:col-span-2">
+            <Label className="text-xs">Default country (ISO 3166-1 alpha-2, lowercase)</Label>
+            <input
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder="e.g. bd, us, sa"
+              value={current.default_country ?? ""}
+              onChange={(e) => set("default_country", e.target.value.toLowerCase() || null)}
+              maxLength={2}
+            />
           </div>
         </div>
       </Card>

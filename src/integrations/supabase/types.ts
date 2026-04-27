@@ -88,6 +88,7 @@ export type Database = {
           app_name_ar: string
           app_name_bn: string
           app_name_en: string
+          default_country: string | null
           default_language: string
           default_theme: string
           gold_hsl: string
@@ -105,6 +106,7 @@ export type Database = {
           app_name_ar?: string
           app_name_bn?: string
           app_name_en?: string
+          default_country?: string | null
           default_language?: string
           default_theme?: string
           gold_hsl?: string
@@ -122,6 +124,7 @@ export type Database = {
           app_name_ar?: string
           app_name_bn?: string
           app_name_en?: string
+          default_country?: string | null
           default_language?: string
           default_theme?: string
           gold_hsl?: string
@@ -211,6 +214,39 @@ export type Database = {
           note?: string | null
           surah?: number
           user_id?: string
+        }
+        Relationships: []
+      }
+      content_item_locales: {
+        Row: {
+          country: string
+          enabled: boolean
+          id: string
+          key: string
+          language: string
+          updated_at: string
+          updated_by: string | null
+          value: string
+        }
+        Insert: {
+          country: string
+          enabled?: boolean
+          id?: string
+          key: string
+          language: string
+          updated_at?: string
+          updated_by?: string | null
+          value: string
+        }
+        Update: {
+          country?: string
+          enabled?: boolean
+          id?: string
+          key?: string
+          language?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
         }
         Relationships: []
       }
@@ -375,6 +411,63 @@ export type Database = {
           subtitle_ar?: string | null
           subtitle_bn?: string | null
           subtitle_en?: string | null
+          title_ar?: string | null
+          title_bn?: string | null
+          title_en?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lesson_items: {
+        Row: {
+          category: string
+          created_at: string
+          description_ar: string | null
+          description_bn: string | null
+          description_en: string | null
+          enabled: boolean
+          id: string
+          recommended_reciter_id: string | null
+          sort_order: number
+          target_ayah_end: number | null
+          target_ayah_start: number | null
+          target_surah: number | null
+          title_ar: string | null
+          title_bn: string | null
+          title_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description_ar?: string | null
+          description_bn?: string | null
+          description_en?: string | null
+          enabled?: boolean
+          id: string
+          recommended_reciter_id?: string | null
+          sort_order?: number
+          target_ayah_end?: number | null
+          target_ayah_start?: number | null
+          target_surah?: number | null
+          title_ar?: string | null
+          title_bn?: string | null
+          title_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description_ar?: string | null
+          description_bn?: string | null
+          description_en?: string | null
+          enabled?: boolean
+          id?: string
+          recommended_reciter_id?: string | null
+          sort_order?: number
+          target_ayah_end?: number | null
+          target_ayah_start?: number | null
+          target_surah?: number | null
           title_ar?: string | null
           title_bn?: string | null
           title_en?: string | null
