@@ -527,26 +527,29 @@ export default function AdminRolesPage() {
                     <div className="flex items-center gap-1">
                       <Button
                         size="sm"
-                        onClick={() => approveRequest(r)}
+                        onClick={() => openReview(r)}
                         disabled={cannotApprove || requestBusy === r.id}
-                        title={cannotApprove ? reason : "Approve promotion"}
+                        title={cannotApprove ? reason : "Review and approve or deny with a reason"}
                       >
                         {requestBusy === r.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : (
-                          <Check className="h-3.5 w-3.5" />
+                          <MessageSquare className="h-3.5 w-3.5" />
                         )}
-                        <span className="ml-1">Approve</span>
+                        <span className="ml-1">Review</span>
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => cancelRequest(r)}
-                        disabled={requestBusy === r.id}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                        <span className="ml-1">Cancel</span>
-                      </Button>
+                      {isOwnRequest && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => cancelRequest(r)}
+                          disabled={requestBusy === r.id}
+                          title="Withdraw your own request"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                          <span className="ml-1">Withdraw</span>
+                        </Button>
+                      )}
                     </div>
                   </li>
                 );
