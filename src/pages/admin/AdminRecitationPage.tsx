@@ -69,7 +69,7 @@ export default function AdminRecitationPage() {
       const [sessionsRes, weakRes] = await Promise.all([
         supabase
           .from("recitation_sessions")
-          .select("surah, accuracy, error_words, hesitation_words, reciter, lesson_type, created_at")
+          .select("surah, ayah, accuracy, error_words, hesitation_words, reciter, lesson_type, mode, created_at")
           .gte("created_at", since.toISOString())
           .limit(10000),
         supabase
