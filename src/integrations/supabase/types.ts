@@ -210,6 +210,7 @@ export type Database = {
           error_words: number
           hesitation_words: number
           id: string
+          mode: string
           surah: number
           total_words: number
           user_id: string
@@ -223,6 +224,7 @@ export type Database = {
           error_words?: number
           hesitation_words?: number
           id?: string
+          mode?: string
           surah: number
           total_words: number
           user_id: string
@@ -236,6 +238,7 @@ export type Database = {
           error_words?: number
           hesitation_words?: number
           id?: string
+          mode?: string
           surah?: number
           total_words?: number
           user_id?: string
