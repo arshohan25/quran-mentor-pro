@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Cell } from "recharts";
 import StatCard from "@/components/admin/StatCard";
 import { Mic, Activity, AlertTriangle, Hash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,15 @@ export default function AdminRecitationPage() {
   const [byReciter, setByReciter] = useState<BreakdownRow[]>([]);
   const [byLessonType, setByLessonType] = useState<BreakdownRow[]>([]);
   const [weakest, setWeakest] = useState<any[]>([]);
+  const [byGrade, setByGrade] = useState<{ grade: string; label: string; attempts: number; fill: string }[]>([]);
+
+  const GRADE_BUCKETS: { grade: string; label: string; min: number; max: number; fill: string }[] = [
+    { grade: "A", label: "A · 90–100%", min: 0.9, max: 1.0001, fill: "hsl(152 55% 38%)" },
+    { grade: "B", label: "B · 75–89%", min: 0.75, max: 0.9, fill: "hsl(152 45% 50%)" },
+    { grade: "C", label: "C · 60–74%", min: 0.6, max: 0.75, fill: "hsl(45 70% 55%)" },
+    { grade: "D", label: "D · 40–59%", min: 0.4, max: 0.6, fill: "hsl(28 80% 55%)" },
+    { grade: "F", label: "F · <40%", min: 0, max: 0.4, fill: "hsl(var(--destructive))" },
+  ];
 
   useEffect(() => {
     (async () => {
@@ -87,6 +96,17 @@ export default function AdminRecitationPage() {
       setBySurah(bySurahArr);
       setByReciter(toRows(reciterMap));
       setByLessonType(toRows(lessonMap));
+
+      const gradeCounts = GRADE_BUCKETS.map((b) => ({
+        grade: b.grade,
+        label: b.label,
+        fill: b.fill,
+        attempts: sessions.filter((s: any) => {
+          const a = s.accuracy ?? 0;
+          return a >= b.min && a < b.max;
+        }).length,
+      }));
+      setByGrade(gradeCounts);
       setTotals({
         sessions: sessions.length,
         avgAccuracy: accN > 0 ? Math.round((accSum / accN) * 100) : 0,
@@ -172,6 +192,54 @@ export default function AdminRecitationPage() {
         </div>
       </div>
 
+
+      <div className="rounded-xl border bg-card p-4">
+        <div className="flex items-baseline justify-between gap-3 flex-wrap mb-3">
+          <div>
+            <h3 className="text-sm font-bold text-foreground">Attempts by accuracy grade</h3>
+            <p className="text-xs text-muted-foreground">
+              Distribution of sessions across performance bands (last {range} days).
+            </p>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {totals.sessions.toLocaleString()} total · avg {totals.avgAccuracy}%
+          </div>
+        </div>
+        <div className="h-64">
+          <ResponsiveContainer>
+            <BarChart data={byGrade}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+              <Tooltip
+                formatter={(val: any) => [
+                  `${val} (${totals.sessions > 0 ? Math.round((Number(val) / totals.sessions) * 100) : 0}%)`,
+                  "Attempts",
+                ]}
+              />
+              <Bar dataKey="attempts" radius={[4, 4, 0, 0]}>
+                {byGrade.map((g) => (
+                  <Cell key={g.grade} fill={g.fill} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px]">
+          {byGrade.map((g) => {
+            const pct = totals.sessions > 0 ? Math.round((g.attempts / totals.sessions) * 100) : 0;
+            return (
+              <div key={g.grade} className="rounded-md border bg-background/40 px-2 py-1.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: g.fill }} />
+                  <span className="font-semibold text-foreground">{g.grade}</span>
+                </div>
+                <div className="text-muted-foreground">{g.attempts} · {pct}%</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="rounded-xl border bg-card p-4">
         <h3 className="text-sm font-bold text-foreground mb-3">Top surahs by session count</h3>
