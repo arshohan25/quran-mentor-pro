@@ -117,7 +117,8 @@ export function useRecitationRecorder({ surah, ayah, state, completed, mode = "p
           hesitation_words: hesitations,
           accuracy,
           duration_ms: duration,
-        });
+          mode,
+        } as any);
 
         const wordRows = Array.from(wordsRef.current.entries()).map(([word_index, t]) => ({
           user_id: user.id,
