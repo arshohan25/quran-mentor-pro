@@ -4,6 +4,7 @@ import { useArabicRecitationEngine } from "@/hooks/useArabicRecitationEngine";
 import { useRecitationRecorder } from "@/hooks/useRecitationRecorder";
 import { useSelectedReciter } from "@/hooks/useSelectedReciter";
 import { useLanguage } from "@/contexts/LanguageContext";
+import SessionReciterPicker from "./SessionReciterPicker";
 import type { MatchMode } from "@/utils/arabicUtils";
 
 interface InlineRecitationProps {
@@ -21,6 +22,9 @@ interface InlineRecitationProps {
 export default function LiveRecitationCheck({ ayahText, onComplete, onCancel, mode = "balanced", surah, ayah, reciter }: InlineRecitationProps) {
   const { t } = useLanguage();
   const { reciterId } = useSelectedReciter();
+  // Session-scoped override: null = follow app-wide selection (or the
+  // explicit `reciter` prop, if a parent passed one).
+  const [sessionReciter, setSessionReciter] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
   const handleComplete = () => { setCompleted(true); onComplete(); };
   const { state, toggleListening, stopListening } = useArabicRecitationEngine(ayahText, mode, handleComplete);
@@ -29,13 +33,15 @@ export default function LiveRecitationCheck({ ayahText, onComplete, onCancel, mo
   // Reset completion flag whenever the ayah text changes
   useEffect(() => { setCompleted(false); }, [ayahText]);
 
+  const effectiveReciter = sessionReciter ?? reciter ?? reciterId;
+
   useRecitationRecorder({
     surah: surah ?? null,
     ayah: ayah ?? null,
     state,
     completed,
     mode: "live",
-    reciter: reciter ?? reciterId,
+    reciter: effectiveReciter,
   });
 
   return (
@@ -95,6 +101,16 @@ export default function LiveRecitationCheck({ ayahText, onComplete, onCancel, mo
         >
           ✕
         </button>
+      </div>
+
+      {/* Session reciter override (does not change global preference) */}
+      <div className="flex items-center justify-end" dir="ltr">
+        <SessionReciterPicker
+          value={sessionReciter}
+          onChange={setSessionReciter}
+          variant="default"
+          className="!h-7 !text-[10px] max-w-[200px]"
+        />
       </div>
 
       {/* Error feedback */}
