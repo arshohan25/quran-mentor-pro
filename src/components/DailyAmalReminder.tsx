@@ -241,15 +241,45 @@ export default function DailyAmalReminder() {
               )}
             </p>
             {settings.smartEnabled && (
-              <div className="flex items-center gap-2">
-                <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                <Input
-                  type="time"
-                  value={settings.smartTime}
-                  onChange={(e) => setSettings((s) => ({ ...s, smartTime: e.target.value || "21:30" }))}
-                  className="h-8 text-xs flex-1"
-                />
-              </div>
+              <>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    type="time"
+                    value={settings.smartTime}
+                    onChange={(e) => setSettings((s) => ({ ...s, smartTime: e.target.value || "21:30" }))}
+                    className="h-8 text-xs flex-1"
+                  />
+                </div>
+
+                {/* Threshold slider */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-medium text-foreground">
+                      {t("নুড থ্রেশহোল্ড", "Nudge threshold", "حد التنبيه")}
+                    </p>
+                    <span className="text-[11px] font-bold text-accent tabular-nums">
+                      {Math.ceil(TOTAL_AMALS * settings.smartThreshold)} / {TOTAL_AMALS}
+                    </span>
+                  </div>
+                  <Slider
+                    min={1}
+                    max={TOTAL_AMALS}
+                    step={1}
+                    value={[Math.ceil(TOTAL_AMALS * settings.smartThreshold)]}
+                    onValueChange={([v]) =>
+                      setSettings((s) => ({ ...s, smartThreshold: v / TOTAL_AMALS }))
+                    }
+                  />
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                    {t(
+                      `এর কম হলে নুড করবে (${Math.round(settings.smartThreshold * 100)}%)`,
+                      `Nudges if completed less than this (${Math.round(settings.smartThreshold * 100)}%)`,
+                      `ينبه إذا أكملت أقل من ذلك (${Math.round(settings.smartThreshold * 100)}%)`
+                    )}
+                  </p>
+                </div>
+              </>
             )}
           </div>
 
