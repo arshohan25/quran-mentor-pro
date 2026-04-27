@@ -256,6 +256,213 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ───────────────────── Two-admin approval flow ─────────────────────
+
+    if (body.action === "list_admin_requests") {
+      const { data: requests, error: reqErr } = await admin
+        .from("admin_promotion_requests")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (reqErr) throw reqErr;
+
+      const reqIds = (requests ?? []).map((r: any) => r.id);
+      const approvalsRes = reqIds.length
+        ? await admin
+            .from("admin_promotion_approvals")
+            .select("request_id, approver_id, created_at")
+            .in("request_id", reqIds)
+        : { data: [], error: null };
+      if (approvalsRes.error) throw approvalsRes.error;
+
+      const byReq = new Map<string, any[]>();
+      (approvalsRes.data ?? []).forEach((a: any) => {
+        const list = byReq.get(a.request_id) ?? [];
+        list.push(a);
+        byReq.set(a.request_id, list);
+      });
+
+      const enriched = (requests ?? []).map((r: any) => ({
+        ...r,
+        approvals: byReq.get(r.id) ?? [],
+        approval_count: (byReq.get(r.id) ?? []).length,
+        required_approvals: REQUIRED_ADMIN_APPROVALS,
+      }));
+
+      return new Response(
+        JSON.stringify({ requests: enriched, required_approvals: REQUIRED_ADMIN_APPROVALS }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (body.action === "request_admin") {
+      if (!body.user_id) {
+        return new Response(JSON.stringify({ error: "user_id required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: existing } = await admin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", body.user_id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (existing) {
+        return new Response(JSON.stringify({ error: "User is already an admin" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: created, error } = await admin
+        .from("admin_promotion_requests")
+        .insert({
+          target_user_id: body.user_id,
+          requested_by: callerId,
+          reason: body.reason ?? null,
+          status: "pending",
+        })
+        .select()
+        .single();
+      if (error) {
+        if (error.message.includes("duplicate") || (error as any).code === "23505") {
+          return new Response(
+            JSON.stringify({ error: "A pending admin request already exists for this user" }),
+            { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        throw error;
+      }
+      return new Response(
+        JSON.stringify({ ok: true, request: created, required_approvals: REQUIRED_ADMIN_APPROVALS }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (body.action === "approve_admin") {
+      if (!body.request_id) {
+        return new Response(JSON.stringify({ error: "request_id required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: reqRow, error: rErr } = await admin
+        .from("admin_promotion_requests")
+        .select("*")
+        .eq("id", body.request_id)
+        .single();
+      if (rErr || !reqRow) {
+        return new Response(JSON.stringify({ error: "Request not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (reqRow.status !== "pending") {
+        return new Response(
+          JSON.stringify({ error: `Request is ${reqRow.status}, cannot approve` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (reqRow.requested_by === callerId) {
+        return new Response(
+          JSON.stringify({ error: "You cannot approve your own promotion request" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (reqRow.target_user_id === callerId) {
+        return new Response(
+          JSON.stringify({ error: "You cannot approve a promotion targeting yourself" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { error: aErr } = await admin
+        .from("admin_promotion_approvals")
+        .insert({ request_id: body.request_id, approver_id: callerId });
+      if (aErr) {
+        if (aErr.message.includes("duplicate") || (aErr as any).code === "23505") {
+          return new Response(
+            JSON.stringify({ error: "You have already approved this request" }),
+            { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        throw aErr;
+      }
+
+      const { count: approvalCount } = await admin
+        .from("admin_promotion_approvals")
+        .select("*", { count: "exact", head: true })
+        .eq("request_id", body.request_id);
+
+      const total = approvalCount ?? 0;
+      let applied = false;
+      if (total >= REQUIRED_ADMIN_APPROVALS) {
+        const { error: insErr } = await admin
+          .from("user_roles")
+          .insert({
+            user_id: reqRow.target_user_id,
+            role: "admin",
+            assigned_by: callerId,
+          });
+        if (insErr && !insErr.message.includes("duplicate")) throw insErr;
+
+        const { error: updErr } = await admin
+          .from("admin_promotion_requests")
+          .update({ status: "approved", applied_at: new Date().toISOString() })
+          .eq("id", body.request_id);
+        if (updErr) throw updErr;
+        applied = true;
+      }
+
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          applied,
+          approval_count: total,
+          required_approvals: REQUIRED_ADMIN_APPROVALS,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (body.action === "cancel_admin_request") {
+      if (!body.request_id) {
+        return new Response(JSON.stringify({ error: "request_id required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: reqRow } = await admin
+        .from("admin_promotion_requests")
+        .select("status")
+        .eq("id", body.request_id)
+        .single();
+      if (!reqRow) {
+        return new Response(JSON.stringify({ error: "Request not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (reqRow.status !== "pending") {
+        return new Response(
+          JSON.stringify({ error: `Request is already ${reqRow.status}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const { error } = await admin
+        .from("admin_promotion_requests")
+        .update({
+          status: "cancelled",
+          cancelled_at: new Date().toISOString(),
+          cancelled_by: callerId,
+        })
+        .eq("id", body.request_id);
+      if (error) throw error;
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
