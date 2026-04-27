@@ -1,13 +1,22 @@
 import { useEffect, useState } from "react";
-import { Users, UserCheck, Mic, TrendingUp } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Users, UserCheck, Mic, TrendingUp, ExternalLink, User as UserIcon } from "lucide-react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 
 type Range = 7 | 30 | 90;
+
+interface TopUser {
+  user_id: string;
+  attempts: number;
+  display_name: string | null;
+  avatar_url: string | null;
+}
 
 interface KpiData {
   totalUsers: number;
@@ -16,6 +25,7 @@ interface KpiData {
   mau: number;
   totalAttempts: number;
   attemptsByDay: { date: string; attempts: number; users: number }[];
+  topUsers: TopUser[];
 }
 
 function startOfDay(d: Date) {
