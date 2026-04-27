@@ -403,41 +403,43 @@ const Index = () => {
 
         {/* ============ Daily Ayah + Daily Dua ============ */}
         <div className="grid md:grid-cols-2 gap-4">
-          {ui.show_daily_ayah && <DailyAyah />}
-          <DailyAmalSummaryCard />
+          {visible("card:daily_ayah") && ui.show_daily_ayah && <DailyAyah />}
+          {visible("card:daily_amal_summary") && <DailyAmalSummaryCard />}
 
-          <div className="premium-card p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className={`icon-container-gold p-1.5 ${duaNotifEnabled ? '' : 'opacity-50'}`}>
-                  {duaNotifEnabled
-                    ? <Bell className="w-4 h-4 text-accent" strokeWidth={1.8} />
-                    : <BellOff className="w-4 h-4 text-muted-foreground" strokeWidth={1.8} />}
+          {visible("card:daily_dua") && (
+            <div className="premium-card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={`icon-container-gold p-1.5 ${duaNotifEnabled ? '' : 'opacity-50'}`}>
+                    {duaNotifEnabled
+                      ? <Bell className="w-4 h-4 text-accent" strokeWidth={1.8} />
+                      : <BellOff className="w-4 h-4 text-muted-foreground" strokeWidth={1.8} />}
+                  </div>
+                  <h3 className="text-sm font-bold text-foreground">
+                    {t("আজকের দোয়া", "Today's Dua", "دعاء اليوم")}
+                  </h3>
                 </div>
-                <h3 className="text-sm font-bold text-foreground">
-                  {t("আজকের দোয়া", "Today's Dua", "دعاء اليوم")}
-                </h3>
+                <Switch
+                  checked={duaNotifEnabled}
+                  onCheckedChange={() => {
+                    if (duaPerm !== "granted") requestDuaPerm();
+                    toggleDuaNotif();
+                  }}
+                />
               </div>
-              <Switch
-                checked={duaNotifEnabled}
-                onCheckedChange={() => {
-                  if (duaPerm !== "granted") requestDuaPerm();
-                  toggleDuaNotif();
-                }}
-              />
+              {todaysDua && (
+                <div className="space-y-2 pt-1">
+                  <p className="font-arabic text-base leading-[2.2] text-foreground">{todaysDua.arabic}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {language === "bn" ? todaysDua.bn : todaysDua.en}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
+                    <BookOpen className="w-3 h-3" /> {todaysDua.reference}
+                  </p>
+                </div>
+              )}
             </div>
-            {todaysDua && (
-              <div className="space-y-2 pt-1">
-                <p className="font-arabic text-base leading-[2.2] text-foreground">{todaysDua.arabic}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {language === "bn" ? todaysDua.bn : todaysDua.en}
-                </p>
-                <p className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
-                  <BookOpen className="w-3 h-3" /> {todaysDua.reference}
-                </p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
         {/* ============ BENTO SECTIONS ============ */}
