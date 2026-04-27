@@ -258,7 +258,7 @@ export default function AdminRecitationPage() {
   }, []);
 
   const hasReciterData = useMemo(
-    () => byReciter.some((r) => r.key !== "(unspecified)"),
+    () => byReciter.some((r) => r.key !== RECITER_UNKNOWN_KEY),
     [byReciter]
   );
   const hasLessonData = useMemo(
