@@ -47,6 +47,28 @@ interface BreakdownRow {
   avgAccuracy: number;
 }
 
+/**
+ * Normalize a reciter value from the DB into a consistent chart key.
+ * Treats null/empty/whitespace and known sentinel placeholders as "unknown"
+ * so historical rows (pre-validation) and new rows render under one bucket.
+ */
+const RECITER_UNKNOWN_KEY = "unknown";
+const RECITER_SENTINELS = new Set(["", "unknown", "null", "undefined", "(unspecified)", "n/a", "na"]);
+function normalizeReciterKey(input: unknown): string {
+  if (typeof input !== "string") return RECITER_UNKNOWN_KEY;
+  const trimmed = input.trim();
+  if (!trimmed) return RECITER_UNKNOWN_KEY;
+  if (RECITER_SENTINELS.has(trimmed.toLowerCase())) return RECITER_UNKNOWN_KEY;
+  return trimmed.slice(0, 100);
+}
+function normalizeLessonKey(input: unknown): string {
+  if (typeof input !== "string") return RECITER_UNKNOWN_KEY;
+  const trimmed = input.trim();
+  if (!trimmed) return RECITER_UNKNOWN_KEY;
+  if (RECITER_SENTINELS.has(trimmed.toLowerCase())) return RECITER_UNKNOWN_KEY;
+  return trimmed.slice(0, 50);
+}
+
 export default function AdminRecitationPage() {
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<RangeDays>(30);
@@ -101,14 +123,14 @@ export default function AdminRecitationPage() {
         accN += 1;
         errSum += s.error_words ?? 0;
 
-        const rKey = (s.reciter as string | null) ?? "(unspecified)";
+        const rKey = normalizeReciterKey(s.reciter);
         const r = reciterMap.get(rKey) ?? { attempts: 0, accSum: 0, accN: 0 };
         r.attempts += 1;
         r.accSum += s.accuracy ?? 0;
         r.accN += 1;
         reciterMap.set(rKey, r);
 
-        const lKey = (s.lesson_type as string | null) ?? "(unspecified)";
+        const lKey = normalizeLessonKey(s.lesson_type);
         const l = lessonMap.get(lKey) ?? { attempts: 0, accSum: 0, accN: 0 };
         l.attempts += 1;
         l.accSum += s.accuracy ?? 0;
@@ -236,7 +258,7 @@ export default function AdminRecitationPage() {
   }, []);
 
   const hasReciterData = useMemo(
-    () => byReciter.some((r) => r.key !== "(unspecified)"),
+    () => byReciter.some((r) => r.key !== RECITER_UNKNOWN_KEY),
     [byReciter]
   );
   const hasLessonData = useMemo(
