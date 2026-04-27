@@ -443,26 +443,34 @@ const Index = () => {
         </div>
 
         {/* ============ BENTO SECTIONS ============ */}
-        <BentoSection
-          eyebrow={t("কুরআন", "Quran", "القرآن")}
-          arabic="القرآن الكريم"
-          tiles={quranTiles}
-        />
-        <BentoSection
-          eyebrow={t("নামাজ", "Prayer", "الصلاة")}
-          arabic="الصلاة"
-          tiles={prayerTiles}
-        />
-        <BentoSection
-          eyebrow={t("যিকর ও দোয়া", "Dhikr & Dua", "الذكر والدعاء")}
-          arabic="الذكر والدعاء"
-          tiles={dhikrTiles}
-        />
-        <BentoSection
-          eyebrow={t("শিখুন ও জিজ্ঞাসা", "Learn & Ask", "تعلم واسأل")}
-          arabic="تعلّم"
-          tiles={learnTiles}
-        />
+        {quranTiles.length > 0 && (
+          <BentoSection
+            eyebrow={t("কুরআন", "Quran", "القرآن")}
+            arabic="القرآن الكريم"
+            tiles={quranTiles}
+          />
+        )}
+        {prayerTiles.length > 0 && (
+          <BentoSection
+            eyebrow={t("নামাজ", "Prayer", "الصلاة")}
+            arabic="الصلاة"
+            tiles={prayerTiles}
+          />
+        )}
+        {dhikrTiles.length > 0 && (
+          <BentoSection
+            eyebrow={t("যিকর ও দোয়া", "Dhikr & Dua", "الذكر والدعاء")}
+            arabic="الذكر والدعاء"
+            tiles={dhikrTiles}
+          />
+        )}
+        {learnTiles.length > 0 && (
+          <BentoSection
+            eyebrow={t("শিখুন ও জিজ্ঞাসা", "Learn & Ask", "تعلم واسأل")}
+            arabic="تعلّم"
+            tiles={learnTiles}
+          />
+        )}
 
         {/* Footer */}
         <div className="text-center pt-3 pb-6">
