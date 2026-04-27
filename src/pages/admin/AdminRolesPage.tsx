@@ -743,7 +743,14 @@ interface FilterableAuditLogProps {
   fmtTime: (s: string) => string;
 }
 
-type ActionFilter = "all" | "assigned" | "revoked";
+type ActionFilter =
+  | "all"
+  | "assigned"
+  | "revoked"
+  | "request_created"
+  | "request_approved"
+  | "request_applied"
+  | "request_cancelled";
 type RoleFilter = "all" | AppRole;
 
 function FilterableAuditLog({
