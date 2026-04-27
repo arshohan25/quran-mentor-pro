@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { usePublicAppConfig } from "@/hooks/usePublicAppConfig";
 
 type Theme = "light" | "dark";
 
@@ -16,11 +17,22 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
 
+  const { branding } = usePublicAppConfig();
+
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle("dark", theme === "dark");
     localStorage.setItem("theme", theme);
   }, [theme]);
+
+  // Apply admin branding tokens to CSS variables live
+  useEffect(() => {
+    if (!branding) return;
+    const root = document.documentElement;
+    if (branding.primary_hsl) root.style.setProperty("--primary", branding.primary_hsl);
+    if (branding.accent_hsl) root.style.setProperty("--accent", branding.accent_hsl);
+    if (branding.gold_hsl) root.style.setProperty("--gold", branding.gold_hsl);
+  }, [branding?.primary_hsl, branding?.accent_hsl, branding?.gold_hsl]);
 
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 
