@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Slider } from "@/components/ui/slider";
 import { Settings2, Megaphone, AlertTriangle, CheckCircle2, X } from "lucide-react";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import { isTileVisibleIn } from "@/lib/homeTilesManifest";
 
 const DAILY_GOAL_KEY = "daily-minutes-goal";
 function loadDailyGoal(): number {
