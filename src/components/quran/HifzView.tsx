@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRecitationRecorder } from "@/hooks/useRecitationRecorder";
 import { useSelectedReciter } from "@/hooks/useSelectedReciter";
 import SessionReciterPicker from "./SessionReciterPicker";
+import LessonPicker from "./LessonPicker";
 
 const SENSITIVITY_KEY = "hifz-sensitivity-mode";
 
@@ -85,6 +86,7 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
   // Session-scoped override for the qari attached to recorded sessions.
   // null = follow the app-wide selection.
   const [sessionReciter, setSessionReciter] = useState<string | null>(null);
+  const [sessionLesson, setSessionLesson] = useState<string | null>(null);
   useRecitationRecorder({
     surah: recitingAyahInSurah !== null ? selectedSurah : null,
     ayah: recitingAyahInSurah,
@@ -92,6 +94,7 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
     completed: recitationCompleted,
     mode: "hifz",
     reciter: sessionReciter ?? reciterId,
+    lessonType: sessionLesson,
   });
 
   // Auto-start listening when activeRecitationAyah is set and text is ready
@@ -198,6 +201,7 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
                     onChange={setSessionReciter}
                     variant="compact"
                   />
+                  <LessonPicker value={sessionLesson} onChange={setSessionLesson} className="h-7 text-[10px] w-36" />
                   <button onClick={() => {
                     if (allHidden) setHiddenAyahs(prev => { const n = new Set(prev); currentAyahs.forEach(a => n.delete(a.number)); return n; });
                     else setHiddenAyahs(prev => { const n = new Set(prev); currentAyahs.forEach(a => n.add(a.number)); return n; });

@@ -53,6 +53,7 @@ import AdminNavPage from "./pages/admin/AdminNavPage.tsx";
 import AdminDailyContentPage from "./pages/admin/AdminDailyContentPage.tsx";
 import AdminRecitersPage from "./pages/admin/AdminRecitersPage.tsx";
 import AdminContentStringsPage from "./pages/admin/AdminContentStringsPage.tsx";
+import AdminLessonsPage from "./pages/admin/AdminLessonsPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -104,6 +105,7 @@ function AnimatedRoutes() {
           <Route path="daily" element={<AdminDailyContentPage />} />
           <Route path="reciters" element={<AdminRecitersPage />} />
           <Route path="strings" element={<AdminContentStringsPage />} />
+          <Route path="lessons" element={<AdminLessonsPage />} />
         </Route>
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>

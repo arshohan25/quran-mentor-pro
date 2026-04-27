@@ -18,6 +18,7 @@ import {
   Calendar,
   Mic2,
   Type,
+  BookOpen,
 } from "lucide-react";
 import {
   Sidebar,
@@ -48,6 +49,7 @@ const NAV = [
   { title: "Navigation", url: "/admin/navigation", icon: Navigation },
   { title: "Daily Content", url: "/admin/daily", icon: Calendar },
   { title: "Reciters", url: "/admin/reciters", icon: Mic2 },
+  { title: "Lessons", url: "/admin/lessons", icon: BookOpen },
   { title: "Strings", url: "/admin/strings", icon: Type },
   { title: "Settings", url: "/admin/settings", icon: Settings },
   { title: "Audit Logs", url: "/admin/logs", icon: ScrollText },
