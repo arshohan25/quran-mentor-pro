@@ -825,11 +825,15 @@ function FilterableAuditLog({
             Action
           </label>
           <Select value={actionFilter} onValueChange={(v) => setActionFilter(v as ActionFilter)}>
-            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All actions</SelectItem>
-              <SelectItem value="assigned">Assigned</SelectItem>
-              <SelectItem value="revoked">Revoked</SelectItem>
+              <SelectItem value="assigned">Role assigned</SelectItem>
+              <SelectItem value="revoked">Role revoked</SelectItem>
+              <SelectItem value="request_created">Request created</SelectItem>
+              <SelectItem value="request_approved">Approval recorded</SelectItem>
+              <SelectItem value="request_applied">Request applied</SelectItem>
+              <SelectItem value="request_cancelled">Request cancelled</SelectItem>
             </SelectContent>
           </Select>
         </div>
