@@ -40,14 +40,6 @@ const KNOWN_RECITER_IDS = new Set<string>([
   "ar.minshawi",
 ]);
 const RECITER_SENTINEL_INVALID = new Set<string>(["", "unknown", "null", "undefined"]);
-  page?: number;
-  perPage?: number;
-  search?: string;
-  user_id?: string;
-  role?: "admin" | "moderator" | "user";
-  request_id?: string;
-  reason?: string;
-}
 
 const REQUIRED_ADMIN_APPROVALS = 2;
 
