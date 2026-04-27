@@ -193,6 +193,11 @@ export default function HifzView({ selectedSurah, setSelectedSurah, onBack }: Qu
                       </DropdownMenuRadioGroup>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  <SessionReciterPicker
+                    value={sessionReciter}
+                    onChange={setSessionReciter}
+                    variant="compact"
+                  />
                   <button onClick={() => {
                     if (allHidden) setHiddenAyahs(prev => { const n = new Set(prev); currentAyahs.forEach(a => n.delete(a.number)); return n; });
                     else setHiddenAyahs(prev => { const n = new Set(prev); currentAyahs.forEach(a => n.add(a.number)); return n; });
