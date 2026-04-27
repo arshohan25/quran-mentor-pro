@@ -13,6 +13,13 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { AppSettings, DEFAULT_APP_SETTINGS, useAppSettings } from "@/hooks/useAppSettings";
 import { usePublicAppConfig } from "@/hooks/usePublicAppConfig";
+import {
+  HOME_TILE_MANIFEST,
+  SECTION_LABELS,
+  SECTION_ORDER,
+  isTileVisibleIn,
+  type HomeTileSection,
+} from "@/lib/homeTilesManifest";
 
 const FEATURE_LABELS: Record<keyof AppSettings["features"], string> = {
   ask_ai: "Ask AI",
@@ -25,13 +32,15 @@ const FEATURE_LABELS: Record<keyof AppSettings["features"], string> = {
   bookmarks: "Bookmarks",
 };
 
-const UI_LABELS: Record<keyof AppSettings["ui"], string> = {
+/** Simple boolean UI flags (exclude `tiles`, which is a map rendered separately). */
+type SimpleUiKey = Exclude<keyof AppSettings["ui"], "tiles">;
+const UI_LABELS: Record<SimpleUiKey, string> = {
   show_streak_chip: "Show streak chip on home",
   show_daily_ayah: "Show Daily Ayah card",
   show_daily_hadith: "Show Daily Hadith card",
   show_daily_dua: "Show Daily Dua card",
-  show_qibla_tile: "Show Qibla tile",
-  show_hijri_tile: "Show Hijri calendar tile",
+  show_qibla_tile: "Show Qibla tile (legacy)",
+  show_hijri_tile: "Show Hijri tile (legacy)",
   compact_home: "Use compact home layout",
 };
 
