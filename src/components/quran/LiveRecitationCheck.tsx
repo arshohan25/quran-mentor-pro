@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Mic, MicOff, AlertCircle } from "lucide-react";
 import { useArabicRecitationEngine } from "@/hooks/useArabicRecitationEngine";
 import { useRecitationRecorder } from "@/hooks/useRecitationRecorder";
+import { useSelectedReciter } from "@/hooks/useSelectedReciter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { MatchMode } from "@/utils/arabicUtils";
 
@@ -13,10 +14,13 @@ interface InlineRecitationProps {
   /** Optional — pass surah + ayah (numberInSurah) to record per-word stats */
   surah?: number;
   ayah?: number;
+  /** Optional override; defaults to the app-wide selected qari */
+  reciter?: string | null;
 }
 
-export default function LiveRecitationCheck({ ayahText, onComplete, onCancel, mode = "balanced", surah, ayah }: InlineRecitationProps) {
+export default function LiveRecitationCheck({ ayahText, onComplete, onCancel, mode = "balanced", surah, ayah, reciter }: InlineRecitationProps) {
   const { t } = useLanguage();
+  const { reciterId } = useSelectedReciter();
   const [completed, setCompleted] = useState(false);
   const handleComplete = () => { setCompleted(true); onComplete(); };
   const { state, toggleListening, stopListening } = useArabicRecitationEngine(ayahText, mode, handleComplete);
@@ -31,6 +35,7 @@ export default function LiveRecitationCheck({ ayahText, onComplete, onCancel, mo
     state,
     completed,
     mode: "live",
+    reciter: reciter ?? reciterId,
   });
 
   return (
