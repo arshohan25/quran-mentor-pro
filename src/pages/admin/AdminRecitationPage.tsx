@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Cell } from "recharts";
 import StatCard from "@/components/admin/StatCard";
 import { Mic, Activity, AlertTriangle, Hash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
