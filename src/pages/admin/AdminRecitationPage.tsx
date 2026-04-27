@@ -101,14 +101,14 @@ export default function AdminRecitationPage() {
         accN += 1;
         errSum += s.error_words ?? 0;
 
-        const rKey = (s.reciter as string | null) ?? "(unspecified)";
+        const rKey = normalizeReciterKey(s.reciter);
         const r = reciterMap.get(rKey) ?? { attempts: 0, accSum: 0, accN: 0 };
         r.attempts += 1;
         r.accSum += s.accuracy ?? 0;
         r.accN += 1;
         reciterMap.set(rKey, r);
 
-        const lKey = (s.lesson_type as string | null) ?? "(unspecified)";
+        const lKey = normalizeLessonKey(s.lesson_type);
         const l = lessonMap.get(lKey) ?? { attempts: 0, accSum: 0, accN: 0 };
         l.attempts += 1;
         l.accSum += s.accuracy ?? 0;
