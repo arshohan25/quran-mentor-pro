@@ -134,6 +134,40 @@ export default function AdminRecitationPage() {
         }).length,
       }));
       setByGrade(gradeCounts);
+
+      // Wrong-ayah aggregation per mode (a "wrong" attempt = at least 1 error word)
+      const perMode: Record<Mode, Map<string, WrongAyah>> = {
+        practice: new Map(), hifz: new Map(), live: new Map(), lesson: new Map(),
+      };
+      let liveWrong = 0;
+      sessions.forEach((s: any) => {
+        const m = (MODES as readonly string[]).includes(s.mode) ? (s.mode as Mode) : "practice";
+        const errs = s.error_words ?? 0;
+        const isWrong = errs > 0;
+        if (m === "live" && isWrong) liveWrong += 1;
+        if (s.ayah == null) return;
+        const key = `${s.surah}:${s.ayah}`;
+        const bucket = perMode[m].get(key) ?? {
+          surah: s.surah, ayah: s.ayah, failures: 0, attempts: 0, totalErrors: 0, failRate: 0,
+        };
+        bucket.attempts += 1;
+        if (isWrong) bucket.failures += 1;
+        bucket.totalErrors += errs;
+        perMode[m].set(key, bucket);
+      });
+      const wrong: Record<Mode, WrongAyah[]> = {
+        practice: [], hifz: [], live: [], lesson: [],
+      };
+      (Object.keys(perMode) as Mode[]).forEach((m) => {
+        wrong[m] = Array.from(perMode[m].values())
+          .map((w) => ({ ...w, failRate: w.attempts > 0 ? w.failures / w.attempts : 0 }))
+          .filter((w) => w.failures > 0)
+          .sort((a, b) => b.failures - a.failures || b.failRate - a.failRate)
+          .slice(0, 25);
+      });
+      setWrongByMode(wrong);
+      setLiveWrongCount(liveWrong);
+
       setTotals({
         sessions: sessions.length,
         avgAccuracy: accN > 0 ? Math.round((accSum / accN) * 100) : 0,
@@ -144,6 +178,52 @@ export default function AdminRecitationPage() {
       setLoading(false);
     })();
   }, [range]);
+
+  // Realtime: bump live counter when new wrong sessions arrive
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-recitation-live")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "recitation_sessions" },
+        (payload) => {
+          const s: any = payload.new;
+          if ((s?.error_words ?? 0) > 0) {
+            setLiveWrongCount((c) => c + 1);
+            setLivePulse(true);
+            setTimeout(() => setLivePulse(false), 800);
+            // Merge into the right mode bucket if ayah is known
+            if (s.ayah != null) {
+              const m = (MODES as readonly string[]).includes(s.mode) ? (s.mode as Mode) : "practice";
+              setWrongByMode((prev) => {
+                const list = [...prev[m]];
+                const idx = list.findIndex((w) => w.surah === s.surah && w.ayah === s.ayah);
+                if (idx >= 0) {
+                  const cur = list[idx];
+                  list[idx] = {
+                    ...cur,
+                    attempts: cur.attempts + 1,
+                    failures: cur.failures + 1,
+                    totalErrors: cur.totalErrors + (s.error_words ?? 0),
+                    failRate: (cur.failures + 1) / (cur.attempts + 1),
+                  };
+                } else {
+                  list.unshift({
+                    surah: s.surah, ayah: s.ayah,
+                    attempts: 1, failures: 1,
+                    totalErrors: s.error_words ?? 0, failRate: 1,
+                  });
+                }
+                list.sort((a, b) => b.failures - a.failures || b.failRate - a.failRate);
+                return { ...prev, [m]: list.slice(0, 25) };
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const hasReciterData = useMemo(
     () => byReciter.some((r) => r.key !== "(unspecified)"),
