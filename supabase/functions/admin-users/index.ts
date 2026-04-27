@@ -74,12 +74,14 @@ Deno.serve(async (req) => {
 
     const body = (await req.json()) as Body;
 
-    // Any mutation (set_role / remove_role / delete_user) requires admin.
-    // Moderators are explicitly forbidden from changing roles or deleting users.
+    // Any mutation requires admin. Moderators are explicitly forbidden.
     const isMutation =
       body.action === "set_role" ||
       body.action === "remove_role" ||
-      body.action === "delete_user";
+      body.action === "delete_user" ||
+      body.action === "request_admin" ||
+      body.action === "approve_admin" ||
+      body.action === "cancel_admin_request";
 
     if (isMutation && !callerIsAdmin) {
       return new Response(
@@ -88,8 +90,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Listing users is allowed for admins and moderators (read-only).
-    if (body.action === "list_users" && !callerIsAdmin) {
+    // Listing users (and admin requests) is allowed for admins and moderators.
+    if (
+      (body.action === "list_users" || body.action === "list_admin_requests") &&
+      !callerIsAdmin
+    ) {
       const { data: isModData } = await userClient.rpc("has_role", {
         _user_id: callerId,
         _role: "moderator",
