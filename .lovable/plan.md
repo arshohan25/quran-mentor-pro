@@ -1,90 +1,56 @@
 ## Goal
-Turn the existing `AdminSettingsPage` into a complete, app-wide settings control center that:
-- Lets admins configure default reciter, practice/live limits, and UI feature toggles
-- Pushes changes to all user devices instantly via Supabase Realtime
-- Has a single source of truth (`app_settings.settings` JSONB) consumed everywhere
+Auto-generate a switch in **Admin → Settings → UI** for every home tile and the home cards/banners, and have Index hide each item the moment its toggle is flipped (live, no reload).
 
-## Current State
-- `app_settings` table exists with a JSONB `settings` column and admin-only update RLS (anon read allowed). ✅
-- `AdminSettingsPage.tsx` already edits `announcement`, `features` (4 flags), and `defaults.daily_minutes_goal`. ❌ No realtime, no consumer hook on the user app — settings are written but never read.
-- No `useAppSettings` hook anywhere; features are not gated.
-
-## Plan
-
-### 1. Schema (migration — additive only, no data wipe)
-Expand the JSONB default to the full shape and seed missing keys on the existing row 1:
-```jsonc
-{
-  "announcement": { "enabled": false, "text": "", "level": "info" },
-  "features": {
-    "ask_ai": true, "live_recitation": true, "hifz_srs": true,
-    "tafsir_compare": true, "word_meanings": true, "tajweed": true,
-    "audio_player": true, "bookmarks": true
-  },
-  "defaults": {
-    "daily_minutes_goal": 20,
-    "default_reciter_id": null,         // overrides reciters.is_default if set
-    "default_translation": "bn.bengali",
-    "default_arabic_font_size": 28
-  },
-  "limits": {
-    "practice_max_seconds": 300,        // hard cap on a single practice session
-    "live_max_seconds": 600,            // hard cap on a live recitation session
-    "live_min_accuracy_to_save": 0,     // % threshold under which sessions are discarded
-    "hifz_daily_review_cap": 50,        // max SRS cards/day
-    "ask_ai_daily_quota": 20            // per-user/day
-  },
-  "ui": {
-    "show_streak_chip": true,
-    "show_daily_ayah": true,
-    "show_daily_hadith": true,
-    "show_daily_dua": true,
-    "show_qibla_tile": true,
-    "show_hijri_tile": true,
-    "compact_home": false
-  }
-}
-```
-- Migration: `UPDATE app_settings SET settings = jsonb_strip_nulls('{...defaults...}'::jsonb || settings) WHERE id = 1;` (preserves any admin edits).
-- Add `app_settings` to `supabase_realtime` publication.
-
-### 2. New hook: `src/hooks/useAppSettings.ts`
-- Module-level cache + subscriber pattern (mirrors `usePublicAppConfig`).
-- One-time bootstrap: fetch row, then subscribe to `postgres_changes` on `app_settings`.
-- Exports:
-  - `useAppSettings()` → full settings object + `loading`
-  - `useFeatureFlag(key)` → boolean (defaults true if missing)
-  - `useLimit(key)` → number
-  - `useUiToggle(key)` → boolean
-- Safe defaults baked in so app never breaks if DB row is missing.
-
-### 3. Admin UI rewrite: `src/pages/admin/AdminSettingsPage.tsx`
-Tabbed layout (Tabs primitive): **Announcement · Features · Defaults · Limits · UI Toggles**.
-- **Defaults tab** — `default_reciter_id` uses a `Select` populated from `reciters` table (the same source as `usePublicAppConfig.reciters`); shows current `is_default` reciter if unset.
-- **Limits tab** — sliders/inputs for each cap with min/max validation.
-- **Features / UI tabs** — list of switches generated from the JSON keys with human-readable labels.
-- Sticky save bar; toast on success; optimistic UI; "Reset section to defaults" buttons.
-- All writes go to `app_settings.id=1` via existing admin RLS — Realtime broadcasts to every connected client within ~1 s.
-
-### 4. Wire consumers (minimal, surgical)
-- **`useSelectedReciter.ts`** — when no per-user choice is stored, fall back to `app_settings.defaults.default_reciter_id` instead of the hardcoded constant.
-- **`useRecitationRecorder.ts`** — read `limits.practice_max_seconds` / `limits.live_max_seconds` and auto-stop; gate save by `live_min_accuracy_to_save`.
-- **`useHifzSrs.ts`** — clamp daily due queue to `limits.hifz_daily_review_cap`.
-- **`AskPage.tsx`** — enforce `limits.ask_ai_daily_quota` (count today's queries in localStorage).
-- **`Index.tsx` (home)** — hide tiles based on `ui.show_*` flags; render announcement banner from `announcement` when `enabled`.
-- **Routes/nav guards** — hide menu entries and 404 routes when matching `features.*` flag is off (`live_recitation`, `hifz_srs`, `tafsir_compare`, `ask_ai`).
-- **`ReadingSettings.tsx`** — initial font size pulls from `defaults.default_arabic_font_size` if user hasn't set one.
-
-### 5. Realtime push verification
-- `useAppSettings` already subscribes; no extra plumbing needed.
-- Add a tiny "Last updated" stamp + "Live" indicator on the admin page so admins see broadcasts working.
+## Approach
+Use a single shared **manifest** as the source of truth for what's on the home page. Admin renders switches from it; Index filters render from the same list. Adding a future tile means adding one manifest entry — no admin/Index edits needed.
 
 ## Files
-**New:** `src/hooks/useAppSettings.ts`
-**Edited:** `src/pages/admin/AdminSettingsPage.tsx`, `src/hooks/useSelectedReciter.ts`, `src/hooks/useRecitationRecorder.ts`, `src/hooks/useHifzSrs.ts`, `src/pages/AskPage.tsx`, `src/pages/Index.tsx`, `src/components/quran/ReadingSettings.tsx`, `src/App.tsx` (route gating)
-**Migration:** one new SQL file (additive JSON merge + realtime publication).
 
-## Out of scope (can follow up)
-- Per-country setting overrides (could reuse the `content_item_locales` pattern later).
-- Versioning / rollback of settings (Phase 4 of the earlier roadmap).
-- A/B targeting by user role.
+### 1. NEW: `src/lib/homeTilesManifest.ts`
+Exports:
+- `HOME_TILE_MANIFEST: { path, label, section }[]` covering:
+  - **Cards/banners** (`card:*` synthetic paths): announcement banner, Daily Ayah, Daily Amal summary, Daily Dua, streak chip, next-prayer chip, Hijri header chip
+  - **Quran tiles**: `/quran`, `/audio`, `/hifz`, `/practice`, `/recitation/stats`, `/tafsir/1/1`, `/bookmarks`, `/planner`
+  - **Prayer tiles**: `/prayer-times`, `/qibla`, `/prayer`, `/qaza`
+  - **Dhikr tiles**: `/tasbih`, `/dua`, `/daily-amal`, `/hijri`
+  - **Learn tiles**: `/hadith`, `/ask`, `/notifications`
+- `SECTION_LABELS` for grouping in admin UI
+
+### 2. EDIT: `src/hooks/useAppSettings.ts`
+Extend `AppSettings.ui` with:
+```ts
+tiles: Record<string, boolean>   // keyed by manifest path; missing key = visible
+```
+Default = `{}` (empty → everything visible). Add a small helper:
+```ts
+export function isTileVisible(path: string): boolean {
+  const v = getAppSettingsSnapshot().ui.tiles?.[path];
+  return v !== false;   // default-on for any unknown path
+}
+```
+Keep the existing `show_qibla_tile`, `show_hijri_tile`, `show_daily_ayah` for back-compat but stop relying on them in Index — the manifest map supersedes them.
+
+### 3. EDIT: `src/pages/admin/AdminSettingsPage.tsx`
+In the **UI** tab, append a new section "Home tiles & cards":
+- Group manifest entries by `section`, render a `Switch` per entry.
+- Bound state to `draft.ui.tiles[path]`; default `true` if undefined.
+- "Toggle all in section" header chip (small QoL).
+- Existing UI toggles (compact_home, show_streak_chip, etc.) stay above for now.
+
+### 4. EDIT: `src/pages/Index.tsx`
+- Replace the conditional spreads (`...(ui.show_qibla_tile ? [...] : [])`) with a generic helper:
+  ```ts
+  const visible = (path: string) => ui.tiles?.[path] !== false;
+  ```
+- Filter `quranTiles`, `prayerTiles`, `dhikrTiles`, `learnTiles` arrays through `visible(tile.path)`.
+- Gate the announcement banner with `visible("card:announcement") && showAnnouncement`.
+- Gate Daily Ayah, Daily Amal summary card, Daily Dua card, streak chip, next-prayer chip, and Hijri header chip with their `card:*` keys.
+- If a section ends up with **0 visible tiles**, hide the whole `<BentoSection>`.
+
+### 5. NO migration required
+The existing JSONB column already stores arbitrary keys. Defaults stay backward-compatible because `isTileVisible` treats missing keys as `true`. Realtime push from the previous round already covers `app_settings` changes.
+
+## What the user gets
+- Admin → Settings → UI tab now lists ~25 switches grouped by section.
+- Toggling any switch hides/shows the corresponding tile or card on every connected user's home page within ~1 second.
+- Adding a new home tile in the future: add one manifest line → toggle appears automatically.
