@@ -111,17 +111,67 @@ export default function AdminRecitationPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Recitation Analytics</h1>
-        <p className="text-sm text-muted-foreground">Aggregate trends across all users (last 30 days).</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Recitation Analytics</h1>
+          <p className="text-sm text-muted-foreground">Aggregate trends across all users (last {range} days).</p>
+        </div>
+        <Tabs value={String(range)} onValueChange={(v) => setRange(Number(v) as RangeDays)}>
+          <TabsList>
+            <TabsTrigger value="7">7d</TabsTrigger>
+            <TabsTrigger value="30">30d</TabsTrigger>
+            <TabsTrigger value="90">90d</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard label="Sessions (30d)" value={totals.sessions} icon={Mic} tone="primary" />
+        <StatCard label={`Sessions (${range}d)`} value={totals.sessions} icon={Mic} tone="primary" />
         <StatCard label="Avg Accuracy" value={`${totals.avgAccuracy}%`} icon={Activity} tone="accent" />
         <StatCard label="Total Errors" value={totals.totalErrors} icon={AlertTriangle} tone="muted" />
         <StatCard label="Tracked Weak Words" value={totals.weakestN} icon={Hash} tone="primary" />
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl border bg-card p-4">
+          <h3 className="text-sm font-bold text-foreground mb-1">Attempts by reciter</h3>
+          <p className="text-xs text-muted-foreground mb-3">
+            {hasReciterData ? "Distribution of recitation attempts across selected qaris." : "No reciter tagged on sessions yet — new sessions will be tagged once a qari is selected in the player."}
+          </p>
+          <div className="h-72">
+            <ResponsiveContainer>
+              <BarChart data={byReciter} layout="vertical" margin={{ left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis type="number" tick={{ fontSize: 10 }} allowDecimals={false} />
+                <YAxis dataKey="key" type="category" tick={{ fontSize: 10 }} width={120} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="attempts" name="Attempts" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="rounded-xl border bg-card p-4">
+          <h3 className="text-sm font-bold text-foreground mb-1">Attempts by lesson type</h3>
+          <p className="text-xs text-muted-foreground mb-3">
+            {hasLessonData ? "Distribution of recitation attempts across lesson styles." : "No lesson type tagged on sessions yet — new sessions will be tagged once selected."}
+          </p>
+          <div className="h-72">
+            <ResponsiveContainer>
+              <BarChart data={byLessonType} layout="vertical" margin={{ left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis type="number" tick={{ fontSize: 10 }} allowDecimals={false} />
+                <YAxis dataKey="key" type="category" tick={{ fontSize: 10 }} width={120} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="attempts" name="Attempts" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
 
       <div className="rounded-xl border bg-card p-4">
         <h3 className="text-sm font-bold text-foreground mb-3">Top surahs by session count</h3>
