@@ -13,6 +13,10 @@ interface UseRecitationRecorderOpts {
   completed: boolean;
   /** Tagging the attempt: defaults to "practice" */
   mode?: RecitationMode;
+  /** Selected reciter/qari (e.g. "ar.alafasy") */
+  reciter?: string | null;
+  /** Lesson/style type (e.g. "tajweed", "tarteel", "hifz") */
+  lessonType?: string | null;
 }
 
 interface WordTally {
@@ -31,7 +35,7 @@ interface WordTally {
  *  - errors++   : whenever errorIndex hits a new word
  *  - hesitations++ : if more than 3s elapsed since last advance
  */
-export function useRecitationRecorder({ surah, ayah, state, completed, mode = "practice" }: UseRecitationRecorderOpts) {
+export function useRecitationRecorder({ surah, ayah, state, completed, mode = "practice", reciter = null, lessonType = null }: UseRecitationRecorderOpts) {
   const { user } = useAuth();
   const startRef = useRef<number | null>(null);
   const wordsRef = useRef<Map<number, WordTally>>(new Map());
@@ -118,6 +122,8 @@ export function useRecitationRecorder({ surah, ayah, state, completed, mode = "p
           accuracy,
           duration_ms: duration,
           mode,
+          reciter,
+          lesson_type: lessonType,
         } as any);
 
         const wordRows = Array.from(wordsRef.current.entries()).map(([word_index, t]) => ({

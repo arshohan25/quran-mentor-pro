@@ -278,7 +278,9 @@ export type Database = {
           error_words: number
           hesitation_words: number
           id: string
+          lesson_type: string | null
           mode: string
+          reciter: string | null
           surah: number
           total_words: number
           user_id: string
@@ -292,7 +294,9 @@ export type Database = {
           error_words?: number
           hesitation_words?: number
           id?: string
+          lesson_type?: string | null
           mode?: string
+          reciter?: string | null
           surah: number
           total_words: number
           user_id: string
@@ -306,7 +310,9 @@ export type Database = {
           error_words?: number
           hesitation_words?: number
           id?: string
+          lesson_type?: string | null
           mode?: string
+          reciter?: string | null
           surah?: number
           total_words?: number
           user_id?: string
