@@ -106,6 +106,8 @@ const Index = () => {
   const { settings: appSettings } = useAppSettings();
   const ui = appSettings.ui;
   const announcement = appSettings.announcement;
+  /** Per-tile visibility from admin (default-on for missing keys). */
+  const visible = (path: string) => isTileVisibleIn(ui.tiles, path);
   const [dismissedAnnouncement, setDismissedAnnouncement] = useState<string | null>(() => {
     try { return localStorage.getItem(ANNOUNCEMENT_DISMISS_KEY); } catch { return null; }
   });
