@@ -17,7 +17,19 @@ interface Body {
     | "approve_admin"
     | "cancel_admin_request"
     | "list_admin_requests"
-    | "validate_recitation_reciters";
+    | "validate_recitation_reciters"
+    | "update_row"
+    | "update_user_profile"
+    | "update_user_settings"
+    | "set_default_reciter";
+  /** update_row: target table (allowlisted) */
+  table?: string;
+  /** update_row: row id */
+  row_id?: string;
+  /** update_row / update_user_profile / update_user_settings: patch payload */
+  patch?: Record<string, unknown>;
+  /** set_default_reciter: reciter id */
+  reciter_id?: string;
   page?: number;
   perPage?: number;
   search?: string;
@@ -96,7 +108,11 @@ Deno.serve(async (req) => {
       body.action === "delete_user" ||
       body.action === "request_admin" ||
       body.action === "approve_admin" ||
-      body.action === "cancel_admin_request";
+      body.action === "cancel_admin_request" ||
+      body.action === "update_row" ||
+      body.action === "update_user_profile" ||
+      body.action === "update_user_settings" ||
+      body.action === "set_default_reciter";
 
     if (isMutation && !callerIsAdmin) {
       return new Response(
@@ -609,6 +625,117 @@ Deno.serve(async (req) => {
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // ───────────────────── Admin direct edit endpoints ─────────────────────
+
+    const ROW_TABLE_FIELDS: Record<string, string[]> = {
+      recitation_sessions: ["accuracy", "correct_words", "error_words", "hesitation_words", "mode", "reciter", "lesson_type", "duration_ms", "surah", "ayah", "total_words"],
+      recitation_word_stats: ["attempts", "correct", "errors", "hesitations"],
+      bookmarks_sync: ["note", "surah", "ayah"],
+      hifz_srs: ["ease_factor", "interval_days", "repetitions", "next_review_at", "last_quality"],
+      qaza_sync: ["fajr", "dhuhr", "asr", "maghrib", "isha", "witr"],
+      profiles: ["display_name", "avatar_url"],
+    };
+
+    const sanitizePatch = (table: string, patch: Record<string, unknown>) => {
+      const allow = ROW_TABLE_FIELDS[table];
+      if (!allow) return null;
+      const out: Record<string, unknown> = {};
+      for (const k of Object.keys(patch ?? {})) {
+        if (allow.includes(k)) out[k] = patch[k];
+      }
+      return out;
+    };
+
+    if (body.action === "update_row") {
+      if (!body.table || !body.row_id || !body.patch) {
+        return new Response(JSON.stringify({ error: "table, row_id and patch required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const clean = sanitizePatch(body.table, body.patch);
+      if (!clean) {
+        return new Response(JSON.stringify({ error: "Table not editable" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { error } = await admin.from(body.table).update(clean).eq("id", body.row_id);
+      if (error) throw error;
+      await admin.from("audit_logs").insert({
+        actor_id: callerId, action: `${body.table}.admin_update`,
+        target_type: body.table, target_id: body.row_id, metadata: { fields: Object.keys(clean) },
+      });
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (body.action === "update_user_profile") {
+      if (!body.user_id || !body.patch) {
+        return new Response(JSON.stringify({ error: "user_id and patch required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const clean = sanitizePatch("profiles", body.patch);
+      if (!clean || Object.keys(clean).length === 0) {
+        return new Response(JSON.stringify({ error: "No editable fields in patch" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { error } = await admin.from("profiles").update(clean).eq("user_id", body.user_id);
+      if (error) throw error;
+      await admin.from("audit_logs").insert({
+        actor_id: callerId, action: "profile.admin_update",
+        target_type: "user", target_id: body.user_id, metadata: { fields: Object.keys(clean) },
+      });
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (body.action === "update_user_settings") {
+      if (!body.user_id || !body.patch) {
+        return new Response(JSON.stringify({ error: "user_id and patch required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: existing } = await admin
+        .from("user_settings").select("settings").eq("user_id", body.user_id).maybeSingle();
+      const merged = { ...(existing?.settings ?? {}), ...(body.patch as Record<string, unknown>) };
+      if (existing) {
+        const { error } = await admin.from("user_settings")
+          .update({ settings: merged }).eq("user_id", body.user_id);
+        if (error) throw error;
+      } else {
+        const { error } = await admin.from("user_settings")
+          .insert({ user_id: body.user_id, settings: merged });
+        if (error) throw error;
+      }
+      await admin.from("audit_logs").insert({
+        actor_id: callerId, action: "user_settings.admin_update",
+        target_type: "user", target_id: body.user_id, metadata: { keys: Object.keys(body.patch) },
+      });
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (body.action === "set_default_reciter") {
+      if (!body.reciter_id) {
+        return new Response(JSON.stringify({ error: "reciter_id required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { error: clearErr } = await admin.from("reciters")
+        .update({ is_default: false }).eq("is_default", true);
+      if (clearErr) throw clearErr;
+      const { error: setErr } = await admin.from("reciters")
+        .update({ is_default: true }).eq("id", body.reciter_id);
+      if (setErr) throw setErr;
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), {

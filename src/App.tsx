@@ -47,6 +47,12 @@ import AdminRecitationPage from "./pages/admin/AdminRecitationPage.tsx";
 import AdminAskPage from "./pages/admin/AdminAskPage.tsx";
 import AdminSettingsPage from "./pages/admin/AdminSettingsPage.tsx";
 import AdminLogsPage from "./pages/admin/AdminLogsPage.tsx";
+import AdminBrandingPage from "./pages/admin/AdminBrandingPage.tsx";
+import AdminHomePage from "./pages/admin/AdminHomePage.tsx";
+import AdminNavPage from "./pages/admin/AdminNavPage.tsx";
+import AdminDailyContentPage from "./pages/admin/AdminDailyContentPage.tsx";
+import AdminRecitersPage from "./pages/admin/AdminRecitersPage.tsx";
+import AdminContentStringsPage from "./pages/admin/AdminContentStringsPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -92,6 +98,12 @@ function AnimatedRoutes() {
           <Route path="ask" element={<AdminAskPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
           <Route path="logs" element={<AdminLogsPage />} />
+          <Route path="branding" element={<AdminBrandingPage />} />
+          <Route path="home" element={<AdminHomePage />} />
+          <Route path="navigation" element={<AdminNavPage />} />
+          <Route path="daily" element={<AdminDailyContentPage />} />
+          <Route path="reciters" element={<AdminRecitersPage />} />
+          <Route path="strings" element={<AdminContentStringsPage />} />
         </Route>
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>

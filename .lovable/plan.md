@@ -1,89 +1,174 @@
-# Professional Admin Panel
+# Admin "Edit Everything" Control Plan
 
-A secure, role-gated admin dashboard at `/admin` to control users, content, settings, and view analytics across the app.
+Goal: Admins can change/add anything users see in the app — home content, navigation, daily Ayah/Hadith/Dua, qari list & default reciter, theme + branding, and every single user record — all live for all users.
 
-## 1. Secure roles foundation (database)
+Because the app currently has many large hardcoded data files (`dailyAmalData.ts`, `duaData.ts`, `surahList.ts`, `hadithCollections.ts`, `prayerData.ts`, etc.), this is delivered in **4 phases**. Phase 1 ships the foundation + most-requested controls so admins get value immediately; later phases migrate the long-form content into editable tables.
 
-Create proper server-side role infrastructure (never trust client/localStorage for admin checks).
+---
 
-**Migration:**
-- `app_role` enum: `admin`, `moderator`, `user`
-- `user_roles` table: `id`, `user_id` (→ auth.users, cascade), `role app_role`, `assigned_at`, `assigned_by`; unique `(user_id, role)`; RLS enabled
-- SECURITY DEFINER function `public.has_role(_user_id uuid, _role app_role) returns boolean` (avoids recursive RLS)
-- RLS policies on `user_roles`:
-  - Users can SELECT their own roles
-  - Only admins can INSERT/UPDATE/DELETE (`has_role(auth.uid(),'admin')`)
-- Bootstrap: insert `admin` role for the first registered user (or via SQL after you confirm your `user_id`)
-- Tighten existing tables: add admin-override SELECT policies on `profiles`, `bookmarks_sync`, `hifz_srs`, `qaza_sync`, `recitation_sessions`, `recitation_word_stats`, `user_settings` so admins can read all rows
+## Phase 1 — Foundation (ship first)
 
-## 2. Auth + role hooks
+### 1.1 Database schema (new migration)
 
-- New `src/hooks/useUserRole.ts` — fetches current user's roles via `user_roles` select; exposes `isAdmin`, `isModerator`, `loading`
-- New `src/components/admin/RequireAdmin.tsx` — route guard; redirects non-admins to `/` with a toast
+New tables (all with `Admins manage / Anyone read` RLS):
 
-## 3. Admin shell & navigation
+- `app_branding` (singleton row)
+  - `app_name_bn/en/ar`, `tagline_bn/en/ar`, `logo_url`, `primary_hsl`, `accent_hsl`, `gold_hsl`, `default_language` (`bn|en|ar`), `default_theme` (`light|dark|auto`), `updated_at`, `updated_by`.
+- `home_sections` (ordered cards on the home page)
+  - `id`, `key` (e.g. `daily_ayah`, `prayer_times`, `streak`, `daily_amal`, `bookmarks`, `hifz`, `tasbih`, `dua`, `hadith`, `ask`, `recitation_stats`), `enabled`, `sort_order`, `title_bn/en/ar`, `subtitle_bn/en/ar`, `link`, `icon` (lucide name), `cta_label_bn/en/ar`.
+- `nav_items` (bottom nav)
+  - `id`, `enabled`, `sort_order`, `path`, `icon` (lucide name), `label_bn/en/ar`. Capped to 5 visible.
+- `reciters` (replaces hardcoded qari list)
+  - `id` (text PK e.g. `ar.alafasy`), `enabled`, `sort_order`, `name_bn/en/ar`, `is_default` (only one true), `external_id` (matches AlQuran.cloud). Seeded from current `qariList`.
+- `daily_content_overrides`
+  - `id`, `kind` (`ayah|hadith|dua`), `date` (date), `payload` jsonb, `enabled`. If a row exists for today, it overrides the algorithmic pick.
+- `content_items` (generic key/value CMS for misc text snippets — banners, empty states, button labels)
+  - `id`, `key` (unique), `bn/en/ar`, `enabled`.
 
-- New layout `src/components/admin/AdminShell.tsx` using shadcn `Sidebar` (collapsible icon mode)
-  - Sections: Dashboard, Users, Content, Recitation, Hadith QA, Settings, Logs
-  - Persistent header with `SidebarTrigger`, breadcrumb, theme/lang switch, "Exit admin" button
-- Route: `/admin/*` wrapped in `<RequireAdmin>`; nested routes for each section
-- Hidden from `BottomNav`; entry point added in `AccountPage` (visible only when `isAdmin`)
+Extend `app_settings.settings` JSON with:
+- `bottomNav.maxItems`, `home.layout` (`compact|comfortable`), `branding.useCustomLogo`.
 
-## 4. Admin pages
+All tables have RLS:
+- `SELECT` to `anon, authenticated` (so unauthenticated users see customizations).
+- `INSERT/UPDATE/DELETE` only via `has_role(auth.uid(), 'admin')`.
+- Trigger `audit_logs` insert on each change for traceability.
 
-**Dashboard (`/admin`)**
-- KPI cards: total users (last 7/30d), active today, total recitation sessions, avg accuracy, total bookmarks, total hifz cards due
-- Charts (recharts): signups over time, recitation accuracy trend, daily active users
-- Recent activity feed (latest sessions / new users)
+### 1.2 Public settings hook
 
-**Users (`/admin/users`)**
-- Searchable, paginated table (shadcn `Table` + `Input`): email (from auth via edge function), display_name, role badges, created_at, last activity
-- Row actions: view profile drawer, assign/remove roles (admin/moderator), reset display name, view their stats
-- Bulk select + bulk role assign
+New `src/hooks/usePublicAppConfig.ts`:
+- Single React Query hook that fetches `app_settings`, `app_branding`, `home_sections`, `nav_items`, `reciters` once on app boot, caches in memory, and subscribes to Supabase Realtime so changes propagate live to every connected user without reload.
+- Exposes typed `branding`, `homeSections`, `navItems`, `reciters`, `defaultReciterId`, `featureFlags`.
 
-**Content moderation (`/admin/content`)**
-- Tabs: Bookmarks, Hifz cards, Qaza records
-- Per-user filter, view/delete entries, export CSV
+Wire into `App.tsx` near `LanguageProvider`/`ThemeProvider` so:
+- `ThemeProvider` reads HSL tokens from `branding.*_hsl` and writes them to CSS custom properties (`--primary`, `--accent`, `--gold`) at runtime.
+- `LanguageProvider` honors `defaultLanguage` for new users.
+- `BottomNav.tsx` renders `navItems` from config (replacing hardcoded `NAV_ITEMS`).
+- `Index.tsx` renders cards from `homeSections` in `sort_order`, hiding disabled ones.
+- `useSelectedReciter.ts` falls back to `defaultReciterId` from config (instead of hardcoded `DEFAULT_RECITER`); the Qari picker shows reciters from the table.
+- `DailyAyah`, daily hadith, and daily dua components first check `daily_content_overrides` for today.
 
-**Recitation analytics (`/admin/recitation`)**
-- Aggregate accuracy trends, weakest words across all users, top reciters leaderboard, session count by surah heatmap
+### 1.3 New admin pages (under `/admin`)
 
-**Hadith QA logs (`/admin/ask`)**
-- View `islamic-qa` edge function logs (via supabase analytics) — questions asked, response times, errors
+Add to `AdminShell` nav and `App.tsx` routes:
 
-**App settings (`/admin/settings`)**
-- Global feature flags stored in a new `app_settings` table (singleton row, jsonb): toggle features (Sabina, Live recitation, AI Ask), default daily goal minutes, announcement banner text
-- Banner reads from this table on `Index.tsx`
+1. **`/admin/branding`** — `AdminBrandingPage.tsx`
+   - Edit app name (3 langs), tagline, upload logo (uses Supabase Storage bucket `branding`), pick primary/accent/gold via color picker (writes HSL), pick default language + default theme.
+   - Live preview swatch + "Apply to all users" button (saves + broadcasts via realtime).
 
-**Audit logs (`/admin/logs`)**
-- New `audit_logs` table: `actor_id`, `action`, `target_type`, `target_id`, `metadata jsonb`, `created_at`
-- Trigger inserts on role changes, content deletions
-- Read-only filterable table
+2. **`/admin/home`** — `AdminHomePage.tsx`
+   - Drag-to-reorder list of `home_sections` with `Switch` per row, inline edit of multi-language title/subtitle/CTA, link, lucide icon picker.
+   - "Add custom section" button creates a new card linking to any internal route.
 
-## 5. Edge function for admin-only operations
+3. **`/admin/navigation`** — `AdminNavPage.tsx`
+   - Same pattern for `nav_items`. Validation: 3–5 visible items, paths must match an existing route (validated against an exported route manifest).
 
-`supabase/functions/admin-users/index.ts` (verify_jwt = true)
-- Verifies caller is admin via `has_role`
-- Endpoints: `list_users` (paginated, joins auth.users emails using service role), `delete_user`, `set_role`
-- Avoids exposing service role key client-side
+4. **`/admin/daily`** — `AdminDailyContentPage.tsx`
+   - Tabs: Ayah / Hadith / Dua. Calendar picker → edit/override the entry shown to users that day. Schedule ahead by inserting future-dated rows.
 
-## 6. Polish
+5. **`/admin/reciters`** — `AdminRecitersPage.tsx`
+   - Table of reciters with enable/disable, sort, edit names per language, "Set as default". `is_default` enforced singleton via partial unique index.
 
-- Consistent admin styling: denser table, status badges, skeleton loaders, empty states
-- All destructive actions behind `AlertDialog` confirmation
-- Toast feedback on every mutation
-- Mobile-responsive (sidebar collapses to sheet)
-- Bilingual labels (bn/en) using existing `useLanguage`
+6. **`/admin/content-strings`** — `AdminContentStringsPage.tsx`
+   - CRUD over `content_items`: edit any labeled snippet (banner text, empty states). Components consume via `useContentString(key, fallback)`.
 
-## Deliverables
-- 1 migration (roles + audit + app_settings + admin-override policies)
-- 1 edge function (`admin-users`)
-- 1 hook (`useUserRole`)
-- ~10 new components/pages under `src/components/admin/` and `src/pages/admin/`
-- Updates to `App.tsx` (routes) and `AccountPage.tsx` (admin entry link)
+### 1.4 Full edit on user data (extend existing pages)
 
-## Security guarantees
-- Roles stored in dedicated `user_roles` table (never on profiles)
-- All admin checks via SECURITY DEFINER `has_role` function
-- RLS enforces admin-only mutations server-side
-- Service-role operations isolated to edge function with JWT verification
+Currently `AdminContentPage` is view + delete only. Add **edit** mode:
+
+- Per-row "Edit" action opens a `Sheet` with a typed form for that table:
+  - `recitation_sessions`: edit `accuracy`, `correct_words`, `error_words`, `hesitation_words`, `mode`, `reciter`, `lesson_type`, `duration_ms`.
+  - `recitation_word_stats`: edit `attempts`, `correct`, `errors`, `hesitations`.
+  - `bookmarks_sync`: edit `note`, `surah`, `ayah`.
+  - `hifz_srs`: edit `ease_factor`, `interval_days`, `repetitions`, `next_review_at`, `last_quality`.
+  - `qaza_sync`: edit each prayer counter.
+- Updates go through the existing `admin-users` edge function with new actions `update_row` (table allowlist + zod-validated fields, service-role write, audit-logged).
+- New `/admin/users/:id` profile page: edit `display_name`, `avatar_url`, language preference, daily minutes goal, full notification settings — writes to `profiles` and `user_settings`.
+- New `/admin/users/:id/data` view aggregates that user's recitations, bookmarks, hifz, qaza in tabs with the same edit/delete actions scoped to them.
+
+### 1.5 Edge function additions
+
+Extend `supabase/functions/admin-users/index.ts` with admin-only actions:
+- `update_row { table, id, patch }` — table allowlist, zod schema per table.
+- `update_user_profile { user_id, patch }`.
+- `update_user_settings { user_id, settings }`.
+- `set_default_reciter { reciter_id }` — atomic toggle of `is_default`.
+All write paths re-check `has_role(..., 'admin')` server-side and write `audit_logs` rows.
+
+### 1.6 Storage
+
+New public Supabase Storage bucket `branding` for logo uploads. Public read; insert/update/delete restricted by `has_role('admin')` policy on `storage.objects`.
+
+---
+
+## Phase 2 — Migrate static content to editable tables
+
+(After Phase 1 ships and is verified.)
+
+- **Surah/Ayah text overrides**: new `quran_overrides` table (`surah`, `ayah`, `field`, `bn/en/ar`) merged on top of API responses so admins can correct any translation/word.
+- **Dua library**: migrate `src/data/duaData.ts` → `duas` table. Existing UI swapped to query the table; current data seeded via SQL.
+- **Daily Amal**: migrate `dailyAmalData.ts` + `AMAL_CATEGORIES` → `amal_items` + `amal_categories` tables. Admin CRUD page with reorder.
+- **Hadith collections list**: migrate `hadithCollections.ts` to `hadith_collections` table (the hadith bodies stay API-sourced, but admin can enable/disable and rename collections).
+- **Prayer reference data** (`prayerData.ts`, tashahhud, durood) → `prayer_references` table.
+- **Quran topics** (`quranTopics.ts`) → `topics` table with editable verse mappings.
+
+Each gets a corresponding `/admin/content/<thing>` page reusing the same editable-table component built in Phase 1.
+
+---
+
+## Phase 3 — Fine-grained per-string editing
+
+- Build an in-app **inline edit overlay** for admins: when an admin is logged in, every text node sourced from the CMS shows a tiny pencil on hover that opens the edit sheet for that `content_items` key. Powered by a `<T k="..." />` wrapper component that registers the key the first time it renders.
+- Lets admins edit literally "every single word" without hunting for the right admin page.
+
+---
+
+## Phase 4 — Polish & guardrails
+
+- **Realtime broadcast** confirmation toast in admin UI: "Pushed to N connected users".
+- **Versioning/rollback** for `app_branding`, `home_sections`, `nav_items`: each save inserts into a `*_history` table; admin can restore any prior version.
+- **Preview-as-user** mode: admin can render the home/nav/branding with a draft config without publishing.
+- **Permissions split**: editor role allowed to edit content tables but not branding or user data; admin retains everything.
+- **Security scan + linter pass**, type regen, smoke-test all admin pages.
+
+---
+
+## Files created (Phase 1)
+
+- Migration: new tables, RLS, triggers, storage bucket + policies, seed reciters from current `qariList`.
+- `src/hooks/usePublicAppConfig.ts`
+- `src/hooks/useContentString.ts`
+- `src/lib/routeManifest.ts`
+- `src/pages/admin/AdminBrandingPage.tsx`
+- `src/pages/admin/AdminHomePage.tsx`
+- `src/pages/admin/AdminNavPage.tsx`
+- `src/pages/admin/AdminDailyContentPage.tsx`
+- `src/pages/admin/AdminRecitersPage.tsx`
+- `src/pages/admin/AdminContentStringsPage.tsx`
+- `src/pages/admin/AdminUserDetailPage.tsx`
+- `src/components/admin/EditRowSheet.tsx`
+- `src/components/admin/IconPicker.tsx`
+- `src/components/admin/ColorPicker.tsx`
+
+## Files edited (Phase 1)
+
+- `src/App.tsx` — new routes, mount `usePublicAppConfig` provider.
+- `src/contexts/ThemeContext.tsx` — apply HSL tokens from branding.
+- `src/contexts/LanguageContext.tsx` — honor default language.
+- `src/components/BottomNav.tsx` — render from `nav_items`.
+- `src/pages/Index.tsx` — render from `home_sections`.
+- `src/components/DailyAyah.tsx`, daily hadith/dua components — check overrides.
+- `src/hooks/useSelectedReciter.ts` + `src/components/quran/SessionReciterPicker.tsx` — read reciters from DB, dynamic default.
+- `src/components/admin/AdminShell.tsx` — new nav entries.
+- `src/pages/admin/AdminContentPage.tsx` — add Edit action per row.
+- `supabase/functions/admin-users/index.ts` — new admin write actions.
+
+---
+
+## Risks & notes
+
+- **Scope is large.** The plan is structured so Phase 1 alone gives admins control of branding, home, nav, daily content, reciters, every CMS string, and full edit access on every user table. Phases 2–4 are incremental and can be approved separately.
+- **Live theme changes** apply via CSS custom properties without reload, but users may notice a flash on navigation; acceptable and reversible.
+- **Realtime cost**: one channel per public table, low-volume writes — negligible.
+- **Data integrity**: every write goes through the edge function with zod + role check + audit log; users keep their RLS-scoped editing of their own rows.
+
+Approve this plan to ship Phase 1, then I'll queue Phases 2–4 as follow-ups.

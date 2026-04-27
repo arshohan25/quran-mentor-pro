@@ -12,6 +12,12 @@ import {
   ArrowLeft,
   Shield,
   LogOut,
+  Palette,
+  Home,
+  Navigation,
+  Calendar,
+  Mic2,
+  Type,
 } from "lucide-react";
 import {
   Sidebar,
@@ -37,6 +43,12 @@ const NAV = [
   { title: "Content", url: "/admin/content", icon: Database },
   { title: "Recitation", url: "/admin/recitation", icon: Mic },
   { title: "AI Q&A", url: "/admin/ask", icon: MessageCircleQuestion },
+  { title: "Branding", url: "/admin/branding", icon: Palette },
+  { title: "Home Page", url: "/admin/home", icon: Home },
+  { title: "Navigation", url: "/admin/navigation", icon: Navigation },
+  { title: "Daily Content", url: "/admin/daily", icon: Calendar },
+  { title: "Reciters", url: "/admin/reciters", icon: Mic2 },
+  { title: "Strings", url: "/admin/strings", icon: Type },
   { title: "Settings", url: "/admin/settings", icon: Settings },
   { title: "Audit Logs", url: "/admin/logs", icon: ScrollText },
 ];
