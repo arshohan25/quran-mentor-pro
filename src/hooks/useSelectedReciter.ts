@@ -78,7 +78,7 @@ export function useSelectedReciter(): {
   }, []);
 
   const setReciterId = useCallback((id: string) => {
-    const safe = validIds.has(id) ? id : DEFAULT_RECITER;
+    const safe = validIds.has(id) ? id : resolveDefault();
     try {
       localStorage.setItem(STORAGE_KEY, safe);
     } catch {
@@ -96,4 +96,6 @@ export function useSelectedReciter(): {
   return { reciterId, reciterName, setReciterId };
 }
 
-export const DEFAULT_RECITER_ID = DEFAULT_RECITER;
+/** Note: this is the build-time hardcoded default. Runtime callers should use
+ *  `useSelectedReciter()` so admin overrides via app_settings apply. */
+export const DEFAULT_RECITER_ID = HARDCODED_DEFAULT;
