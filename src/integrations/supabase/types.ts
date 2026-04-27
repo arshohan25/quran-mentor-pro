@@ -82,6 +82,60 @@ export type Database = {
         }
         Relationships: []
       }
+      app_branding: {
+        Row: {
+          accent_hsl: string
+          app_name_ar: string
+          app_name_bn: string
+          app_name_en: string
+          default_language: string
+          default_theme: string
+          gold_hsl: string
+          id: number
+          logo_url: string | null
+          primary_hsl: string
+          tagline_ar: string | null
+          tagline_bn: string | null
+          tagline_en: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          accent_hsl?: string
+          app_name_ar?: string
+          app_name_bn?: string
+          app_name_en?: string
+          default_language?: string
+          default_theme?: string
+          gold_hsl?: string
+          id?: number
+          logo_url?: string | null
+          primary_hsl?: string
+          tagline_ar?: string | null
+          tagline_bn?: string | null
+          tagline_en?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          accent_hsl?: string
+          app_name_ar?: string
+          app_name_bn?: string
+          app_name_en?: string
+          default_language?: string
+          default_theme?: string
+          gold_hsl?: string
+          id?: number
+          logo_url?: string | null
+          primary_hsl?: string
+          tagline_ar?: string | null
+          tagline_bn?: string | null
+          tagline_en?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           id: number
@@ -160,6 +214,69 @@ export type Database = {
         }
         Relationships: []
       }
+      content_items: {
+        Row: {
+          ar: string | null
+          bn: string | null
+          created_at: string
+          en: string | null
+          enabled: boolean
+          id: string
+          key: string
+          updated_at: string
+        }
+        Insert: {
+          ar?: string | null
+          bn?: string | null
+          created_at?: string
+          en?: string | null
+          enabled?: boolean
+          id?: string
+          key: string
+          updated_at?: string
+        }
+        Update: {
+          ar?: string | null
+          bn?: string | null
+          created_at?: string
+          en?: string | null
+          enabled?: boolean
+          id?: string
+          key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      daily_content_overrides: {
+        Row: {
+          created_at: string
+          date: string
+          enabled: boolean
+          id: string
+          kind: string
+          payload: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          enabled?: boolean
+          id?: string
+          kind: string
+          payload?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          enabled?: boolean
+          id?: string
+          kind?: string
+          payload?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hifz_srs: {
         Row: {
           ayah: number
@@ -202,6 +319,105 @@ export type Database = {
           surah?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      home_sections: {
+        Row: {
+          created_at: string
+          cta_label_ar: string | null
+          cta_label_bn: string | null
+          cta_label_en: string | null
+          enabled: boolean
+          icon: string | null
+          id: string
+          key: string
+          link: string | null
+          sort_order: number
+          subtitle_ar: string | null
+          subtitle_bn: string | null
+          subtitle_en: string | null
+          title_ar: string | null
+          title_bn: string | null
+          title_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cta_label_ar?: string | null
+          cta_label_bn?: string | null
+          cta_label_en?: string | null
+          enabled?: boolean
+          icon?: string | null
+          id?: string
+          key: string
+          link?: string | null
+          sort_order?: number
+          subtitle_ar?: string | null
+          subtitle_bn?: string | null
+          subtitle_en?: string | null
+          title_ar?: string | null
+          title_bn?: string | null
+          title_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cta_label_ar?: string | null
+          cta_label_bn?: string | null
+          cta_label_en?: string | null
+          enabled?: boolean
+          icon?: string | null
+          id?: string
+          key?: string
+          link?: string | null
+          sort_order?: number
+          subtitle_ar?: string | null
+          subtitle_bn?: string | null
+          subtitle_en?: string | null
+          title_ar?: string | null
+          title_bn?: string | null
+          title_en?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nav_items: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          icon: string
+          id: string
+          label_ar: string | null
+          label_bn: string | null
+          label_en: string | null
+          path: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          icon: string
+          id?: string
+          label_ar?: string | null
+          label_bn?: string | null
+          label_en?: string | null
+          path: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          icon?: string
+          id?: string
+          label_ar?: string | null
+          label_bn?: string | null
+          label_en?: string | null
+          path?: string
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -358,6 +574,45 @@ export type Database = {
           updated_at?: string
           user_id?: string
           word_index?: number
+        }
+        Relationships: []
+      }
+      reciters: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          external_id: string | null
+          id: string
+          is_default: boolean
+          name_ar: string | null
+          name_bn: string | null
+          name_en: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          external_id?: string | null
+          id: string
+          is_default?: boolean
+          name_ar?: string | null
+          name_bn?: string | null
+          name_en?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          external_id?: string | null
+          id?: string
+          is_default?: boolean
+          name_ar?: string | null
+          name_bn?: string | null
+          name_en?: string | null
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
