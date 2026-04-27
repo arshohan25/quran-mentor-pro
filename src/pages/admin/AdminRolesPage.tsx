@@ -887,6 +887,7 @@ function FilterableAuditLog({
           <TableHeader>
             <TableRow>
               <TableHead>When</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Action</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Target user</TableHead>
@@ -897,12 +898,12 @@ function FilterableAuditLog({
             {loading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell colSpan={5}><Skeleton className="h-6 w-full" /></TableCell>
+                  <TableCell colSpan={6}><Skeleton className="h-6 w-full" /></TableCell>
                 </TableRow>
               ))
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-6">
+                <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-6">
                   {logs.length === 0
                     ? "No role changes yet"
                     : "No entries match the current filters"}
@@ -913,17 +914,81 @@ function FilterableAuditLog({
                 const target = userById(log.target_id);
                 const actor = userById(log.actor_id);
                 const role = log.metadata?.role as AppRole | undefined;
-                const assigned = log.action === "role.assigned";
+
+                const meta: {
+                  status: string;
+                  statusClass: string;
+                  action: string;
+                } = (() => {
+                  switch (log.action) {
+                    case "role.assigned":
+                      return {
+                        status: "Applied",
+                        statusClass: "bg-primary text-primary-foreground",
+                        action: "Role assigned",
+                      };
+                    case "role.revoked":
+                      return {
+                        status: "Revoked",
+                        statusClass: "bg-destructive text-destructive-foreground",
+                        action: "Role revoked",
+                      };
+                    case "admin_request.created":
+                      return {
+                        status: "Pending",
+                        statusClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30",
+                        action: "Promotion requested",
+                      };
+                    case "admin_request.approved":
+                      return {
+                        status: "Approval recorded",
+                        statusClass: "bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30",
+                        action: "Approval added",
+                      };
+                    case "admin_request.applied":
+                      return {
+                        status: "Approved",
+                        statusClass: "bg-primary text-primary-foreground",
+                        action: "Promotion applied",
+                      };
+                    case "admin_request.cancelled":
+                      return {
+                        status: "Cancelled",
+                        statusClass: "bg-destructive text-destructive-foreground",
+                        action: "Request cancelled",
+                      };
+                    default:
+                      return {
+                        status: log.action,
+                        statusClass: "bg-muted text-muted-foreground",
+                        action: log.action,
+                      };
+                  }
+                })();
+
+                const ts = new Date(log.created_at);
                 return (
                   <TableRow key={log.id}>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                      {fmtTime(log.created_at)}
+                      <div className="flex flex-col">
+                        <span>{fmtTime(log.created_at)}</span>
+                        <span className="text-[10px] font-mono">
+                          {ts.toLocaleString(undefined, {
+                            year: "numeric",
+                            month: "short",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={assigned ? "default" : "outline"}>
-                        {assigned ? "assigned" : "revoked"}
+                      <Badge className={`${meta.statusClass} whitespace-nowrap`}>
+                        {meta.status}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-sm whitespace-nowrap">{meta.action}</TableCell>
                     <TableCell>
                       {role ? <Badge className={ROLE_COLORS[role]}>{role}</Badge> : "—"}
                     </TableCell>
