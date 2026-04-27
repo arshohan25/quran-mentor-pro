@@ -103,6 +103,16 @@ export default function LiveRecitationCheck({ ayahText, onComplete, onCancel, mo
         </button>
       </div>
 
+      {/* Session reciter override (does not change global preference) */}
+      <div className="flex items-center justify-end" dir="ltr">
+        <SessionReciterPicker
+          value={sessionReciter}
+          onChange={setSessionReciter}
+          variant="default"
+          className="!h-7 !text-[10px] max-w-[200px]"
+        />
+      </div>
+
       {/* Error feedback */}
       {errorIndex !== null && (
         <div className="flex items-center gap-1.5 text-destructive">
