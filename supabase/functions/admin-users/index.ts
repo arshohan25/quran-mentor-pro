@@ -16,7 +16,8 @@ interface Body {
     | "request_admin"
     | "approve_admin"
     | "cancel_admin_request"
-    | "list_admin_requests";
+    | "list_admin_requests"
+    | "validate_recitation_reciters";
   page?: number;
   perPage?: number;
   search?: string;
@@ -24,7 +25,21 @@ interface Body {
   role?: "admin" | "moderator" | "user";
   request_id?: string;
   reason?: string;
+  /** validate_recitation_reciters: limit examples returned (default 25) */
+  sample_limit?: number;
+  /** validate_recitation_reciters: optional ISO date to scope scan */
+  since?: string;
 }
+
+/** Canonical reciter ids accepted by the app (mirrors src/data/prayerData.ts qariList). */
+const KNOWN_RECITER_IDS = new Set<string>([
+  "ar.alafasy",
+  "ar.abdulbasitmurattal",
+  "ar.abdurrahmaansudais",
+  "ar.hudhaify",
+  "ar.minshawi",
+]);
+const RECITER_SENTINEL_INVALID = new Set<string>(["", "unknown", "null", "undefined"]);
 
 const REQUIRED_ADMIN_APPROVALS = 2;
 
@@ -92,7 +107,7 @@ Deno.serve(async (req) => {
 
     // Listing users (and admin requests) is allowed for admins and moderators.
     if (
-      (body.action === "list_users" || body.action === "list_admin_requests") &&
+      ((body.action === "list_users" || body.action === "list_admin_requests" || body.action === "validate_recitation_reciters")) &&
       !callerIsAdmin
     ) {
       const { data: isModData } = await userClient.rpc("has_role", {
@@ -486,6 +501,114 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    if (body.action === "validate_recitation_reciters") {
+      const sampleLimit = Math.min(200, Math.max(1, Number(body.sample_limit ?? 25) || 25));
+      const sinceIso = typeof body.since === "string" && !Number.isNaN(Date.parse(body.since))
+        ? new Date(body.since).toISOString()
+        : null;
+
+      // 1. Total session count in scope
+      let totalQuery = admin
+        .from("recitation_sessions")
+        .select("*", { count: "exact", head: true });
+      if (sinceIso) totalQuery = totalQuery.gte("created_at", sinceIso);
+      const { count: totalCount, error: totalErr } = await totalQuery;
+      if (totalErr) throw totalErr;
+
+      // 2. Null reciter
+      let nullQuery = admin
+        .from("recitation_sessions")
+        .select("*", { count: "exact", head: true })
+        .is("reciter", null);
+      if (sinceIso) nullQuery = nullQuery.gte("created_at", sinceIso);
+      const { count: nullCount, error: nullErr } = await nullQuery;
+      if (nullErr) throw nullErr;
+
+      // 3. Sentinel/empty values ("unknown", "", "null", "undefined")
+      const sentinels = Array.from(RECITER_SENTINEL_INVALID);
+      let sentinelQuery = admin
+        .from("recitation_sessions")
+        .select("*", { count: "exact", head: true })
+        .in("reciter", sentinels);
+      if (sinceIso) sentinelQuery = sentinelQuery.gte("created_at", sinceIso);
+      const { count: sentinelCount, error: sentinelErr } = await sentinelQuery;
+      if (sentinelErr) throw sentinelErr;
+
+      // 4. Unknown / non-canonical values: pull a bounded breakdown grouped client-side
+      let breakdownQuery = admin
+        .from("recitation_sessions")
+        .select("reciter")
+        .not("reciter", "is", null)
+        .not("reciter", "in", `(${sentinels.map((s) => `"${s}"`).join(",")})`)
+        .limit(10000);
+      if (sinceIso) breakdownQuery = breakdownQuery.gte("created_at", sinceIso);
+      const { data: nonNullRows, error: brErr } = await breakdownQuery;
+      if (brErr) throw brErr;
+
+      const valueCounts = new Map<string, number>();
+      let unknownReciterCount = 0;
+      let knownReciterCount = 0;
+      for (const row of nonNullRows ?? []) {
+        const r = (row as { reciter: string | null }).reciter;
+        if (typeof r !== "string") continue;
+        valueCounts.set(r, (valueCounts.get(r) ?? 0) + 1);
+        if (KNOWN_RECITER_IDS.has(r)) knownReciterCount += 1;
+        else unknownReciterCount += 1;
+      }
+
+      const unknownBreakdown = Array.from(valueCounts.entries())
+        .filter(([id]) => !KNOWN_RECITER_IDS.has(id))
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, sampleLimit)
+        .map(([reciter, count]) => ({ reciter, count }));
+
+      const knownBreakdown = Array.from(valueCounts.entries())
+        .filter(([id]) => KNOWN_RECITER_IDS.has(id))
+        .sort((a, b) => b[1] - a[1])
+        .map(([reciter, count]) => ({ reciter, count }));
+
+      // 5. Recent invalid samples (most useful for ops to trace bad clients)
+      let samplesQuery = admin
+        .from("recitation_sessions")
+        .select("id, user_id, created_at, surah, ayah, mode, reciter")
+        .order("created_at", { ascending: false })
+        .limit(sampleLimit);
+      const sampleFilter = `reciter.is.null,reciter.in.(${sentinels.map((s) => `"${s}"`).join(",")})`;
+      samplesQuery = samplesQuery.or(sampleFilter);
+      if (sinceIso) samplesQuery = samplesQuery.gte("created_at", sinceIso);
+      const { data: samples, error: sampErr } = await samplesQuery;
+      if (sampErr) throw sampErr;
+
+      const total = totalCount ?? 0;
+      const missing = (nullCount ?? 0) + (sentinelCount ?? 0);
+      const invalid = missing + unknownReciterCount;
+      const validPercent = total > 0
+        ? Math.round(((total - invalid) / total) * 10000) / 100
+        : 100;
+
+      return new Response(
+        JSON.stringify({
+          scanned_at: new Date().toISOString(),
+          since: sinceIso,
+          totals: {
+            sessions: total,
+            valid: Math.max(0, total - invalid),
+            invalid,
+            missing_null: nullCount ?? 0,
+            missing_sentinel: sentinelCount ?? 0,
+            unknown_reciter: unknownReciterCount,
+            known_reciter: knownReciterCount,
+            valid_percent: validPercent,
+          },
+          known_breakdown: knownBreakdown,
+          unknown_breakdown: unknownBreakdown,
+          recent_invalid_samples: samples ?? [],
+          known_reciter_ids: Array.from(KNOWN_RECITER_IDS),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), {
