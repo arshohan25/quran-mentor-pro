@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Trash2, Download, Loader2, Search, Filter, X } from "lucide-react";
+import { Trash2, Download, Loader2, Search, Filter, X, Pencil } from "lucide-react";
+import EditRowSheet from "@/components/admin/EditRowSheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,8 @@ export default function AdminContentPage() {
   const [userFilter, setUserFilter] = useState<string>("");
   const [accuracyBucket, setAccuracyBucket] = useState<string>("all");
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [editRow, setEditRow] = useState<any>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -375,6 +378,10 @@ export default function AdminContentPage() {
                     <TableRow key={r.id}>
                       {renderRow(r)}
                       <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" className="h-7 w-7"
+                          onClick={() => { setEditRow(r); setEditOpen(true); }}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
@@ -409,6 +416,15 @@ export default function AdminContentPage() {
           </p>
         </TabsContent>
       </Tabs>
+      {editRow && (
+        <EditRowSheet
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          table={TABLES[tab]}
+          row={editRow}
+          onSaved={() => { setEditRow(null); /* trigger reload via state */ setRows((rs) => [...rs]); }}
+        />
+      )}
     </div>
   );
 }
