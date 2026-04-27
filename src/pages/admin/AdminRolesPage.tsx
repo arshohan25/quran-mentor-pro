@@ -109,6 +109,8 @@ export default function AdminRolesPage() {
         "admin_request.approved",
         "admin_request.applied",
         "admin_request.cancelled",
+        "admin_request.approval_reason",
+        "admin_request.deny_reason",
       ])
       .order("created_at", { ascending: false })
       .limit(100);
