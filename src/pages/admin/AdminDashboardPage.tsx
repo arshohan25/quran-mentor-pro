@@ -3,6 +3,7 @@ import { Users, Mic, BookMarked, GraduationCap, TrendingUp, Activity } from "luc
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import StatCard from "@/components/admin/StatCard";
 import AdminKpiWidget from "@/components/admin/AdminKpiWidget";
+import AdminModeBreakdownWidget from "@/components/admin/AdminModeBreakdownWidget";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
