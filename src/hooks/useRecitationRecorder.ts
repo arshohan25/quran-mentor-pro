@@ -3,12 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { RecitationState } from "./useArabicRecitationEngine";
 
+export type RecitationMode = "practice" | "hifz" | "live" | "lesson";
+
 interface UseRecitationRecorderOpts {
   surah: number | null;
   ayah: number | null;
   state: RecitationState;
   /** Set true exactly once when the ayah is fully completed */
   completed: boolean;
+  /** Tagging the attempt: defaults to "practice" */
+  mode?: RecitationMode;
 }
 
 interface WordTally {
