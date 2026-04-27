@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
 
     // Listing users (and admin requests) is allowed for admins and moderators.
     if (
-      (body.action === "list_users" || body.action === "list_admin_requests") &&
+      ((body.action === "list_users" || body.action === "list_admin_requests" || body.action === "validate_recitation_reciters")) &&
       !callerIsAdmin
     ) {
       const { data: isModData } = await userClient.rpc("has_role", {
