@@ -14,6 +14,74 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_promotion_approvals: {
+        Row: {
+          approver_id: string
+          created_at: string
+          id: string
+          request_id: string
+        }
+        Insert: {
+          approver_id: string
+          created_at?: string
+          id?: string
+          request_id: string
+        }
+        Update: {
+          approver_id?: string
+          created_at?: string
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_promotion_approvals_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "admin_promotion_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_promotion_requests: {
+        Row: {
+          applied_at: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          id: string
+          reason: string | null
+          requested_by: string
+          status: Database["public"]["Enums"]["admin_request_status"]
+          target_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          applied_at?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          id?: string
+          reason?: string | null
+          requested_by: string
+          status?: Database["public"]["Enums"]["admin_request_status"]
+          target_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          applied_at?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          id?: string
+          reason?: string | null
+          requested_by?: string
+          status?: Database["public"]["Enums"]["admin_request_status"]
+          target_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           id: number
@@ -346,6 +414,7 @@ export type Database = {
       }
     }
     Enums: {
+      admin_request_status: "pending" | "approved" | "cancelled"
       app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
@@ -474,6 +543,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_request_status: ["pending", "approved", "cancelled"],
       app_role: ["admin", "moderator", "user"],
     },
   },

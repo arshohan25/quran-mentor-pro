@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search, Shield, ShieldCheck, ShieldOff, Loader2, RefreshCw, ScrollText, UserCog, AlertTriangle } from "lucide-react";
+import { Search, Shield, ShieldCheck, ShieldOff, Loader2, RefreshCw, ScrollText, UserCog, AlertTriangle, Check, X, Hourglass } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,21 @@ interface AuditLog {
   created_at: string;
 }
 
+interface PromotionRequest {
+  id: string;
+  target_user_id: string;
+  requested_by: string;
+  status: "pending" | "approved" | "cancelled";
+  reason: string | null;
+  created_at: string;
+  applied_at: string | null;
+  cancelled_at: string | null;
+  cancelled_by: string | null;
+  approvals: { approver_id: string; created_at: string }[];
+  approval_count: number;
+  required_approvals: number;
+}
+
 const ROLE_COLORS: Record<AppRole, string> = {
   admin: "bg-primary text-primary-foreground",
   moderator: "bg-accent text-accent-foreground",
@@ -52,10 +67,14 @@ export default function AdminRolesPage() {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [requests, setRequests] = useState<PromotionRequest[]>([]);
+  const [requiredApprovals, setRequiredApprovals] = useState(2);
   const [loading, setLoading] = useState(true);
   const [logsLoading, setLogsLoading] = useState(true);
+  const [requestsLoading, setRequestsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [requestBusy, setRequestBusy] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -76,9 +95,16 @@ export default function AdminRolesPage() {
     const { data, error } = await supabase
       .from("audit_logs")
       .select("*")
-      .in("action", ["role.assigned", "role.revoked"])
+      .in("action", [
+        "role.assigned",
+        "role.revoked",
+        "admin_request.created",
+        "admin_request.approved",
+        "admin_request.applied",
+        "admin_request.cancelled",
+      ])
       .order("created_at", { ascending: false })
-      .limit(50);
+      .limit(100);
     if (error) {
       toast.error("Failed to load audit logs");
     } else {
@@ -87,8 +113,23 @@ export default function AdminRolesPage() {
     setLogsLoading(false);
   }, []);
 
+  const fetchRequests = useCallback(async () => {
+    setRequestsLoading(true);
+    const { data, error } = await supabase.functions.invoke("admin-users", {
+      body: { action: "list_admin_requests" },
+    });
+    if (error) {
+      toast.error("Failed to load admin requests");
+    } else {
+      setRequests(((data as any)?.requests ?? []) as PromotionRequest[]);
+      setRequiredApprovals((data as any)?.required_approvals ?? 2);
+    }
+    setRequestsLoading(false);
+  }, []);
+
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
+  useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
   const adminCount = useMemo(
     () => users.filter((u) => u.roles.includes("admin")).length,
@@ -96,6 +137,12 @@ export default function AdminRolesPage() {
   );
   const isLastAdmin = (u: AdminUser) =>
     u.roles.includes("admin") && adminCount <= 1;
+
+  const pendingRequestForUser = useCallback(
+    (userId: string) =>
+      requests.find((r) => r.target_user_id === userId && r.status === "pending"),
+    [requests]
+  );
 
   const changeRole = async (target: AdminUser, newRole: AppRole) => {
     const current = highestRole(target.roles);
@@ -111,9 +158,33 @@ export default function AdminRolesPage() {
       return;
     }
 
+    // Two-admin approval is required for granting admin
+    if (newRole === "admin") {
+      const existing = pendingRequestForUser(target.id);
+      if (existing) {
+        toast.info("A pending admin request already exists for this user");
+        return;
+      }
+      setBusy(target.id);
+      try {
+        const { error } = await supabase.functions.invoke("admin-users", {
+          body: { action: "request_admin", user_id: target.id },
+        });
+        if (error) throw error;
+        toast.success(
+          `Promotion request created — needs ${requiredApprovals} admin approvals`
+        );
+        await Promise.all([fetchRequests(), fetchLogs()]);
+      } catch (e: any) {
+        toast.error(e?.message ?? "Failed to create request");
+      } finally {
+        setBusy(null);
+      }
+      return;
+    }
+
     setBusy(target.id);
     try {
-      // Remove existing privileged roles (admin/moderator) other than the target
       const toRemove = (target.roles ?? []).filter(
         (r) => (r === "admin" || r === "moderator") && r !== newRole
       );
@@ -123,7 +194,6 @@ export default function AdminRolesPage() {
         });
         if (error) throw error;
       }
-      // Assign the new role (skip when it's the implicit "user")
       if (newRole !== "user" && !target.roles.includes(newRole)) {
         const { error } = await supabase.functions.invoke("admin-users", {
           body: { action: "set_role", user_id: target.id, role: newRole },
@@ -136,6 +206,45 @@ export default function AdminRolesPage() {
       toast.error(e?.message ?? "Failed to update role");
     } finally {
       setBusy(null);
+    }
+  };
+
+  const approveRequest = async (req: PromotionRequest) => {
+    setRequestBusy(req.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: { action: "approve_admin", request_id: req.id },
+      });
+      if (error) throw error;
+      const applied = (data as any)?.applied;
+      const count = (data as any)?.approval_count ?? 0;
+      const need = (data as any)?.required_approvals ?? requiredApprovals;
+      toast.success(
+        applied
+          ? "Approval applied — user is now an admin"
+          : `Approval recorded (${count}/${need})`
+      );
+      await Promise.all([fetchRequests(), fetchUsers(), fetchLogs()]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to approve");
+    } finally {
+      setRequestBusy(null);
+    }
+  };
+
+  const cancelRequest = async (req: PromotionRequest) => {
+    setRequestBusy(req.id);
+    try {
+      const { error } = await supabase.functions.invoke("admin-users", {
+        body: { action: "cancel_admin_request", request_id: req.id },
+      });
+      if (error) throw error;
+      toast.success("Request cancelled");
+      await Promise.all([fetchRequests(), fetchLogs()]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to cancel");
+    } finally {
+      setRequestBusy(null);
     }
   };
 
@@ -320,6 +429,101 @@ export default function AdminRolesPage() {
             </TableBody>
           </Table>
         </div>
+      </Card>
+
+      <Card className="p-4 space-y-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Hourglass className="h-4 w-4 text-primary" /> Pending admin promotions
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Granting admin requires {requiredApprovals} distinct admin approvals.
+              Requesters cannot approve their own request.
+            </p>
+          </div>
+          <Button variant="outline" size="icon" onClick={fetchRequests} aria-label="Refresh requests">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {requestsLoading ? (
+          <Skeleton className="h-20 w-full" />
+        ) : requests.filter((r) => r.status === "pending").length === 0 ? (
+          <p className="text-sm text-muted-foreground italic px-1 py-4 text-center">
+            No pending admin promotion requests.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {requests
+              .filter((r) => r.status === "pending")
+              .map((r) => {
+                const target = userById(r.target_user_id);
+                const requester = userById(r.requested_by);
+                const youApproved = r.approvals.some(
+                  (a) => a.approver_id === currentUser?.id
+                );
+                const isOwnRequest = r.requested_by === currentUser?.id;
+                const isOwnTarget = r.target_user_id === currentUser?.id;
+                const cannotApprove = youApproved || isOwnRequest || isOwnTarget;
+                const reason = isOwnRequest
+                  ? "You created this request"
+                  : isOwnTarget
+                  ? "You are the target of this request"
+                  : youApproved
+                  ? "You already approved"
+                  : "";
+                const remaining = Math.max(
+                  0,
+                  (r.required_approvals ?? requiredApprovals) - r.approval_count
+                );
+                return (
+                  <li
+                    key={r.id}
+                    className="rounded-lg border bg-background/40 p-3 flex flex-wrap items-center gap-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <span>{target?.display_name ?? target?.email ?? r.target_user_id.slice(0, 8)}</span>
+                        <Badge className={ROLE_COLORS.admin}>→ admin</Badge>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Requested by {requester?.email ?? r.requested_by.slice(0, 8)} · {fmtTime(r.created_at)}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {r.approval_count}/{r.required_approvals ?? requiredApprovals} approvals
+                      {remaining > 0 && ` · ${remaining} more needed`}
+                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        onClick={() => approveRequest(r)}
+                        disabled={cannotApprove || requestBusy === r.id}
+                        title={cannotApprove ? reason : "Approve promotion"}
+                      >
+                        {requestBusy === r.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Check className="h-3.5 w-3.5" />
+                        )}
+                        <span className="ml-1">Approve</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => cancelRequest(r)}
+                        disabled={requestBusy === r.id}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        <span className="ml-1">Cancel</span>
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+          </ul>
+        )}
       </Card>
 
       <FilterableAuditLog
