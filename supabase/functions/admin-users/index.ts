@@ -462,6 +462,7 @@ Deno.serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+      const denyReason = typeof body.reason === "string" ? body.reason.trim().slice(0, 500) : null;
       const { error } = await admin
         .from("admin_promotion_requests")
         .update({
@@ -471,6 +472,17 @@ Deno.serve(async (req) => {
         })
         .eq("id", body.request_id);
       if (error) throw error;
+
+      if (denyReason) {
+        await admin.from("audit_logs").insert({
+          actor_id: callerId,
+          action: "admin_request.deny_reason",
+          target_type: "user",
+          target_id: null,
+          metadata: { request_id: body.request_id, reason: denyReason },
+        });
+      }
+
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
