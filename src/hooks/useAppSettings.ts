@@ -34,6 +34,11 @@ export interface AppSettings {
     show_qibla_tile: boolean;
     show_hijri_tile: boolean;
     compact_home: boolean;
+    /**
+     * Per-tile visibility map keyed by the path/key from
+     * `src/lib/homeTilesManifest.ts`. Missing key = visible (default-on).
+     */
+    tiles: Record<string, boolean>;
   };
 }
 
@@ -64,6 +69,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     show_qibla_tile: true,
     show_hijri_tile: true,
     compact_home: false,
+    tiles: {},
   },
 };
 

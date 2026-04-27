@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Slider } from "@/components/ui/slider";
 import { Settings2, Megaphone, AlertTriangle, CheckCircle2, X } from "lucide-react";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import { isTileVisibleIn } from "@/lib/homeTilesManifest";
 
 const DAILY_GOAL_KEY = "daily-minutes-goal";
 function loadDailyGoal(): number {
@@ -105,6 +106,8 @@ const Index = () => {
   const { settings: appSettings } = useAppSettings();
   const ui = appSettings.ui;
   const announcement = appSettings.announcement;
+  /** Per-tile visibility from admin (default-on for missing keys). */
+  const visible = (path: string) => isTileVisibleIn(ui.tiles, path);
   const [dismissedAnnouncement, setDismissedAnnouncement] = useState<string | null>(() => {
     try { return localStorage.getItem(ANNOUNCEMENT_DISMISS_KEY); } catch { return null; }
   });
@@ -137,31 +140,31 @@ const Index = () => {
     { icon: Layers, title: t("তাফসির তুলনা", "Tafsir Compare", "مقارنة التفسير"), desc: t("৪টি বাংলা তাফসির", "4 Bengali tafsirs"), path: "/tafsir/1/1", isNew: true },
     { icon: Heart, title: t("বুকমার্ক", "Bookmarks", "المحفوظات"), desc: t("সেভ করা আয়াত", "Saved ayahs"), path: "/bookmarks" },
     { icon: Calendar, title: t("প্ল্যানার", "Planner", "مخطط"), desc: t("দৈনিক টার্গেট", "Daily target"), path: "/planner", gold: true },
-  ];
+  ].filter((tile) => visible(tile.path)) as Tile[];
 
   const prayerTiles: Tile[] = [
     { icon: Clock, title: t("নামাজের সময়", "Prayer Times", "أوقات الصلاة"), desc: t("লোকেশন অনুযায়ী", "Location-based"), path: "/prayer-times", span: 2 },
-    ...(ui.show_qibla_tile ? [{ icon: Compass, title: t("কিবলা", "Qibla", "القبلة"), desc: t("দিকনির্দেশ", "Direction"), path: "/qibla", gold: true } as Tile] : []),
+    { icon: Compass, title: t("কিবলা", "Qibla", "القبلة"), desc: t("দিকনির্দেশ", "Direction"), path: "/qibla", gold: true },
     { icon: BookText, title: t("নামাজ শিক্ষা", "Prayer Guide", "دليل الصلاة"), desc: t("৪ মাযহাব", "4 Madhabs"), path: "/prayer" },
     { icon: ClipboardCheck, title: t("কাযা ট্র্যাকার", "Qaza Tracker", "القضاء"), desc: t("ছুটে যাওয়া নামাজ", "Missed prayers"), path: "/qaza", isNew: true },
-  ];
+  ].filter((tile) => visible(tile.path)) as Tile[];
 
   const dhikrTiles: Tile[] = [
     { icon: Hash, title: t("তাসবিহ", "Tasbih", "تسبيح"), desc: t("ডিজিটাল কাউন্টার", "Digital counter"), path: "/tasbih" },
     { icon: HandHeart, title: t("দোয়া ও যিকর", "Duas & Azkar", "أدعية"), desc: t("দৈনন্দিন সংগ্রহ", "Daily collection"), path: "/dua", gold: true },
     { icon: ListChecks, title: t("দৈনিক আমল", "Daily Amal", "أعمال يومية"), desc: t("ফযিলতসহ", "With virtues"), path: "/daily-amal" },
-    ...(ui.show_hijri_tile ? [{ icon: CalendarDays, title: t("হিজরি ক্যালেন্ডার", "Hijri Calendar", "التقويم"), desc: t("ইসলামিক তারিখ", "Islamic dates"), path: "/hijri", gold: true } as Tile] : []),
-  ];
+    { icon: CalendarDays, title: t("হিজরি ক্যালেন্ডার", "Hijri Calendar", "التقويم"), desc: t("ইসলামিক তারিখ", "Islamic dates"), path: "/hijri", gold: true },
+  ].filter((tile) => visible(tile.path)) as Tile[];
 
   const learnTiles: Tile[] = [
     { icon: ScrollText, title: t("হাদীস লাইব্রেরি", "Hadith Library", "الحديث"), desc: t("সিহাহ সিত্তাহ", "Sahih Sittah"), path: "/hadith", span: 2 },
     { icon: MessageCircleQuestion, title: t("AI প্রশ্ন", "Ask AI", "اسأل"), desc: t("বাংলা Q&A", "Bengali Q&A"), path: "/ask", gold: true, isNew: true },
     { icon: Bell, title: t("নোটিফিকেশন", "Notifications", "تنبيهات"), desc: t("আযান ও রিমাইন্ডার", "Adhan & reminders"), path: "/notifications" },
-  ];
+  ].filter((tile) => visible(tile.path)) as Tile[];
 
   return (
     <div className="min-h-screen bg-background">
-      {showAnnouncement && (
+      {visible("card:announcement") && showAnnouncement && (
         <div
           role="status"
           className={`px-4 py-2.5 flex items-center gap-2.5 text-sm border-b ${
@@ -217,7 +220,7 @@ const Index = () => {
 
           {/* Hijri + Next prayer chips */}
           <div className="flex gap-2 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
-            {hijri && (
+            {visible("card:hijri_header") && hijri && (
               <div className="flex-1 min-w-0 rounded-xl border border-primary-foreground/10 bg-primary-foreground/[0.06] backdrop-blur-sm px-3 py-2 flex items-center gap-2.5">
                 <CalendarDays className="w-3.5 h-3.5 text-accent shrink-0" strokeWidth={2} />
                 <div className="min-w-0">
@@ -228,27 +231,29 @@ const Index = () => {
                 </div>
               </div>
             )}
-            <Link
-              to="/prayer-times"
-              className="flex-1 min-w-0 rounded-xl border border-accent/30 bg-accent/10 backdrop-blur-sm px-3 py-2 flex items-center gap-2.5 hover:bg-accent/20 transition-colors"
-            >
-              <Clock className="w-3.5 h-3.5 text-accent shrink-0" strokeWidth={2} />
-              <div className="min-w-0 flex-1">
-                <p className="text-[9px] uppercase tracking-wider text-primary-foreground/50 font-semibold leading-none">
-                  {t("পরবর্তী নামাজ", "Next Prayer", "الصلاة القادمة")}
-                </p>
-                {nextPrayer ? (
-                  <p className="text-[12px] font-semibold text-primary-foreground/95 truncate mt-0.5">
-                    {language === "bn" ? PRAYER_LABELS_BN[nextPrayer.name] : language === "ar" ? PRAYER_LABELS_AR[nextPrayer.name] : nextPrayer.name}
-                    <span className="text-accent font-bold"> · {nextPrayer.time}</span>
+            {visible("card:next_prayer") && (
+              <Link
+                to="/prayer-times"
+                className="flex-1 min-w-0 rounded-xl border border-accent/30 bg-accent/10 backdrop-blur-sm px-3 py-2 flex items-center gap-2.5 hover:bg-accent/20 transition-colors"
+              >
+                <Clock className="w-3.5 h-3.5 text-accent shrink-0" strokeWidth={2} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[9px] uppercase tracking-wider text-primary-foreground/50 font-semibold leading-none">
+                    {t("পরবর্তী নামাজ", "Next Prayer", "الصلاة القادمة")}
                   </p>
-                ) : (
-                  <p className="text-[12px] font-semibold text-primary-foreground/70 truncate mt-0.5 flex items-center gap-1">
-                    <MapPin className="w-3 h-3" /> {t("লোকেশন সেট করুন", "Set location", "حدد الموقع")}
-                  </p>
-                )}
-              </div>
-            </Link>
+                  {nextPrayer ? (
+                    <p className="text-[12px] font-semibold text-primary-foreground/95 truncate mt-0.5">
+                      {language === "bn" ? PRAYER_LABELS_BN[nextPrayer.name] : language === "ar" ? PRAYER_LABELS_AR[nextPrayer.name] : nextPrayer.name}
+                      <span className="text-accent font-bold"> · {nextPrayer.time}</span>
+                    </p>
+                  ) : (
+                    <p className="text-[12px] font-semibold text-primary-foreground/70 truncate mt-0.5 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> {t("লোকেশন সেট করুন", "Set location", "حدد الموقع")}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -285,22 +290,24 @@ const Index = () => {
 
         {/* ============ Today strip (3 stat chips) ============ */}
         <div className="flex gap-2 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
-          <Link to="/hifz" className="stat-chip group">
-            <div className="icon-container-gold p-1.5 group-hover:scale-110 transition-transform">
-              <Flame className="w-4 h-4 text-accent" strokeWidth={2} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold leading-none">
-                {t("স্ট্রিক", "Streak", "تتابع")}
-              </p>
-              <p className="text-sm font-bold text-foreground leading-tight mt-0.5">
-                {streak.currentStreak ?? 0} {t("দিন", "d", "ي")}
-              </p>
-            </div>
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1 group-hover:translate-x-0">
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            </div>
-          </Link>
+          {visible("card:streak_chip") && (
+            <Link to="/hifz" className="stat-chip group">
+              <div className="icon-container-gold p-1.5 group-hover:scale-110 transition-transform">
+                <Flame className="w-4 h-4 text-accent" strokeWidth={2} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold leading-none">
+                  {t("স্ট্রিক", "Streak", "تتابع")}
+                </p>
+                <p className="text-sm font-bold text-foreground leading-tight mt-0.5">
+                  {streak.currentStreak ?? 0} {t("দিন", "d", "ي")}
+                </p>
+              </div>
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1 group-hover:translate-x-0">
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </div>
+            </Link>
+          )}
           <div className="stat-chip group flex-col items-start gap-2 relative">
             <Link to="/recitation/stats" className="flex items-center gap-2 w-full">
               <div className="icon-container p-1.5 group-hover:scale-110 transition-transform">
@@ -396,64 +403,74 @@ const Index = () => {
 
         {/* ============ Daily Ayah + Daily Dua ============ */}
         <div className="grid md:grid-cols-2 gap-4">
-          {ui.show_daily_ayah && <DailyAyah />}
-          <DailyAmalSummaryCard />
+          {visible("card:daily_ayah") && ui.show_daily_ayah && <DailyAyah />}
+          {visible("card:daily_amal_summary") && <DailyAmalSummaryCard />}
 
-          <div className="premium-card p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className={`icon-container-gold p-1.5 ${duaNotifEnabled ? '' : 'opacity-50'}`}>
-                  {duaNotifEnabled
-                    ? <Bell className="w-4 h-4 text-accent" strokeWidth={1.8} />
-                    : <BellOff className="w-4 h-4 text-muted-foreground" strokeWidth={1.8} />}
+          {visible("card:daily_dua") && (
+            <div className="premium-card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={`icon-container-gold p-1.5 ${duaNotifEnabled ? '' : 'opacity-50'}`}>
+                    {duaNotifEnabled
+                      ? <Bell className="w-4 h-4 text-accent" strokeWidth={1.8} />
+                      : <BellOff className="w-4 h-4 text-muted-foreground" strokeWidth={1.8} />}
+                  </div>
+                  <h3 className="text-sm font-bold text-foreground">
+                    {t("আজকের দোয়া", "Today's Dua", "دعاء اليوم")}
+                  </h3>
                 </div>
-                <h3 className="text-sm font-bold text-foreground">
-                  {t("আজকের দোয়া", "Today's Dua", "دعاء اليوم")}
-                </h3>
+                <Switch
+                  checked={duaNotifEnabled}
+                  onCheckedChange={() => {
+                    if (duaPerm !== "granted") requestDuaPerm();
+                    toggleDuaNotif();
+                  }}
+                />
               </div>
-              <Switch
-                checked={duaNotifEnabled}
-                onCheckedChange={() => {
-                  if (duaPerm !== "granted") requestDuaPerm();
-                  toggleDuaNotif();
-                }}
-              />
+              {todaysDua && (
+                <div className="space-y-2 pt-1">
+                  <p className="font-arabic text-base leading-[2.2] text-foreground">{todaysDua.arabic}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {language === "bn" ? todaysDua.bn : todaysDua.en}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
+                    <BookOpen className="w-3 h-3" /> {todaysDua.reference}
+                  </p>
+                </div>
+              )}
             </div>
-            {todaysDua && (
-              <div className="space-y-2 pt-1">
-                <p className="font-arabic text-base leading-[2.2] text-foreground">{todaysDua.arabic}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {language === "bn" ? todaysDua.bn : todaysDua.en}
-                </p>
-                <p className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
-                  <BookOpen className="w-3 h-3" /> {todaysDua.reference}
-                </p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
         {/* ============ BENTO SECTIONS ============ */}
-        <BentoSection
-          eyebrow={t("কুরআন", "Quran", "القرآن")}
-          arabic="القرآن الكريم"
-          tiles={quranTiles}
-        />
-        <BentoSection
-          eyebrow={t("নামাজ", "Prayer", "الصلاة")}
-          arabic="الصلاة"
-          tiles={prayerTiles}
-        />
-        <BentoSection
-          eyebrow={t("যিকর ও দোয়া", "Dhikr & Dua", "الذكر والدعاء")}
-          arabic="الذكر والدعاء"
-          tiles={dhikrTiles}
-        />
-        <BentoSection
-          eyebrow={t("শিখুন ও জিজ্ঞাসা", "Learn & Ask", "تعلم واسأل")}
-          arabic="تعلّم"
-          tiles={learnTiles}
-        />
+        {quranTiles.length > 0 && (
+          <BentoSection
+            eyebrow={t("কুরআন", "Quran", "القرآن")}
+            arabic="القرآن الكريم"
+            tiles={quranTiles}
+          />
+        )}
+        {prayerTiles.length > 0 && (
+          <BentoSection
+            eyebrow={t("নামাজ", "Prayer", "الصلاة")}
+            arabic="الصلاة"
+            tiles={prayerTiles}
+          />
+        )}
+        {dhikrTiles.length > 0 && (
+          <BentoSection
+            eyebrow={t("যিকর ও দোয়া", "Dhikr & Dua", "الذكر والدعاء")}
+            arabic="الذكر والدعاء"
+            tiles={dhikrTiles}
+          />
+        )}
+        {learnTiles.length > 0 && (
+          <BentoSection
+            eyebrow={t("শিখুন ও জিজ্ঞাসা", "Learn & Ask", "تعلم واسأل")}
+            arabic="تعلّم"
+            tiles={learnTiles}
+          />
+        )}
 
         {/* Footer */}
         <div className="text-center pt-3 pb-6">
