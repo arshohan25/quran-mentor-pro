@@ -96,6 +96,17 @@ export default function AdminRecitationPage() {
       setBySurah(bySurahArr);
       setByReciter(toRows(reciterMap));
       setByLessonType(toRows(lessonMap));
+
+      const gradeCounts = GRADE_BUCKETS.map((b) => ({
+        grade: b.grade,
+        label: b.label,
+        fill: b.fill,
+        attempts: sessions.filter((s: any) => {
+          const a = s.accuracy ?? 0;
+          return a >= b.min && a < b.max;
+        }).length,
+      }));
+      setByGrade(gradeCounts);
       setTotals({
         sessions: sessions.length,
         avgAccuracy: accN > 0 ? Math.round((accSum / accN) * 100) : 0,
