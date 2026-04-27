@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Search, Shield, ShieldCheck, ShieldOff, Loader2, RefreshCw, ScrollText, UserCog } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Search, Shield, ShieldCheck, ShieldOff, Loader2, RefreshCw, ScrollText, UserCog, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
@@ -90,12 +90,24 @@ export default function AdminRolesPage() {
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
+  const adminCount = useMemo(
+    () => users.filter((u) => u.roles.includes("admin")).length,
+    [users]
+  );
+  const isLastAdmin = (u: AdminUser) =>
+    u.roles.includes("admin") && adminCount <= 1;
+
   const changeRole = async (target: AdminUser, newRole: AppRole) => {
     const current = highestRole(target.roles);
     if (current === newRole) return;
 
     if (target.id === currentUser?.id && current === "admin" && newRole !== "admin") {
       toast.error("You cannot demote yourself from admin");
+      return;
+    }
+
+    if (current === "admin" && newRole !== "admin" && isLastAdmin(target)) {
+      toast.error("Cannot revoke admin — this is the last remaining admin");
       return;
     }
 
@@ -142,6 +154,37 @@ export default function AdminRolesPage() {
           Promote, demote, and audit role changes across users.
         </p>
       </div>
+
+      <Card className="p-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+              <Shield className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                Current admins
+              </p>
+              {loading ? (
+                <Skeleton className="h-7 w-16 mt-0.5" />
+              ) : (
+                <p className="text-2xl font-bold leading-tight">{adminCount}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {adminCount <= 1
+                  ? "Only one admin remains — revoke is locked to prevent lockout."
+                  : "At least one admin must always be present."}
+              </p>
+            </div>
+          </div>
+          {adminCount <= 1 && !loading && (
+            <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>Promote another user to admin before revoking the last one.</span>
+            </div>
+          )}
+        </div>
+      </Card>
 
       <Card className="p-4 space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -191,6 +234,11 @@ export default function AdminRolesPage() {
                 users.map((u) => {
                   const current = highestRole(u.roles);
                   const isSelf = u.id === currentUser?.id;
+                  const lockRevoke =
+                    current === "admin" && (isSelf || isLastAdmin(u));
+                  const lockReason = isSelf
+                    ? "You cannot demote yourself"
+                    : "Last remaining admin — promote another user first";
                   return (
                     <TableRow key={u.id}>
                       <TableCell>
@@ -212,6 +260,11 @@ export default function AdminRolesPage() {
                               {isSelf && (
                                 <Badge variant="outline" className="text-[10px] py-0 h-4">you</Badge>
                               )}
+                              {current === "admin" && isLastAdmin(u) && !isSelf && (
+                                <Badge variant="outline" className="text-[10px] py-0 h-4 border-destructive/40 text-destructive">
+                                  last admin
+                                </Badge>
+                              )}
                             </div>
                             <div className="text-xs text-muted-foreground truncate">{u.email}</div>
                           </div>
@@ -227,16 +280,19 @@ export default function AdminRolesPage() {
                             onValueChange={(v) => changeRole(u, v as AppRole)}
                             disabled={busy === u.id}
                           >
-                            <SelectTrigger className="w-36">
+                            <SelectTrigger
+                              className="w-36"
+                              title={lockRevoke ? lockReason : undefined}
+                            >
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="user">
+                              <SelectItem value="user" disabled={lockRevoke}>
                                 <div className="flex items-center gap-2">
                                   <ShieldOff className="h-3.5 w-3.5" /> User
                                 </div>
                               </SelectItem>
-                              <SelectItem value="moderator">
+                              <SelectItem value="moderator" disabled={lockRevoke}>
                                 <div className="flex items-center gap-2">
                                   <ShieldCheck className="h-3.5 w-3.5" /> Moderator
                                 </div>
@@ -250,6 +306,9 @@ export default function AdminRolesPage() {
                           </Select>
                           {busy === u.id && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
                         </div>
+                        {lockRevoke && (
+                          <p className="text-[10px] text-muted-foreground mt-1">{lockReason}</p>
+                        )}
                       </TableCell>
                       <TableCell className="text-right text-xs text-muted-foreground">
                         {new Date(u.created_at).toLocaleDateString()}
