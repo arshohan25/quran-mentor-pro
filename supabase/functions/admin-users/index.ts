@@ -16,7 +16,30 @@ interface Body {
     | "request_admin"
     | "approve_admin"
     | "cancel_admin_request"
-    | "list_admin_requests";
+    | "list_admin_requests"
+    | "validate_recitation_reciters";
+  page?: number;
+  perPage?: number;
+  search?: string;
+  user_id?: string;
+  role?: "admin" | "moderator" | "user";
+  request_id?: string;
+  reason?: string;
+  /** validate_recitation_reciters: limit examples returned (default 25) */
+  sample_limit?: number;
+  /** validate_recitation_reciters: optional ISO date to scope scan */
+  since?: string;
+}
+
+/** Canonical reciter ids accepted by the app (mirrors src/data/prayerData.ts qariList). */
+const KNOWN_RECITER_IDS = new Set<string>([
+  "ar.alafasy",
+  "ar.abdulbasitmurattal",
+  "ar.abdurrahmaansudais",
+  "ar.hudhaify",
+  "ar.minshawi",
+]);
+const RECITER_SENTINEL_INVALID = new Set<string>(["", "unknown", "null", "undefined"]);
   page?: number;
   perPage?: number;
   search?: string;
