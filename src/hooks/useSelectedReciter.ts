@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { qariList } from "@/data/prayerData";
+import { getAppSettingsSnapshot, useAppSettings } from "@/hooks/useAppSettings";
 
 const STORAGE_KEY = "selected_qari_id";
-const DEFAULT_RECITER = qariList[0]?.id ?? "ar.alafasy";
+const HARDCODED_DEFAULT = qariList[0]?.id ?? "ar.alafasy";
 
 const validIds = new Set(qariList.map((q) => q.id));
+
+/** Resolve the active default — admin override (if valid) else hardcoded. */
+function resolveDefault(): string {
+  const admin = getAppSettingsSnapshot().defaults.default_reciter_id;
+  if (admin && validIds.has(admin)) return admin;
+  return HARDCODED_DEFAULT;
+}
 
 function readStored(): string {
   try {
@@ -14,7 +22,7 @@ function readStored(): string {
   } catch {
     /* ignore */
   }
-  return DEFAULT_RECITER;
+  return resolveDefault();
 }
 
 function nameFor(id: string): string {
