@@ -22,7 +22,8 @@ import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
-import { Settings2 } from "lucide-react";
+import { Settings2, Megaphone, AlertTriangle, CheckCircle2, X } from "lucide-react";
+import { useAppSettings } from "@/hooks/useAppSettings";
 
 const DAILY_GOAL_KEY = "daily-minutes-goal";
 function loadDailyGoal(): number {
@@ -93,12 +94,21 @@ type Tile = {
   span?: 1 | 2;
 };
 
+const ANNOUNCEMENT_DISMISS_KEY = "announcement-dismissed-text";
+
 const Index = () => {
   const { t, language } = useLanguage();
   const { bookmarks } = useBookmark();
   const { enabled: duaNotifEnabled, toggleEnabled: toggleDuaNotif, todaysDua, permission: duaPerm, requestPermission: requestDuaPerm } =
     useDailyDuaNotification();
   const nextPrayer = useNextPrayer();
+  const { settings: appSettings } = useAppSettings();
+  const ui = appSettings.ui;
+  const announcement = appSettings.announcement;
+  const [dismissedAnnouncement, setDismissedAnnouncement] = useState<string | null>(() => {
+    try { return localStorage.getItem(ANNOUNCEMENT_DISMISS_KEY); } catch { return null; }
+  });
+  const showAnnouncement = announcement.enabled && announcement.text && dismissedAnnouncement !== announcement.text;
 
   const lastReadSurah = bookmarks.lastRead
     ? surahList.find((s) => s.number === bookmarks.lastRead!.surah)
