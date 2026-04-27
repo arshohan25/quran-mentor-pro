@@ -132,6 +132,8 @@ export default function AdminDashboardPage() {
 
       <AdminKpiWidget />
 
+      <AdminModeBreakdownWidget />
+
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="rounded-xl border bg-card p-4">
           <h3 className="text-sm font-bold text-foreground mb-3">Signups (last 30 days)</h3>
