@@ -36,6 +36,21 @@ interface AuditLog {
   created_at: string;
 }
 
+interface PromotionRequest {
+  id: string;
+  target_user_id: string;
+  requested_by: string;
+  status: "pending" | "approved" | "cancelled";
+  reason: string | null;
+  created_at: string;
+  applied_at: string | null;
+  cancelled_at: string | null;
+  cancelled_by: string | null;
+  approvals: { approver_id: string; created_at: string }[];
+  approval_count: number;
+  required_approvals: number;
+}
+
 const ROLE_COLORS: Record<AppRole, string> = {
   admin: "bg-primary text-primary-foreground",
   moderator: "bg-accent text-accent-foreground",
