@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Users, Mic, BookMarked, GraduationCap, TrendingUp, Activity } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import StatCard from "@/components/admin/StatCard";
+import AdminKpiWidget from "@/components/admin/AdminKpiWidget";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -127,6 +128,8 @@ export default function AdminDashboardPage() {
         <StatCard label="Bookmarks" value={stats.totalBookmarks} icon={BookMarked} tone="muted" />
         <StatCard label="Hifz Cards" value={stats.totalHifz} icon={GraduationCap} tone="muted" />
       </div>
+
+      <AdminKpiWidget />
 
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="rounded-xl border bg-card p-4">
