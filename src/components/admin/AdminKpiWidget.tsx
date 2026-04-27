@@ -104,6 +104,32 @@ export default function AdminKpiWidget() {
           users: v.users.size,
         }));
 
+        // Top active users by attempts in range
+        const counts = new Map<string, number>();
+        sessions.forEach((s) => counts.set(s.user_id, (counts.get(s.user_id) ?? 0) + 1));
+        const topIds = Array.from(counts.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10);
+
+        let topUsers: TopUser[] = [];
+        if (topIds.length > 0) {
+          const ids = topIds.map(([id]) => id);
+          const { data: profs } = await supabase
+            .from("profiles")
+            .select("user_id, display_name, avatar_url")
+            .in("user_id", ids);
+          const map = new Map((profs ?? []).map((p: any) => [p.user_id, p]));
+          topUsers = topIds.map(([user_id, attempts]) => {
+            const p = map.get(user_id);
+            return {
+              user_id,
+              attempts,
+              display_name: p?.display_name ?? null,
+              avatar_url: p?.avatar_url ?? null,
+            };
+          });
+        }
+
         if (cancelled) return;
         setData({
           totalUsers: profilesAll.count ?? 0,
@@ -112,6 +138,7 @@ export default function AdminKpiWidget() {
           mau: mauSet.size,
           totalAttempts: sessionsAll.count ?? 0,
           attemptsByDay,
+          topUsers,
         });
       } finally {
         if (!cancelled) setLoading(false);
