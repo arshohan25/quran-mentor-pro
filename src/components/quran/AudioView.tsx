@@ -5,6 +5,7 @@ import { qariList } from "@/data/prayerData";
 import { useSurahWithTranslations, useSurahAudio } from "@/hooks/useQuranApi";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBookmark } from "@/hooks/useBookmark";
+import { useSelectedReciter } from "@/hooks/useSelectedReciter";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +17,7 @@ import { type QuranSectionProps } from "./types";
 export default function AudioView({ selectedSurah, setSelectedSurah, onBack }: QuranSectionProps) {
   const { t, language } = useLanguage();
   const { saveLastAudio } = useBookmark();
-  const [selectedQari, setSelectedQari] = useState(qariList[0].id);
+  const { reciterId: selectedQari, setReciterId: setSelectedQari } = useSelectedReciter();
   const [currentAyah, setCurrentAyah] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
