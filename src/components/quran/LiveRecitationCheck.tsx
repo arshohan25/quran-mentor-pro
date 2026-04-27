@@ -4,6 +4,7 @@ import { useArabicRecitationEngine } from "@/hooks/useArabicRecitationEngine";
 import { useRecitationRecorder } from "@/hooks/useRecitationRecorder";
 import { useSelectedReciter } from "@/hooks/useSelectedReciter";
 import { useLanguage } from "@/contexts/LanguageContext";
+import SessionReciterPicker from "./SessionReciterPicker";
 import type { MatchMode } from "@/utils/arabicUtils";
 
 interface InlineRecitationProps {
