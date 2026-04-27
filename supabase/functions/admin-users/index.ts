@@ -8,13 +8,25 @@ const corsHeaders = {
 };
 
 interface Body {
-  action: "list_users" | "set_role" | "remove_role" | "delete_user";
+  action:
+    | "list_users"
+    | "set_role"
+    | "remove_role"
+    | "delete_user"
+    | "request_admin"
+    | "approve_admin"
+    | "cancel_admin_request"
+    | "list_admin_requests";
   page?: number;
   perPage?: number;
   search?: string;
   user_id?: string;
   role?: "admin" | "moderator" | "user";
+  request_id?: string;
+  reason?: string;
 }
+
+const REQUIRED_ADMIN_APPROVALS = 2;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
