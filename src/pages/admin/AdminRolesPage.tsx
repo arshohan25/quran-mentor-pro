@@ -322,81 +322,13 @@ export default function AdminRolesPage() {
         </div>
       </Card>
 
-      <Card className="p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <ScrollText className="h-4 w-4 text-primary" /> Recent role changes
-          </h2>
-          <Button variant="outline" size="icon" onClick={fetchLogs} aria-label="Refresh logs">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <div className="rounded-md border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>When</TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Target user</TableHead>
-                <TableHead>Actor</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {logsLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell colSpan={5}><Skeleton className="h-6 w-full" /></TableCell>
-                  </TableRow>
-                ))
-              ) : logs.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-6">
-                    No role changes yet
-                  </TableCell>
-                </TableRow>
-              ) : (
-                logs.map((log) => {
-                  const target = userById(log.target_id);
-                  const actor = userById(log.actor_id);
-                  const role = log.metadata?.role as AppRole | undefined;
-                  const assigned = log.action === "role.assigned";
-                  return (
-                    <TableRow key={log.id}>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                        {fmtTime(log.created_at)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={assigned ? "default" : "outline"}>
-                          {assigned ? "assigned" : "revoked"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {role ? <Badge className={ROLE_COLORS[role]}>{role}</Badge> : "—"}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {target?.email ?? (
-                          <span className="text-muted-foreground font-mono text-xs">
-                            {log.target_id?.slice(0, 8) ?? "—"}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {actor?.email ?? (
-                          <span className="text-muted-foreground font-mono text-xs">
-                            {log.actor_id?.slice(0, 8) ?? "system"}
-                          </span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
+      <FilterableAuditLog
+        logs={logs}
+        loading={logsLoading}
+        onRefresh={fetchLogs}
+        userById={userById}
+        fmtTime={fmtTime}
+      />
     </div>
   );
 }
