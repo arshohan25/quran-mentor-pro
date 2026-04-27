@@ -332,3 +332,203 @@ export default function AdminRolesPage() {
     </div>
   );
 }
+
+interface FilterableAuditLogProps {
+  logs: AuditLog[];
+  loading: boolean;
+  onRefresh: () => void;
+  userById: (id: string | null) => AdminUser | undefined;
+  fmtTime: (s: string) => string;
+}
+
+type ActionFilter = "all" | "assigned" | "revoked";
+type RoleFilter = "all" | AppRole;
+
+function FilterableAuditLog({
+  logs, loading, onRefresh, userById, fmtTime,
+}: FilterableAuditLogProps) {
+  const [actionFilter, setActionFilter] = useState<ActionFilter>("all");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const [targetSearch, setTargetSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = targetSearch.trim().toLowerCase();
+    return logs.filter((log) => {
+      const role = log.metadata?.role as AppRole | undefined;
+      const assigned = log.action === "role.assigned";
+
+      if (actionFilter === "assigned" && !assigned) return false;
+      if (actionFilter === "revoked" && assigned) return false;
+      if (roleFilter !== "all" && role !== roleFilter) return false;
+
+      if (q) {
+        const target = userById(log.target_id);
+        const actor = userById(log.actor_id);
+        const hay = [
+          target?.email, target?.display_name, log.target_id,
+          actor?.email, actor?.display_name, log.actor_id,
+        ].filter(Boolean).join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [logs, actionFilter, roleFilter, targetSearch, userById]);
+
+  const counts = useMemo(() => {
+    const c = { admin: 0, moderator: 0, user: 0 };
+    filtered.forEach((l) => {
+      const r = l.metadata?.role as AppRole | undefined;
+      if (r && r in c) c[r] += 1;
+    });
+    return c;
+  }, [filtered]);
+
+  const resetFilters = () => {
+    setActionFilter("all");
+    setRoleFilter("all");
+    setTargetSearch("");
+  };
+  const filtersActive =
+    actionFilter !== "all" || roleFilter !== "all" || targetSearch.trim() !== "";
+
+  return (
+    <Card className="p-4 space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <ScrollText className="h-4 w-4 text-primary" /> Role change audit log
+        </h2>
+        <Button variant="outline" size="icon" onClick={onRefresh} aria-label="Refresh logs">
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Action
+          </label>
+          <Select value={actionFilter} onValueChange={(v) => setActionFilter(v as ActionFilter)}>
+            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All actions</SelectItem>
+              <SelectItem value="assigned">Assigned</SelectItem>
+              <SelectItem value="revoked">Revoked</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Role
+          </label>
+          <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as RoleFilter)}>
+            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All roles</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="moderator">Moderator</SelectItem>
+              <SelectItem value="user">User</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+          <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Target / actor
+          </label>
+          <div className="relative">
+            <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Email, name, or id…"
+              value={targetSearch}
+              onChange={(e) => setTargetSearch(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+        </div>
+        {filtersActive && (
+          <Button variant="ghost" size="sm" onClick={resetFilters}>
+            Clear
+          </Button>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted-foreground">
+          Showing {filtered.length} of {logs.length} entries
+        </span>
+        <span className="text-muted-foreground">·</span>
+        <Badge className={ROLE_COLORS.admin}>admin {counts.admin}</Badge>
+        <Badge className={ROLE_COLORS.moderator}>moderator {counts.moderator}</Badge>
+        <Badge className={ROLE_COLORS.user}>user {counts.user}</Badge>
+      </div>
+
+      <div className="rounded-md border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>When</TableHead>
+              <TableHead>Action</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Target user</TableHead>
+              <TableHead>Actor</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell colSpan={5}><Skeleton className="h-6 w-full" /></TableCell>
+                </TableRow>
+              ))
+            ) : filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-6">
+                  {logs.length === 0
+                    ? "No role changes yet"
+                    : "No entries match the current filters"}
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map((log) => {
+                const target = userById(log.target_id);
+                const actor = userById(log.actor_id);
+                const role = log.metadata?.role as AppRole | undefined;
+                const assigned = log.action === "role.assigned";
+                return (
+                  <TableRow key={log.id}>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                      {fmtTime(log.created_at)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={assigned ? "default" : "outline"}>
+                        {assigned ? "assigned" : "revoked"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {role ? <Badge className={ROLE_COLORS[role]}>{role}</Badge> : "—"}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      <div className="flex flex-col">
+                        <span>{target?.display_name ?? target?.email ?? "—"}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[200px]">
+                          {target?.email ?? log.target_id ?? "—"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      <div className="flex flex-col">
+                        <span>{actor?.display_name ?? actor?.email ?? "system"}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[200px]">
+                          {actor?.email ?? log.actor_id ?? "—"}
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </Card>
+  );
+}
