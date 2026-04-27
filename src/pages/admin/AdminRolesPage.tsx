@@ -234,6 +234,11 @@ export default function AdminRolesPage() {
                 users.map((u) => {
                   const current = highestRole(u.roles);
                   const isSelf = u.id === currentUser?.id;
+                  const lockRevoke =
+                    current === "admin" && (isSelf || isLastAdmin(u));
+                  const lockReason = isSelf
+                    ? "You cannot demote yourself"
+                    : "Last remaining admin — promote another user first";
                   return (
                     <TableRow key={u.id}>
                       <TableCell>
@@ -255,6 +260,11 @@ export default function AdminRolesPage() {
                               {isSelf && (
                                 <Badge variant="outline" className="text-[10px] py-0 h-4">you</Badge>
                               )}
+                              {current === "admin" && isLastAdmin(u) && !isSelf && (
+                                <Badge variant="outline" className="text-[10px] py-0 h-4 border-destructive/40 text-destructive">
+                                  last admin
+                                </Badge>
+                              )}
                             </div>
                             <div className="text-xs text-muted-foreground truncate">{u.email}</div>
                           </div>
@@ -270,16 +280,19 @@ export default function AdminRolesPage() {
                             onValueChange={(v) => changeRole(u, v as AppRole)}
                             disabled={busy === u.id}
                           >
-                            <SelectTrigger className="w-36">
+                            <SelectTrigger
+                              className="w-36"
+                              title={lockRevoke ? lockReason : undefined}
+                            >
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="user">
+                              <SelectItem value="user" disabled={lockRevoke}>
                                 <div className="flex items-center gap-2">
                                   <ShieldOff className="h-3.5 w-3.5" /> User
                                 </div>
                               </SelectItem>
-                              <SelectItem value="moderator">
+                              <SelectItem value="moderator" disabled={lockRevoke}>
                                 <div className="flex items-center gap-2">
                                   <ShieldCheck className="h-3.5 w-3.5" /> Moderator
                                 </div>
@@ -293,6 +306,9 @@ export default function AdminRolesPage() {
                           </Select>
                           {busy === u.id && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
                         </div>
+                        {lockRevoke && (
+                          <p className="text-[10px] text-muted-foreground mt-1">{lockReason}</p>
+                        )}
                       </TableCell>
                       <TableCell className="text-right text-xs text-muted-foreground">
                         {new Date(u.created_at).toLocaleDateString()}
