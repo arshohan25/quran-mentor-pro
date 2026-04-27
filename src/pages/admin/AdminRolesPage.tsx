@@ -79,6 +79,9 @@ export default function AdminRolesPage() {
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [requestBusy, setRequestBusy] = useState<string | null>(null);
+  const [reviewRequest, setReviewRequest] = useState<PromotionRequest | null>(null);
+  const [reviewDecision, setReviewDecision] = useState<"approve" | "deny">("approve");
+  const [reviewReason, setReviewReason] = useState("");
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
