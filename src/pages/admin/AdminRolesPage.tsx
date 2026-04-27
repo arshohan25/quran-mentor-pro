@@ -216,11 +216,11 @@ export default function AdminRolesPage() {
     }
   };
 
-  const approveRequest = async (req: PromotionRequest) => {
+  const approveRequest = async (req: PromotionRequest, reason?: string) => {
     setRequestBusy(req.id);
     try {
       const { data, error } = await supabase.functions.invoke("admin-users", {
-        body: { action: "approve_admin", request_id: req.id },
+        body: { action: "approve_admin", request_id: req.id, reason: reason ?? null },
       });
       if (error) throw error;
       const applied = (data as any)?.applied;
@@ -239,19 +239,41 @@ export default function AdminRolesPage() {
     }
   };
 
-  const cancelRequest = async (req: PromotionRequest) => {
+  const cancelRequest = async (req: PromotionRequest, reason?: string) => {
     setRequestBusy(req.id);
     try {
       const { error } = await supabase.functions.invoke("admin-users", {
-        body: { action: "cancel_admin_request", request_id: req.id },
+        body: { action: "cancel_admin_request", request_id: req.id, reason: reason ?? null },
       });
       if (error) throw error;
-      toast.success("Request cancelled");
+      toast.success(reason ? "Request denied" : "Request cancelled");
       await Promise.all([fetchRequests(), fetchLogs()]);
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to cancel");
     } finally {
       setRequestBusy(null);
+    }
+  };
+
+  const openReview = (req: PromotionRequest) => {
+    setReviewRequest(req);
+    setReviewDecision("approve");
+    setReviewReason("");
+  };
+
+  const submitReview = async () => {
+    if (!reviewRequest) return;
+    const trimmed = reviewReason.trim();
+    if (reviewDecision === "deny" && trimmed.length === 0) {
+      toast.error("A reason is required when denying a request");
+      return;
+    }
+    const req = reviewRequest;
+    setReviewRequest(null);
+    if (reviewDecision === "approve") {
+      await approveRequest(req, trimmed || undefined);
+    } else {
+      await cancelRequest(req, trimmed);
     }
   };
 
