@@ -220,7 +220,7 @@ const Index = () => {
 
           {/* Hijri + Next prayer chips */}
           <div className="flex gap-2 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
-            {hijri && (
+            {visible("card:hijri_header") && hijri && (
               <div className="flex-1 min-w-0 rounded-xl border border-primary-foreground/10 bg-primary-foreground/[0.06] backdrop-blur-sm px-3 py-2 flex items-center gap-2.5">
                 <CalendarDays className="w-3.5 h-3.5 text-accent shrink-0" strokeWidth={2} />
                 <div className="min-w-0">
