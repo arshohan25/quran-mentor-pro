@@ -231,27 +231,29 @@ const Index = () => {
                 </div>
               </div>
             )}
-            <Link
-              to="/prayer-times"
-              className="flex-1 min-w-0 rounded-xl border border-accent/30 bg-accent/10 backdrop-blur-sm px-3 py-2 flex items-center gap-2.5 hover:bg-accent/20 transition-colors"
-            >
-              <Clock className="w-3.5 h-3.5 text-accent shrink-0" strokeWidth={2} />
-              <div className="min-w-0 flex-1">
-                <p className="text-[9px] uppercase tracking-wider text-primary-foreground/50 font-semibold leading-none">
-                  {t("পরবর্তী নামাজ", "Next Prayer", "الصلاة القادمة")}
-                </p>
-                {nextPrayer ? (
-                  <p className="text-[12px] font-semibold text-primary-foreground/95 truncate mt-0.5">
-                    {language === "bn" ? PRAYER_LABELS_BN[nextPrayer.name] : language === "ar" ? PRAYER_LABELS_AR[nextPrayer.name] : nextPrayer.name}
-                    <span className="text-accent font-bold"> · {nextPrayer.time}</span>
+            {visible("card:next_prayer") && (
+              <Link
+                to="/prayer-times"
+                className="flex-1 min-w-0 rounded-xl border border-accent/30 bg-accent/10 backdrop-blur-sm px-3 py-2 flex items-center gap-2.5 hover:bg-accent/20 transition-colors"
+              >
+                <Clock className="w-3.5 h-3.5 text-accent shrink-0" strokeWidth={2} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[9px] uppercase tracking-wider text-primary-foreground/50 font-semibold leading-none">
+                    {t("পরবর্তী নামাজ", "Next Prayer", "الصلاة القادمة")}
                   </p>
-                ) : (
-                  <p className="text-[12px] font-semibold text-primary-foreground/70 truncate mt-0.5 flex items-center gap-1">
-                    <MapPin className="w-3 h-3" /> {t("লোকেশন সেট করুন", "Set location", "حدد الموقع")}
-                  </p>
-                )}
-              </div>
-            </Link>
+                  {nextPrayer ? (
+                    <p className="text-[12px] font-semibold text-primary-foreground/95 truncate mt-0.5">
+                      {language === "bn" ? PRAYER_LABELS_BN[nextPrayer.name] : language === "ar" ? PRAYER_LABELS_AR[nextPrayer.name] : nextPrayer.name}
+                      <span className="text-accent font-bold"> · {nextPrayer.time}</span>
+                    </p>
+                  ) : (
+                    <p className="text-[12px] font-semibold text-primary-foreground/70 truncate mt-0.5 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> {t("লোকেশন সেট করুন", "Set location", "حدد الموقع")}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            )}
           </div>
         </div>
       </header>
