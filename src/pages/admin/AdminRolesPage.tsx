@@ -155,6 +155,37 @@ export default function AdminRolesPage() {
         </p>
       </div>
 
+      <Card className="p-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+              <Shield className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                Current admins
+              </p>
+              {loading ? (
+                <Skeleton className="h-7 w-16 mt-0.5" />
+              ) : (
+                <p className="text-2xl font-bold leading-tight">{adminCount}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {adminCount <= 1
+                  ? "Only one admin remains — revoke is locked to prevent lockout."
+                  : "At least one admin must always be present."}
+              </p>
+            </div>
+          </div>
+          {adminCount <= 1 && !loading && (
+            <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>Promote another user to admin before revoking the last one.</span>
+            </div>
+          )}
+        </div>
+      </Card>
+
       <Card className="p-4 space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <h2 className="text-lg font-semibold flex items-center gap-2">
