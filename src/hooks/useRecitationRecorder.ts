@@ -31,7 +31,7 @@ interface WordTally {
  *  - errors++   : whenever errorIndex hits a new word
  *  - hesitations++ : if more than 3s elapsed since last advance
  */
-export function useRecitationRecorder({ surah, ayah, state, completed }: UseRecitationRecorderOpts) {
+export function useRecitationRecorder({ surah, ayah, state, completed, mode = "practice" }: UseRecitationRecorderOpts) {
   const { user } = useAuth();
   const startRef = useRef<number | null>(null);
   const wordsRef = useRef<Map<number, WordTally>>(new Map());
