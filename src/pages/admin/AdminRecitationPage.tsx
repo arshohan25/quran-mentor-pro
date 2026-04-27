@@ -2,13 +2,23 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Cell } from "recharts";
 import StatCard from "@/components/admin/StatCard";
-import { Mic, Activity, AlertTriangle, Hash, Radio } from "lucide-react";
+import { Mic, Activity, AlertTriangle, Hash, Radio, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { surahList } from "@/data/surahList";
+import { toast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const MODES = ["practice", "hifz", "live", "lesson"] as const;
 type Mode = (typeof MODES)[number];
@@ -234,6 +244,159 @@ export default function AdminRecitationPage() {
     [byLessonType]
   );
 
+  const surahName = (n: number) =>
+    surahList.find((s) => s.number === n)?.englishName ?? `Surah ${n}`;
+
+  const exportCsv = () => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    const lines: string[] = [];
+    const push = (row: (string | number)[] = []) =>
+      lines.push(row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","));
+
+    push([`Recitation Report - last ${range} days`]);
+    push([`Generated`, new Date().toISOString()]);
+    push();
+    push(["Totals"]);
+    push(["Sessions", totals.sessions]);
+    push(["Avg accuracy %", totals.avgAccuracy]);
+    push(["Total errors", totals.totalErrors]);
+    push(["Tracked weak words", totals.weakestN]);
+    push();
+    push(["Attempts by accuracy grade"]);
+    push(["Grade", "Attempts"]);
+    byGrade.forEach((g) => push([g.label, g.attempts]));
+    push();
+    push(["Top surahs by sessions"]);
+    push(["Surah", "Sessions"]);
+    bySurah.forEach((r) => push([surahName(r.surah), r.n]));
+    push();
+    push(["Attempts by reciter"]);
+    push(["Reciter", "Attempts", "Avg accuracy %"]);
+    byReciter.forEach((r) => push([r.key, r.attempts, r.avgAccuracy]));
+    push();
+    push(["Attempts by lesson type"]);
+    push(["Lesson type", "Attempts", "Avg accuracy %"]);
+    byLessonType.forEach((r) => push([r.key, r.attempts, r.avgAccuracy]));
+    push();
+    push(["Commonly failed ayahs by mode"]);
+    push(["Mode", "Surah", "Ayah", "Failures", "Attempts", "Total errors", "Fail rate %"]);
+    (Object.keys(wrongByMode) as Mode[]).forEach((m) => {
+      wrongByMode[m].forEach((w) =>
+        push([
+          MODE_LABELS[m],
+          surahName(w.surah),
+          w.ayah,
+          w.failures,
+          w.attempts,
+          w.totalErrors,
+          Math.round(w.failRate * 100),
+        ])
+      );
+    });
+
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `recitation-report-${range}d-${stamp}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "CSV exported", description: `Last ${range} days` });
+  };
+
+  const exportPdf = () => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    doc.setFontSize(18);
+    doc.text("Recitation Analytics Report", 40, 50);
+    doc.setFontSize(10);
+    doc.setTextColor(120);
+    doc.text(`Range: last ${range} days`, 40, 68);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 40, 82);
+    doc.setTextColor(0);
+
+    autoTable(doc, {
+      startY: 100,
+      head: [["Metric", "Value"]],
+      body: [
+        ["Sessions", String(totals.sessions)],
+        ["Avg accuracy", `${totals.avgAccuracy}%`],
+        ["Total errors", String(totals.totalErrors)],
+        ["Tracked weak words", String(totals.weakestN)],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: [40, 100, 70] },
+      styles: { fontSize: 10 },
+    });
+
+    autoTable(doc, {
+      head: [["Accuracy grade", "Attempts"]],
+      body: byGrade.map((g) => [g.label, String(g.attempts)]),
+      theme: "striped",
+      headStyles: { fillColor: [40, 100, 70] },
+      styles: { fontSize: 10 },
+    });
+
+    autoTable(doc, {
+      head: [["Surah", "Sessions"]],
+      body: bySurah.map((r) => [surahName(r.surah), String(r.n)]),
+      theme: "striped",
+      headStyles: { fillColor: [40, 100, 70] },
+      styles: { fontSize: 10 },
+    });
+
+    if (byReciter.length) {
+      autoTable(doc, {
+        head: [["Reciter", "Attempts", "Avg accuracy %"]],
+        body: byReciter.map((r) => [r.key, String(r.attempts), String(r.avgAccuracy)]),
+        theme: "striped",
+        headStyles: { fillColor: [40, 100, 70] },
+        styles: { fontSize: 10 },
+      });
+    }
+
+    if (byLessonType.length) {
+      autoTable(doc, {
+        head: [["Lesson type", "Attempts", "Avg accuracy %"]],
+        body: byLessonType.map((r) => [r.key, String(r.attempts), String(r.avgAccuracy)]),
+        theme: "striped",
+        headStyles: { fillColor: [40, 100, 70] },
+        styles: { fontSize: 10 },
+      });
+    }
+
+    (Object.keys(wrongByMode) as Mode[]).forEach((m) => {
+      const rows = wrongByMode[m];
+      if (!rows.length) return;
+      autoTable(doc, {
+        head: [[`Failed ayahs - ${MODE_LABELS[m]}`, "Failures", "Attempts", "Errors", "Fail %"]],
+        body: rows.map((w) => [
+          `${surahName(w.surah)} - Ayah ${w.ayah}`,
+          String(w.failures),
+          String(w.attempts),
+          String(w.totalErrors),
+          `${Math.round(w.failRate * 100)}%`,
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [180, 60, 60] },
+        styles: { fontSize: 9 },
+      });
+    });
+
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(`Page ${i} of ${pageCount}`, pageWidth - 80, doc.internal.pageSize.getHeight() - 20);
+    }
+
+    doc.save(`recitation-report-${range}d-${stamp}.pdf`);
+    toast({ title: "PDF exported", description: `Last ${range} days` });
+  };
+
   if (loading) return <Skeleton className="h-96" />;
 
   return (
@@ -243,13 +406,31 @@ export default function AdminRecitationPage() {
           <h1 className="text-2xl font-bold text-foreground">Recitation Analytics</h1>
           <p className="text-sm text-muted-foreground">Aggregate trends across all users (last {range} days).</p>
         </div>
-        <Tabs value={String(range)} onValueChange={(v) => setRange(Number(v) as RangeDays)}>
-          <TabsList>
-            <TabsTrigger value="7">7d</TabsTrigger>
-            <TabsTrigger value="30">30d</TabsTrigger>
-            <TabsTrigger value="90">90d</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Tabs value={String(range)} onValueChange={(v) => setRange(Number(v) as RangeDays)}>
+            <TabsList>
+              <TabsTrigger value="7">7d</TabsTrigger>
+              <TabsTrigger value="30">30d</TabsTrigger>
+              <TabsTrigger value="90">90d</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export report
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportPdf} className="gap-2">
+                <FileText className="h-4 w-4" /> PDF (.pdf)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportCsv} className="gap-2">
+                <FileSpreadsheet className="h-4 w-4" /> CSV (.csv)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
