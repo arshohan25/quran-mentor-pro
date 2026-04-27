@@ -46,6 +46,11 @@ export default function AdminRecitationPage() {
   const [byLessonType, setByLessonType] = useState<BreakdownRow[]>([]);
   const [weakest, setWeakest] = useState<any[]>([]);
   const [byGrade, setByGrade] = useState<{ grade: string; label: string; attempts: number; fill: string }[]>([]);
+  const [wrongByMode, setWrongByMode] = useState<Record<Mode, WrongAyah[]>>({
+    practice: [], hifz: [], live: [], lesson: [],
+  });
+  const [liveWrongCount, setLiveWrongCount] = useState(0);
+  const [livePulse, setLivePulse] = useState(false);
 
   const GRADE_BUCKETS: { grade: string; label: string; min: number; max: number; fill: string }[] = [
     { grade: "A", label: "A · 90–100%", min: 0.9, max: 1.0001, fill: "hsl(152 55% 38%)" },
