@@ -17,6 +17,7 @@ import { LINES_PER_PAGE, type QuranSectionProps } from "./types";
 import { useUpsertCard } from "@/hooks/useHifzSrs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRecitationRecorder } from "@/hooks/useRecitationRecorder";
+import { useSelectedReciter } from "@/hooks/useSelectedReciter";
 
 const SENSITIVITY_KEY = "hifz-sensitivity-mode";
 
