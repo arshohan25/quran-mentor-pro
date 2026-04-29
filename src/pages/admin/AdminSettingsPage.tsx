@@ -369,3 +369,145 @@ function NumField({ label, value, min, max, step, onChange }:
     </div>
   );
 }
+
+/* ---------- Tile Audit ---------- */
+
+type TileAuditBucket = "auto" | "matches" | "differs";
+
+interface AuditedTile {
+  entry: HomeTileManifestEntry;
+  bucket: TileAuditBucket;
+  effective: boolean;
+  override: boolean | undefined;
+}
+
+function TileAuditSection({
+  tiles,
+  onClearKeys,
+}: {
+  tiles: Record<string, boolean>;
+  onClearKeys: (paths: string[]) => void;
+}) {
+  const audited = useMemo<AuditedTile[]>(() => {
+    return HOME_TILE_MANIFEST.map((entry) => {
+      const override = tiles[entry.path];
+      const hasOverride = typeof override === "boolean";
+      let bucket: TileAuditBucket = "auto";
+      if (hasOverride) bucket = override === entry.defaultEnabled ? "matches" : "differs";
+      return {
+        entry,
+        bucket,
+        override: hasOverride ? override : undefined,
+        effective: isTileVisibleIn(tiles, entry.path),
+      };
+    });
+  }, [tiles]);
+
+  const groups: Record<TileAuditBucket, AuditedTile[]> = {
+    auto: audited.filter((t) => t.bucket === "auto"),
+    matches: audited.filter((t) => t.bucket === "matches"),
+    differs: audited.filter((t) => t.bucket === "differs"),
+  };
+
+  const renderGroup = (
+    bucket: TileAuditBucket,
+    title: string,
+    description: string,
+    items: AuditedTile[],
+  ) => (
+    <div key={bucket} className="space-y-2 pt-2">
+      <div className="flex items-center justify-between">
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {title} <span className="text-foreground/70">({items.length})</span>
+          </h4>
+          <p className="text-[11px] text-muted-foreground">{description}</p>
+        </div>
+        {bucket === "matches" && items.length > 0 && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => onClearKeys(items.map((it) => it.entry.path))}
+          >
+            Clear all
+          </Button>
+        )}
+      </div>
+      {items.length === 0 ? (
+        <p className="text-xs text-muted-foreground/70 italic px-1 py-3">None</p>
+      ) : (
+        <div className="space-y-1.5">
+          {items.map((it) => (
+            <div
+              key={it.entry.path}
+              className="flex items-center justify-between gap-3 py-2 px-3 rounded-lg border bg-background/40"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-medium text-foreground truncate">
+                    {it.entry.label}
+                  </span>
+                  <Badge variant={it.effective ? "default" : "secondary"} className="text-[10px] h-4">
+                    {it.effective ? "Visible" : "Hidden"}
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px] h-4">
+                    Default: {it.entry.defaultEnabled ? "on" : "off"}
+                  </Badge>
+                  <Badge
+                    variant={bucket === "auto" ? "outline" : bucket === "differs" ? "destructive" : "secondary"}
+                    className="text-[10px] h-4"
+                  >
+                    {bucket === "auto" ? "Auto" : "Override"}
+                  </Badge>
+                </div>
+                <p className="text-[10px] text-muted-foreground/70 font-mono truncate mt-0.5">
+                  {it.entry.path}
+                </p>
+              </div>
+              {bucket !== "auto" && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs shrink-0"
+                  onClick={() => onClearKeys([it.entry.path])}
+                >
+                  Reset
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <Section title="Tile Audit">
+      <p className="text-xs text-muted-foreground -mt-1">
+        Source-of-truth view of every manifest tile. Resets stage in your draft — click
+        <span className="font-semibold"> Save & push live </span> to apply.
+      </p>
+      {renderGroup(
+        "differs",
+        "Override differs from default",
+        "Admin has explicitly flipped these away from their manifest default.",
+        groups.differs,
+      )}
+      {renderGroup(
+        "matches",
+        "Override matches default",
+        "Stored in DB but identical to the manifest default — safe to clear.",
+        groups.matches,
+      )}
+      {renderGroup(
+        "auto",
+        "Auto (manifest default)",
+        "No admin override — visibility comes from the code-level manifest.",
+        groups.auto,
+      )}
+    </Section>
+  );
+}
