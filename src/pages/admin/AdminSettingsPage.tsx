@@ -296,6 +296,15 @@ export default function AdminSettingsPage() {
               );
             })}
           </Section>
+
+          <TileAuditSection
+            tiles={draft.ui.tiles ?? {}}
+            onClearKeys={(paths) => {
+              const next = { ...(draft.ui.tiles ?? {}) };
+              paths.forEach((p) => { delete next[p]; });
+              updateNested("ui", "tiles", next);
+            }}
+          />
         </TabsContent>
       </Tabs>
 
