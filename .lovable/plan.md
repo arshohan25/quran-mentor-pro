@@ -1,56 +1,30 @@
-## Goal
-Auto-generate a switch in **Admin → Settings → UI** for every home tile and the home cards/banners, and have Index hide each item the moment its toggle is flipped (live, no reload).
+# Tile Audit View in Admin Settings
 
-## Approach
-Use a single shared **manifest** as the source of truth for what's on the home page. Admin renders switches from it; Index filters render from the same list. Adding a future tile means adding one manifest entry — no admin/Index edits needed.
+Add a new sub-view inside Admin → Settings → UI tab that classifies every manifest tile by its current source of truth, so admins can see at a glance which tiles are running on auto defaults vs. which ones they have explicitly overridden (and whether the override matches or differs from the default).
 
-## Files
+## What the user will see
 
-### 1. NEW: `src/lib/homeTilesManifest.ts`
-Exports:
-- `HOME_TILE_MANIFEST: { path, label, section }[]` covering:
-  - **Cards/banners** (`card:*` synthetic paths): announcement banner, Daily Ayah, Daily Amal summary, Daily Dua, streak chip, next-prayer chip, Hijri header chip
-  - **Quran tiles**: `/quran`, `/audio`, `/hifz`, `/practice`, `/recitation/stats`, `/tafsir/1/1`, `/bookmarks`, `/planner`
-  - **Prayer tiles**: `/prayer-times`, `/qibla`, `/prayer`, `/qaza`
-  - **Dhikr tiles**: `/tasbih`, `/dua`, `/daily-amal`, `/hijri`
-  - **Learn tiles**: `/hadith`, `/ask`, `/notifications`
-- `SECTION_LABELS` for grouping in admin UI
+A new collapsible "Tile Audit" panel below the existing per-tile toggle list (in the UI tab). It shows three grouped lists with counts:
 
-### 2. EDIT: `src/hooks/useAppSettings.ts`
-Extend `AppSettings.ui` with:
-```ts
-tiles: Record<string, boolean>   // keyed by manifest path; missing key = visible
-```
-Default = `{}` (empty → everything visible). Add a small helper:
-```ts
-export function isTileVisible(path: string): boolean {
-  const v = getAppSettingsSnapshot().ui.tiles?.[path];
-  return v !== false;   // default-on for any unknown path
-}
-```
-Keep the existing `show_qibla_tile`, `show_hijri_tile`, `show_daily_ayah` for back-compat but stop relying on them in Index — the manifest map supersedes them.
+1. **Auto (default)** — tiles with no key present in `app_settings.ui.tiles`. Visibility comes from manifest `defaultEnabled`.
+2. **Override matches default** — admin has written a key but the value equals `defaultEnabled` (a no-op override; safe to clear).
+3. **Override differs from default** — admin has actively flipped the tile away from its default. These are the "interesting" overrides.
 
-### 3. EDIT: `src/pages/admin/AdminSettingsPage.tsx`
-In the **UI** tab, append a new section "Home tiles & cards":
-- Group manifest entries by `section`, render a `Switch` per entry.
-- Bound state to `draft.ui.tiles[path]`; default `true` if undefined.
-- "Toggle all in section" header chip (small QoL).
-- Existing UI toggles (compact_home, show_streak_chip, etc.) stay above for now.
+Each row shows: label · `path` (mono) · current effective state badge (Visible/Hidden) · default badge · source badge (Auto / Override).
 
-### 4. EDIT: `src/pages/Index.tsx`
-- Replace the conditional spreads (`...(ui.show_qibla_tile ? [...] : [])`) with a generic helper:
-  ```ts
-  const visible = (path: string) => ui.tiles?.[path] !== false;
-  ```
-- Filter `quranTiles`, `prayerTiles`, `dhikrTiles`, `learnTiles` arrays through `visible(tile.path)`.
-- Gate the announcement banner with `visible("card:announcement") && showAnnouncement`.
-- Gate Daily Ayah, Daily Amal summary card, Daily Dua card, streak chip, next-prayer chip, and Hijri header chip with their `card:*` keys.
-- If a section ends up with **0 visible tiles**, hide the whole `<BentoSection>`.
+For groups 2 and 3, a small "Reset to default" button per row deletes the key from `ui.tiles` (so it falls back to the manifest). A "Reset all matching defaults" button clears every key in group 2 in one click. These edits go through the same draft → Save & push live flow as the existing toggles (no separate save button).
 
-### 5. NO migration required
-The existing JSONB column already stores arbitrary keys. Defaults stay backward-compatible because `isTileVisible` treats missing keys as `true`. Realtime push from the previous round already covers `app_settings` changes.
+## Technical details
 
-## What the user gets
-- Admin → Settings → UI tab now lists ~25 switches grouped by section.
-- Toggling any switch hides/shows the corresponding tile or card on every connected user's home page within ~1 second.
-- Adding a new home tile in the future: add one manifest line → toggle appears automatically.
+**File edited: `src/pages/admin/AdminSettingsPage.tsx`**
+- Add a `useMemo` that walks `HOME_TILE_MANIFEST` once against `draft.ui.tiles` and classifies each entry into `auto | matches | differs`.
+- Render a new `<Section title="Tile Audit">` inside the existing UI `TabsContent`, below the "Home tiles & cards" section.
+- Reuse `Badge`, `Button`, `Row` components already imported.
+- Removing an override = `const next = { ...draft.ui.tiles }; delete next[path]; updateNested("ui", "tiles", next);`
+- "Reset all matching defaults" iterates group 2 paths and deletes them from a single `next` map.
+
+No new files, no migrations, no schema changes — purely a read/diff view on data already present in `draft` and `HOME_TILE_MANIFEST`.
+
+## Out of scope
+- No history of who/when an override was set (would need an audit log query).
+- No filtering/search box (manifest is small, ~26 entries).
