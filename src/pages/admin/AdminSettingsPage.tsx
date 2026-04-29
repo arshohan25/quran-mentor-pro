@@ -18,6 +18,7 @@ import {
   SECTION_LABELS,
   SECTION_ORDER,
   isTileVisibleIn,
+  type HomeTileManifestEntry,
   type HomeTileSection,
 } from "@/lib/homeTilesManifest";
 
