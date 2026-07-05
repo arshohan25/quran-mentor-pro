@@ -760,13 +760,6 @@ export type Database = {
     }
     Functions: {
       backfill_app_settings_tiles: { Args: { _defaults: Json }; Returns: Json }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
     }
     Enums: {
       admin_request_status: "pending" | "approved" | "cancelled"
