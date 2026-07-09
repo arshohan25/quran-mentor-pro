@@ -96,6 +96,14 @@ export default function AccountPage() {
             {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {isBn ? "সংরক্ষণ করুন" : "Save"}
           </Button>
+
+          <div className="pt-3 border-t space-y-1.5">
+            <Label>{isBn ? "দেশ" : "Country"}</Label>
+            <CountrySwitcher />
+            <p className="text-[11px] text-muted-foreground">
+              {isBn ? "নির্বাচিত দেশ অনুযায়ী স্থানীয় কনটেন্ট দেখানো হবে।" : "Localized content will match your selected country."}
+            </p>
+          </div>
         </Card>
 
         {isAdmin && (
