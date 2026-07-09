@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import JsonImportExport from "@/components/admin/JsonImportExport";
 import { toast } from "sonner";
 
 interface Reciter {
