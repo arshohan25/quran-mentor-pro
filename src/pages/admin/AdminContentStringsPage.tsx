@@ -123,6 +123,7 @@ export default function AdminContentStringsPage() {
         </div>
         <div className="flex gap-2">
           <Input placeholder="Filter by key…" value={filter} onChange={(e) => setFilter(e.target.value)} className="w-56" />
+          <JsonImportExport table="content_items" filename="content-strings" conflictColumn="key" onImported={reload} />
           <Button variant="outline" onClick={add}><Plus className="w-4 h-4 mr-1" /> Add</Button>
         </div>
       </div>
