@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePublicAppConfig } from "@/hooks/usePublicAppConfig";
+import JsonImportExport from "@/components/admin/JsonImportExport";
 import { toast } from "sonner";
 
 interface Lesson {
