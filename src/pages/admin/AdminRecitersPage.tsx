@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import JsonImportExport from "@/components/admin/JsonImportExport";
 import { toast } from "sonner";
 
 interface Reciter {
@@ -85,7 +86,10 @@ export default function AdminRecitersPage() {
           <h1 className="text-2xl font-bold">Reciters</h1>
           <p className="text-sm text-muted-foreground">Manage qaris available app-wide. Star = default.</p>
         </div>
-        <Button variant="outline" onClick={add}><Plus className="w-4 h-4 mr-1" /> Add</Button>
+        <div className="flex items-center gap-2">
+          <JsonImportExport table="reciters" filename="reciters" onImported={reload} />
+          <Button variant="outline" onClick={add}><Plus className="w-4 h-4 mr-1" /> Add</Button>
+        </div>
       </div>
 
       <div className="space-y-3">
