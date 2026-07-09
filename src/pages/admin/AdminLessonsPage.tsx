@@ -86,7 +86,10 @@ export default function AdminLessonsPage() {
           <h1 className="text-2xl font-bold">Lesson Items</h1>
           <p className="text-sm text-muted-foreground">Curated lesson templates that show up in Live & Hifz sessions.</p>
         </div>
-        <Button variant="outline" onClick={add}><Plus className="w-4 h-4 mr-1" /> Add</Button>
+        <div className="flex items-center gap-2">
+          <JsonImportExport table="lesson_items" filename="lesson-items" onImported={reload} />
+          <Button variant="outline" onClick={add}><Plus className="w-4 h-4 mr-1" /> Add</Button>
+        </div>
       </div>
 
       <div className="space-y-3">
