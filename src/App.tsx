@@ -36,6 +36,7 @@ import AskPage from "./pages/AskPage.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
 import RecitationStatsPage from "./pages/RecitationStatsPage.tsx";
+import ProgressPage from "./pages/ProgressPage.tsx";
 import TafsirComparePage from "./pages/TafsirComparePage.tsx";
 import RequireAdmin from "@/components/admin/RequireAdmin";
 import AdminShell from "@/components/admin/AdminShell";
@@ -89,6 +90,7 @@ function AnimatedRoutes() {
         <Route path="/auth" element={<PageTransition><AuthPage /></PageTransition>} />
         <Route path="/account" element={<PageTransition><AccountPage /></PageTransition>} />
         <Route path="/recitation/stats" element={<PageTransition><RecitationStatsPage /></PageTransition>} />
+        <Route path="/progress" element={<PageTransition><ProgressPage /></PageTransition>} />
         <Route path="/tafsir/:surah/:ayah" element={<PageTransition><TafsirComparePage /></PageTransition>} />
         <Route path="/admin" element={<RequireAdmin><AdminShell /></RequireAdmin>}>
           <Route index element={<AdminDashboardPage />} />
