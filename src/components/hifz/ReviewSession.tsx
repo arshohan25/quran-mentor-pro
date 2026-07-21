@@ -259,6 +259,20 @@ export default function ReviewSession() {
           )}
         </button>
 
+        {feedback === "incorrect" && (
+          <button
+            onClick={() => playCurrentAudio()}
+            disabled={!audioUrl}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 text-destructive px-3 py-2 text-xs font-medium hover:bg-destructive/10 transition-colors disabled:opacity-50"
+          >
+            <Volume2 className={`w-3.5 h-3.5 ${replaying ? "animate-pulse" : ""}`} />
+            {replaying
+              ? t("বাজছে…", "Playing…", "يشغل…")
+              : t("আবার শুনুন", "Replay ayah", "أعد الاستماع")}
+          </button>
+        )}
+
+
         {/* Quick actions — always visible for one-tap grading */}
         <div className="grid grid-cols-2 gap-2">
           <button
