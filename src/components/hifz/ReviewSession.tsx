@@ -57,6 +57,11 @@ export default function ReviewSession() {
 
   const grade = async (q: Quality) => {
     if (!current || review.isPending) return;
+    const isCorrect = q >= 4;
+    setFeedback(isCorrect ? "correct" : "incorrect");
+    setRevealed(true);
+    if (isCorrect) setCorrectCount(c => c + 1);
+    else setIncorrectCount(c => c + 1);
     try {
       await review.mutateAsync({
         surah: current.surah,
@@ -65,13 +70,21 @@ export default function ReviewSession() {
         existing: current,
       });
       setReviewedCount(c => c + 1);
-      setRevealed(false);
-      setShowTranslation(false);
-      setIndex(i => i + 1);
+      // Brief pause so learner sees the red/green feedback before advancing
+      setTimeout(() => {
+        setFeedback(null);
+        setRevealed(false);
+        setShowTranslation(false);
+        setIndex(i => i + 1);
+      }, 650);
     } catch (e) {
       console.error("Review failed", e);
+      setFeedback(null);
     }
   };
+
+  const quickCorrect = () => grade(5);
+  const quickIncorrect = () => grade(0);
 
   if (isLoading || !queue) {
     return (
