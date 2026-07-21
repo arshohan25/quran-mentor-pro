@@ -61,6 +61,32 @@ export default function ReviewSession() {
     return src.ayahs.find(a => a.numberInSurah === current.ayah)?.text ?? "";
   }, [current, surahData, language]);
 
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
+      audioRef.current = null;
+    }
+    setReplaying(false);
+  };
+
+  const playCurrentAudio = (onDone?: () => void) => {
+    if (!audioUrl) { onDone?.(); return; }
+    stopAudio();
+    const a = new Audio(audioUrl);
+    audioRef.current = a;
+    setReplaying(true);
+    const finish = () => {
+      if (audioRef.current === a) audioRef.current = null;
+      setReplaying(false);
+      onDone?.();
+    };
+    a.onended = finish;
+    a.onerror = finish;
+    a.play().catch(finish);
+  };
+
   const grade = async (q: Quality) => {
     if (!current || review.isPending) return;
     const isCorrect = q >= 4;
@@ -76,13 +102,25 @@ export default function ReviewSession() {
         existing: current,
       });
       setReviewedCount(c => c + 1);
-      // Brief pause so learner sees the red/green feedback before advancing
-      setTimeout(() => {
+
+      const advance = () => {
         setFeedback(null);
         setRevealed(false);
         setShowTranslation(false);
+        stopAudio();
         setIndex(i => i + 1);
-      }, 650);
+      };
+
+      if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
+
+      if (isCorrect) {
+        advanceTimerRef.current = window.setTimeout(advance, 650);
+      } else {
+        // Auto-replay the ayah so the learner can immediately repeat the red-marked line.
+        playCurrentAudio();
+        // Give them time to listen + repeat; capped so the session still flows.
+        advanceTimerRef.current = window.setTimeout(advance, 8000);
+      }
     } catch (e) {
       console.error("Review failed", e);
       setFeedback(null);
@@ -91,6 +129,13 @@ export default function ReviewSession() {
 
   const quickCorrect = () => grade(5);
   const quickIncorrect = () => grade(0);
+
+  useEffect(() => {
+    return () => {
+      if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
+      stopAudio();
+    };
+  }, []);
 
   if (isLoading || !queue) {
     return (
