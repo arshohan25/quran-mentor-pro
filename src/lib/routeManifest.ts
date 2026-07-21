@@ -21,4 +21,5 @@ export const APP_ROUTES: { path: string; label: string }[] = [
   { path: "/ask", label: "Ask AI" },
   { path: "/account", label: "Account" },
   { path: "/recitation/stats", label: "Recitation Stats" },
+  { path: "/progress", label: "My Progress" },
 ];

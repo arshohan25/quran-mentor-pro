@@ -240,6 +240,16 @@ export default function HifzDashboardPage() {
       <div className="container py-4 space-y-4">
         <DueTodayCard />
         <Link
+          to="/progress"
+          className="flex items-center justify-between rounded-xl border border-border bg-card p-3 hover:bg-muted/40 transition-colors"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <TrendingUp className="w-4 h-4 text-primary" />
+            {t("আমার অগ্রগতি", "My progress", "تقدمي")}
+          </span>
+          <span className="text-xs text-muted-foreground">{t("মুখস্থ অবস্থা · এখন প্রয়োজন", "Mastery · due now", "الحفظ · مستحق")}</span>
+        </Link>
+        <Link
           to="/recitation/stats"
           className="flex items-center justify-between rounded-xl border border-border bg-card p-3 hover:bg-muted/40 transition-colors"
         >
