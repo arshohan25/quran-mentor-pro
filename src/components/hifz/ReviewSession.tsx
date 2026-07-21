@@ -154,26 +154,48 @@ export default function ReviewSession() {
       </div>
 
       <div className="container py-5 max-w-2xl mx-auto space-y-5">
-        {/* Ayah label */}
-        <div className="text-center">
+        {/* Ayah label + tally */}
+        <div className="text-center space-y-1">
           <p className="text-xs text-muted-foreground uppercase tracking-wide">
             {language === "bn" ? surahMeta?.bengaliName : surahMeta?.englishName}
           </p>
           <p className="text-sm font-semibold text-foreground">
             {t("আয়াত", "Ayah", "آية")} {current!.ayah}
           </p>
+          <div className="flex justify-center gap-3 pt-1 text-[11px]">
+            <span className="inline-flex items-center gap-1 text-accent">
+              <Check className="w-3 h-3" /> {correctCount}
+            </span>
+            <span className="inline-flex items-center gap-1 text-destructive">
+              <X className="w-3 h-3" /> {incorrectCount}
+            </span>
+          </div>
         </div>
 
         {/* Arabic */}
         <button
           onClick={() => setRevealed(r => !r)}
-          className="w-full islamic-card p-6 min-h-[140px] flex items-center justify-center text-center"
+          className={`w-full islamic-card p-6 min-h-[140px] flex items-center justify-center text-center border-2 transition-colors ${
+            feedback === "correct"
+              ? "border-accent bg-accent/10"
+              : feedback === "incorrect"
+              ? "border-destructive bg-destructive/10 ring-2 ring-destructive/40"
+              : "border-transparent"
+          }`}
           dir="rtl"
         >
           {ayahLoading ? (
             <Skeleton className="h-10 w-full" />
           ) : revealed ? (
-            <p className="font-arabic text-2xl md:text-3xl leading-[2.4] text-foreground">
+            <p
+              className={`font-arabic text-2xl md:text-3xl leading-[2.4] ${
+                feedback === "incorrect"
+                  ? "text-destructive underline decoration-2 decoration-destructive/70"
+                  : feedback === "correct"
+                  ? "text-accent"
+                  : "text-foreground"
+              }`}
+            >
               {ayahArabic}
             </p>
           ) : (
@@ -185,6 +207,26 @@ export default function ReviewSession() {
             </div>
           )}
         </button>
+
+        {/* Quick actions — always visible for one-tap grading */}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={quickIncorrect}
+            disabled={review.isPending}
+            className="rounded-xl border-2 border-destructive/30 bg-destructive/10 text-destructive px-3 py-3 text-sm font-semibold hover:bg-destructive/15 transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
+          >
+            <X className="w-4 h-4" />
+            {t("ভুল হয়েছে", "Incorrect", "خطأ")}
+          </button>
+          <button
+            onClick={quickCorrect}
+            disabled={review.isPending}
+            className="rounded-xl border-2 border-accent/30 bg-accent/10 text-accent px-3 py-3 text-sm font-semibold hover:bg-accent/15 transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
+          >
+            <Check className="w-4 h-4" />
+            {t("সঠিক হয়েছে", "Correct", "صحيح")}
+          </button>
+        </div>
 
         {/* Translation toggle */}
         <div className="flex justify-center">
@@ -202,49 +244,49 @@ export default function ReviewSession() {
           <p className="text-sm text-muted-foreground text-center px-2">{ayahTranslation}</p>
         )}
 
-        {/* Grading */}
+        {/* Detailed grading (SRS quality) */}
         {revealed && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
-            {QUALITIES.map(q => {
-              const next = projectNext(current!, q);
-              const label = QUALITY_LABELS[q];
-              const color =
-                q === 0
-                  ? "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/15"
-                  : q === 3
-                  ? "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20 hover:bg-orange-500/15"
-                  : q === 4
-                  ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/15"
-                  : "bg-accent/10 text-accent border-accent/20 hover:bg-accent/15";
-              return (
-                <button
-                  key={q}
-                  onClick={() => grade(q)}
-                  disabled={review.isPending}
-                  className={`rounded-lg border px-3 py-3 text-sm font-semibold transition-colors disabled:opacity-50 ${color}`}
-                >
-                  <div className="flex items-center justify-center gap-1.5">
-                    {q === 0 && <RotateCcw className="w-3.5 h-3.5" />}
-                    {language === "bn" ? label.bn : label.en}
-                  </div>
-                  <p className="text-[10px] font-normal opacity-80 mt-0.5">
-                    → {formatInterval(next.interval_days, t)}
-                  </p>
-                </button>
-              );
-            })}
+          <div className="pt-1">
+            <p className="text-[11px] text-muted-foreground text-center mb-2 uppercase tracking-wide">
+              {t("বিস্তারিত গ্রেড", "Detailed grade", "تقييم مفصل")}
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {QUALITIES.map(q => {
+                const next = projectNext(current!, q);
+                const label = QUALITY_LABELS[q];
+                const color =
+                  q === 0
+                    ? "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/15"
+                    : q === 3
+                    ? "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20 hover:bg-orange-500/15"
+                    : q === 4
+                    ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/15"
+                    : "bg-accent/10 text-accent border-accent/20 hover:bg-accent/15";
+                return (
+                  <button
+                    key={q}
+                    onClick={() => grade(q)}
+                    disabled={review.isPending}
+                    className={`rounded-lg border px-3 py-3 text-sm font-semibold transition-colors disabled:opacity-50 ${color}`}
+                  >
+                    <div className="flex items-center justify-center gap-1.5">
+                      {q === 0 && <RotateCcw className="w-3.5 h-3.5" />}
+                      {language === "bn" ? label.bn : label.en}
+                    </div>
+                    <p className="text-[10px] font-normal opacity-80 mt-0.5">
+                      → {formatInterval(next.interval_days, t)}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        )}
-
-        {!revealed && (
-          <p className="text-center text-xs text-muted-foreground pt-2">
-            {t("দেখার পর গ্রেড করুন", "Reveal to grade", "اكشف للتقييم")}
-          </p>
         )}
       </div>
     </div>
   );
 }
+
 
 function Header({ title }: { title: string }) {
   return (
