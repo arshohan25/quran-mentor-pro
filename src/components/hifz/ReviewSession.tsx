@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Eye, EyeOff, Check, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Check, RotateCcw, X, Volume2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDueCards, useReviewMutation, projectNext, type HifzSrsRow } from "@/hooks/useHifzSrs";
-import { useSurahWithTranslations } from "@/hooks/useQuranApi";
+import { useAyahAudio, useSurahWithTranslations } from "@/hooks/useQuranApi";
+import { useSelectedReciter } from "@/hooks/useSelectedReciter";
 import { surahList } from "@/data/surahList";
 import { QUALITY_LABELS, type Quality } from "@/lib/srs";
 import { Skeleton } from "@/components/ui/skeleton";
