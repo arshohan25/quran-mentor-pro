@@ -36,6 +36,7 @@ import AskPage from "./pages/AskPage.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import AccountPage from "./pages/AccountPage.tsx";
 import RecitationStatsPage from "./pages/RecitationStatsPage.tsx";
+import ProgressPage from "./pages/ProgressPage.tsx";
 import TafsirComparePage from "./pages/TafsirComparePage.tsx";
 import RequireAdmin from "@/components/admin/RequireAdmin";
 import AdminShell from "@/components/admin/AdminShell";
