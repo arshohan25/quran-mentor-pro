@@ -25,6 +25,7 @@ export default function ReviewSession() {
   const navigate = useNavigate();
   const { data: due, isLoading } = useDueCards();
   const review = useReviewMutation();
+  const { reciterId } = useSelectedReciter();
 
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -33,6 +34,9 @@ export default function ReviewSession() {
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [incorrectCount, setIncorrectCount] = useState(0);
+  const [replaying, setReplaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const advanceTimerRef = useRef<number | null>(null);
 
   // Snapshot the queue once so it doesn't shrink as we mutate
   const [queue, setQueue] = useState<HifzSrsRow[] | null>(null);
@@ -44,6 +48,7 @@ export default function ReviewSession() {
   const surahMeta = current ? surahList.find(s => s.number === current.surah) : null;
 
   const { data: surahData, isLoading: ayahLoading } = useSurahWithTranslations(current?.surah ?? 0);
+  const { data: audioUrl } = useAyahAudio(current?.surah ?? 0, current?.ayah ?? 0, reciterId);
 
   const ayahArabic = useMemo(() => {
     if (!current || !surahData) return "";
