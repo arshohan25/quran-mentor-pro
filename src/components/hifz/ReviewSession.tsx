@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Eye, EyeOff, Check, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Check, RotateCcw, X, Volume2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDueCards, useReviewMutation, projectNext, type HifzSrsRow } from "@/hooks/useHifzSrs";
-import { useSurahWithTranslations } from "@/hooks/useQuranApi";
+import { useAyahAudio, useSurahWithTranslations } from "@/hooks/useQuranApi";
+import { useSelectedReciter } from "@/hooks/useSelectedReciter";
 import { surahList } from "@/data/surahList";
 import { QUALITY_LABELS, type Quality } from "@/lib/srs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +25,7 @@ export default function ReviewSession() {
   const navigate = useNavigate();
   const { data: due, isLoading } = useDueCards();
   const review = useReviewMutation();
+  const { reciterId } = useSelectedReciter();
 
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -32,6 +34,9 @@ export default function ReviewSession() {
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [incorrectCount, setIncorrectCount] = useState(0);
+  const [replaying, setReplaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const advanceTimerRef = useRef<number | null>(null);
 
   // Snapshot the queue once so it doesn't shrink as we mutate
   const [queue, setQueue] = useState<HifzSrsRow[] | null>(null);
@@ -43,6 +48,7 @@ export default function ReviewSession() {
   const surahMeta = current ? surahList.find(s => s.number === current.surah) : null;
 
   const { data: surahData, isLoading: ayahLoading } = useSurahWithTranslations(current?.surah ?? 0);
+  const { data: audioUrl } = useAyahAudio(current?.surah ?? 0, current?.ayah ?? 0, reciterId);
 
   const ayahArabic = useMemo(() => {
     if (!current || !surahData) return "";
@@ -54,6 +60,32 @@ export default function ReviewSession() {
     const src = language === "bn" ? surahData.bengali : surahData.english;
     return src.ayahs.find(a => a.numberInSurah === current.ayah)?.text ?? "";
   }, [current, surahData, language]);
+
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
+      audioRef.current = null;
+    }
+    setReplaying(false);
+  };
+
+  const playCurrentAudio = (onDone?: () => void) => {
+    if (!audioUrl) { onDone?.(); return; }
+    stopAudio();
+    const a = new Audio(audioUrl);
+    audioRef.current = a;
+    setReplaying(true);
+    const finish = () => {
+      if (audioRef.current === a) audioRef.current = null;
+      setReplaying(false);
+      onDone?.();
+    };
+    a.onended = finish;
+    a.onerror = finish;
+    a.play().catch(finish);
+  };
 
   const grade = async (q: Quality) => {
     if (!current || review.isPending) return;
@@ -70,13 +102,25 @@ export default function ReviewSession() {
         existing: current,
       });
       setReviewedCount(c => c + 1);
-      // Brief pause so learner sees the red/green feedback before advancing
-      setTimeout(() => {
+
+      const advance = () => {
         setFeedback(null);
         setRevealed(false);
         setShowTranslation(false);
+        stopAudio();
         setIndex(i => i + 1);
-      }, 650);
+      };
+
+      if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
+
+      if (isCorrect) {
+        advanceTimerRef.current = window.setTimeout(advance, 650);
+      } else {
+        // Auto-replay the ayah so the learner can immediately repeat the red-marked line.
+        playCurrentAudio();
+        // Give them time to listen + repeat; capped so the session still flows.
+        advanceTimerRef.current = window.setTimeout(advance, 8000);
+      }
     } catch (e) {
       console.error("Review failed", e);
       setFeedback(null);
@@ -85,6 +129,13 @@ export default function ReviewSession() {
 
   const quickCorrect = () => grade(5);
   const quickIncorrect = () => grade(0);
+
+  useEffect(() => {
+    return () => {
+      if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
+      stopAudio();
+    };
+  }, []);
 
   if (isLoading || !queue) {
     return (
@@ -207,6 +258,20 @@ export default function ReviewSession() {
             </div>
           )}
         </button>
+
+        {feedback === "incorrect" && (
+          <button
+            onClick={() => playCurrentAudio()}
+            disabled={!audioUrl}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 text-destructive px-3 py-2 text-xs font-medium hover:bg-destructive/10 transition-colors disabled:opacity-50"
+          >
+            <Volume2 className={`w-3.5 h-3.5 ${replaying ? "animate-pulse" : ""}`} />
+            {replaying
+              ? t("বাজছে…", "Playing…", "يشغل…")
+              : t("আবার শুনুন", "Replay ayah", "أعد الاستماع")}
+          </button>
+        )}
+
 
         {/* Quick actions — always visible for one-tap grading */}
         <div className="grid grid-cols-2 gap-2">
