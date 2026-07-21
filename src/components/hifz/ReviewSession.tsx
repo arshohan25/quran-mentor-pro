@@ -29,6 +29,9 @@ export default function ReviewSession() {
   const [revealed, setRevealed] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
   const [reviewedCount, setReviewedCount] = useState(0);
+  const [feedback, setFeedback] = useState<Feedback>(null);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [incorrectCount, setIncorrectCount] = useState(0);
 
   // Snapshot the queue once so it doesn't shrink as we mutate
   const [queue, setQueue] = useState<HifzSrsRow[] | null>(null);
