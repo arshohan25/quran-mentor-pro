@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import StatCard from "@/components/admin/StatCard";
 import AdminKpiWidget from "@/components/admin/AdminKpiWidget";
 import AdminModeBreakdownWidget from "@/components/admin/AdminModeBreakdownWidget";
+import AdminEngagementWidget from "@/components/admin/AdminEngagementWidget";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -133,6 +134,8 @@ export default function AdminDashboardPage() {
       <AdminKpiWidget />
 
       <AdminModeBreakdownWidget />
+
+      <AdminEngagementWidget />
 
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="rounded-xl border bg-card p-4">
