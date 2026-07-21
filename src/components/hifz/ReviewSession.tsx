@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Eye, EyeOff, Check, RotateCcw } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Check, RotateCcw, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDueCards, useReviewMutation, projectNext, type HifzSrsRow } from "@/hooks/useHifzSrs";
 import { useSurahWithTranslations } from "@/hooks/useQuranApi";
@@ -9,6 +9,7 @@ import { QUALITY_LABELS, type Quality } from "@/lib/srs";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const QUALITIES: Quality[] = [0, 3, 4, 5];
+type Feedback = "correct" | "incorrect" | null;
 
 function formatInterval(days: number, t: (bn: string, en: string, ar: string) => string) {
   if (days < 1) return t("<১ দিন", "<1d", "<1ي");
