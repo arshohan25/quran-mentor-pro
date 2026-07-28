@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { duaData } from "@/data/duaData";
+import { DUAS } from "@/data/duaData";
 
 type Kind = "ayah" | "hadith" | "dua";
 
