@@ -49,15 +49,12 @@ async function fetchAyahPayload() {
 }
 
 function pickDuaPayload() {
-  const all = (duaData as any[]).flatMap((cat: any) =>
-    (cat.duas ?? []).map((d: any) => ({ ...d, category: cat.title_en ?? cat.title_bn }))
-  );
-  if (!all.length) return {};
-  const d = all[dailySeed() % all.length];
+  if (!DUAS.length) return {};
+  const d = DUAS[dailySeed() % DUAS.length];
   return {
     arabic: d.arabic ?? "",
-    bn: d.translation_bn ?? d.bn ?? "",
-    en: d.translation_en ?? d.en ?? "",
+    bn: d.bn ?? "",
+    en: d.en ?? "",
     transliteration: d.transliteration ?? "",
     reference: d.reference ?? d.category ?? "",
   };
