@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Save, Loader2 } from "lucide-react";
+import { Plus, Trash2, Save, Loader2, Wand2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { duaData } from "@/data/duaData";
 
 type Kind = "ayah" | "hadith" | "dua";
 
@@ -22,11 +23,52 @@ const PAYLOAD_FIELDS: Record<Kind, string[]> = {
   dua: ["arabic", "bn", "en", "transliteration", "reference"],
 };
 
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function dailySeed() {
+  const d = new Date();
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+
+async function fetchAyahPayload() {
+  const num = (dailySeed() % 6236) + 1;
+  const [arRes, bnRes, enRes] = await Promise.all([
+    fetch(`https://api.alquran.cloud/v1/ayah/${num}/quran-uthmani`),
+    fetch(`https://api.alquran.cloud/v1/ayah/${num}/bn.bengali`),
+    fetch(`https://api.alquran.cloud/v1/ayah/${num}/en.sahih`),
+  ]);
+  const [ar, bn, en] = await Promise.all([arRes.json(), bnRes.json(), enRes.json()]);
+  return {
+    arabic: ar.data.text,
+    bn: bn.data.text,
+    en: en.data.text,
+    reference: `${ar.data.surah.englishName} (${ar.data.surah.name}) : ${ar.data.numberInSurah}`,
+  };
+}
+
+function pickDuaPayload() {
+  const all = (duaData as any[]).flatMap((cat: any) =>
+    (cat.duas ?? []).map((d: any) => ({ ...d, category: cat.title_en ?? cat.title_bn }))
+  );
+  if (!all.length) return {};
+  const d = all[dailySeed() % all.length];
+  return {
+    arabic: d.arabic ?? "",
+    bn: d.translation_bn ?? d.bn ?? "",
+    en: d.translation_en ?? d.en ?? "",
+    transliteration: d.transliteration ?? "",
+    reference: d.reference ?? d.category ?? "",
+  };
+}
+
 export default function AdminDailyContentPage() {
   const [kind, setKind] = useState<Kind>("ayah");
   const [rows, setRows] = useState<Override[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [seeding, setSeeding] = useState(false);
 
   const reload = async () => {
     setLoading(true);
@@ -48,13 +90,42 @@ export default function AdminDailyContentPage() {
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, payload: { ...r.payload, [key]: value } } : r)));
 
   const add = async () => {
-    const today = new Date().toISOString().slice(0, 10);
     const { data, error } = await supabase
       .from("daily_content_overrides")
-      .insert({ kind, date: today, payload: {} })
+      .insert({ kind, date: todayStr(), payload: {} })
       .select().single();
     if (error) return toast.error(error.message);
     setRows((rs) => [data as Override, ...rs]);
+  };
+
+  const autoFillToday = async () => {
+    setSeeding(true);
+    try {
+      let payload: Record<string, any> = {};
+      if (kind === "ayah") payload = await fetchAyahPayload();
+      else if (kind === "dua") payload = pickDuaPayload();
+      else payload = { arabic: "", bn: "", en: "", narrator: "", reference: "" };
+
+      const today = todayStr();
+      const existing = rows.find((r) => r.date === today);
+      if (existing) {
+        const { error } = await supabase.from("daily_content_overrides")
+          .update({ payload, enabled: true }).eq("id", existing.id);
+        if (error) throw error;
+        update(existing.id, { payload, enabled: true });
+        toast.success("Today's row refreshed");
+      } else {
+        const { data, error } = await supabase.from("daily_content_overrides")
+          .insert({ kind, date: today, payload, enabled: true }).select().single();
+        if (error) throw error;
+        setRows((rs) => [data as Override, ...rs]);
+        toast.success("Today's row seeded");
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Auto-fill failed");
+    } finally {
+      setSeeding(false);
+    }
   };
 
   const remove = async (id: string) => {
@@ -78,7 +149,7 @@ export default function AdminDailyContentPage() {
     <div className="space-y-4 max-w-4xl">
       <div>
         <h1 className="text-2xl font-bold">Daily Content</h1>
-        <p className="text-sm text-muted-foreground">Curate the Ayah, Hadith and Dua shown to users on a given date.</p>
+        <p className="text-sm text-muted-foreground">Curate the Ayah, Hadith and Dua shown to users on a given date. Use <b>Auto-fill today</b> to seed the row from live sources, then edit and save.</p>
       </div>
 
       <Tabs value={kind} onValueChange={(v) => setKind(v as Kind)}>
@@ -89,8 +160,12 @@ export default function AdminDailyContentPage() {
         </TabsList>
 
         <TabsContent value={kind} className="space-y-3 mt-4">
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={add}><Plus className="w-4 h-4 mr-1" /> Add for today</Button>
+          <div className="flex justify-end gap-2">
+            <Button variant="default" onClick={autoFillToday} disabled={seeding}>
+              {seeding ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Wand2 className="w-4 h-4 mr-1" />}
+              Auto-fill today
+            </Button>
+            <Button variant="outline" onClick={add}><Plus className="w-4 h-4 mr-1" /> Add blank</Button>
           </div>
           {loading ? <Skeleton className="h-64" /> : rows.length === 0 ? (
             <p className="text-sm text-muted-foreground p-6 text-center border rounded-md">No overrides yet.</p>
